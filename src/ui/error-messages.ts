@@ -6,6 +6,8 @@ export function domainErrorMessage(error: Error): string {
       return 'Ya registraste una visita para este lote ese día.';
     case 'FieldNotFound':
       return 'No se encontró el lote.';
+    case 'InvalidVisitInterval':
+      return 'La próxima visita debe ser posterior a la fecha de la visita.';
     default:
       return 'Ocurrió un error al registrar la visita.';
   }

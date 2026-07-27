@@ -10,6 +10,12 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function futureIso(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 function utcDate(iso: string): Date {
   return new Date(`${iso}T00:00:00.000Z`);
 }
@@ -23,7 +29,7 @@ export function RecordVisitScreen() {
   const [notes, setNotes] = useState('');
   const [kind, setKind] = useState<FollowUpKind>('interval');
   const [intervalDays, setIntervalDays] = useState(14);
-  const [nextDate, setNextDate] = useState(todayIso());
+  const [nextDate, setNextDate] = useState(futureIso(14));
   const [leadDays, setLeadDays] = useState(3);
 
   useEffect(() => {
@@ -32,11 +38,13 @@ export function RecordVisitScreen() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const safeInterval = Number.isFinite(intervalDays) && intervalDays > 0 ? intervalDays : 14;
+    const safeLead = Number.isFinite(leadDays) && leadDays >= 0 ? leadDays : 0;
     let followUp: FollowUpInput;
     if (kind === 'interval') {
-      followUp = { kind: 'interval', days: intervalDays, reminderLeadDays: leadDays };
+      followUp = { kind: 'interval', days: safeInterval, reminderLeadDays: safeLead };
     } else if (kind === 'date') {
-      followUp = { kind: 'date', date: utcDate(nextDate), reminderLeadDays: leadDays };
+      followUp = { kind: 'date', date: utcDate(nextDate), reminderLeadDays: safeLead };
     } else {
       followUp = { kind: 'none' };
     }
@@ -79,6 +87,7 @@ export function RecordVisitScreen() {
               Días
               <input
                 type="number"
+                min="1"
                 value={intervalDays}
                 onChange={(e) => setIntervalDays(Number(e.target.value))}
               />
@@ -95,6 +104,7 @@ export function RecordVisitScreen() {
               Avisar días antes
               <input
                 type="number"
+                min="0"
                 value={leadDays}
                 onChange={(e) => setLeadDays(Number(e.target.value))}
               />
