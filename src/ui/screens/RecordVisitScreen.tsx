@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { FollowUpInput } from '@/application/use-cases/record-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
 import { domainErrorMessage } from '@/ui/error-messages';
@@ -57,62 +57,83 @@ export function RecordVisitScreen() {
   };
 
   return (
-    <main>
-      <h1>Registrar visita</h1>
-      <form onSubmit={onSubmit}>
-        <label>
-          Fecha
-          <input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
+    <main className="screen record">
+      <Link className="back-link" to="/">‹ Buscar lote</Link>
+      <h1 className="screen-title">Registrar visita</h1>
+      <form className="form" onSubmit={onSubmit}>
+        <label className="field">
+          <span className="field-label">Fecha</span>
+          <input
+            className="control"
+            type="date"
+            value={visitDate}
+            onChange={(e) => setVisitDate(e.target.value)}
+          />
         </label>
-        <label>
-          Notas
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <label className="field">
+          <span className="field-label">Notas</span>
+          <textarea
+            className="control textarea"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </label>
-        <fieldset>
-          <legend>Próxima visita</legend>
-          <label>
-            <input type="radio" name="kind" checked={kind === 'interval'} onChange={() => setKind('interval')} />
-            En N días
-          </label>
-          <label>
-            <input type="radio" name="kind" checked={kind === 'date'} onChange={() => setKind('date')} />
-            En una fecha
-          </label>
-          <label>
-            <input type="radio" name="kind" checked={kind === 'none'} onChange={() => setKind('none')} />
-            Sin próxima
-          </label>
-          {kind === 'interval' && (
-            <label>
-              Días
-              <input
-                type="number"
-                min="1"
-                value={intervalDays}
-                onChange={(e) => setIntervalDays(Number(e.target.value))}
-              />
+        <fieldset className="field fieldset">
+          <legend className="field-label">Próxima visita</legend>
+          <div className="segmented">
+            <label className="segment">
+              <input type="radio" name="kind" checked={kind === 'interval'} onChange={() => setKind('interval')} />
+              <span>En N días</span>
             </label>
-          )}
-          {kind === 'date' && (
-            <label>
-              Fecha próxima
-              <input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} />
+            <label className="segment">
+              <input type="radio" name="kind" checked={kind === 'date'} onChange={() => setKind('date')} />
+              <span>En una fecha</span>
             </label>
-          )}
-          {kind !== 'none' && (
-            <label>
-              Avisar días antes
-              <input
-                type="number"
-                min="0"
-                value={leadDays}
-                onChange={(e) => setLeadDays(Number(e.target.value))}
-              />
+            <label className="segment">
+              <input type="radio" name="kind" checked={kind === 'none'} onChange={() => setKind('none')} />
+              <span>Sin próxima</span>
             </label>
-          )}
+          </div>
+          <div className="conditional-row">
+            {kind === 'interval' && (
+              <label className="field">
+                <span className="field-label">Días</span>
+                <input
+                  className="control"
+                  type="number"
+                  min="1"
+                  value={intervalDays}
+                  onChange={(e) => setIntervalDays(Number(e.target.value))}
+                />
+              </label>
+            )}
+            {kind === 'date' && (
+              <label className="field">
+                <span className="field-label">Fecha próxima</span>
+                <input
+                  className="control"
+                  type="date"
+                  value={nextDate}
+                  onChange={(e) => setNextDate(e.target.value)}
+                />
+              </label>
+            )}
+            {kind !== 'none' && (
+              <label className="field">
+                <span className="field-label">Avisar días antes</span>
+                <input
+                  className="control"
+                  type="number"
+                  min="0"
+                  value={leadDays}
+                  onChange={(e) => setLeadDays(Number(e.target.value))}
+                />
+              </label>
+            )}
+          </div>
         </fieldset>
-        {error && <p role="alert">{domainErrorMessage(error)}</p>}
-        <button type="submit" disabled={submitting}>
+        {error && <p className="alert" role="alert">{domainErrorMessage(error)}</p>}
+        <button className="btn-primary" type="submit" disabled={submitting}>
           Registrar
         </button>
       </form>

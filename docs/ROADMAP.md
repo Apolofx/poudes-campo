@@ -36,7 +36,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 |---|---|---|
 | **1 — núcleo lógico** | Dominio + aplicación puros: buscar lotes (HU5) + registrar visita con follow-up (HU1/HU2) | ✅ Completa (merge en `main`, 57 tests) |
 | **1b — IndexedDB + UI + PWA** | Persistencia real, UI React (2 pantallas), PWA instalable offline | ✅ Completa (merge `46d23ed`, 100 tests) |
-| **1c — pasada de diseño** *(propuesta)* | Estilo visual de las 2 pantallas existentes (mobile-first) | 🔜 Próxima — a brainstormear |
+| **1c — pasada de diseño** | Estilo visual de las 2 pantallas (paleta "Campo" verde, fuente del sistema, mobile-first): buscador sticky, filas táctiles, control segmentado, back link, estado vacío | ✅ Completa (103 tests) |
 | **2 — panel de urgencia** | Semáforo/urgencia por zona calculado contra `nextVisitDate`, proporcional al intervalo del lote (VO `VisitUrgency` al vuelo, nunca persistido) | ⏳ Pendiente |
 | **3 — aviso al abrir** | Cálculo idempotente al abrir la app (`DispatchDueReminders`, PENDING→SENT); backlog colapsado en un resumen por zona; `ReminderNotifier` agnóstico al protocolo | ⏳ Pendiente |
 | **4 — cancelar/editar + catálogo** | Cancelar/editar visitas (baja lógica auditable) + ABM de Zone/Client/Field (alta/edición/archivado) | ⏳ Pendiente |
@@ -48,9 +48,10 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 
 Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
 
-- **Estilo visual** — la UI de Etapa 1b es HTML semántico sin CSS. No fue bug: el diseño visual nunca entró al alcance de 1b (foco fue plomería + comportamiento). → **Etapa 1c** (pasada de diseño). El markup semántico + `role="alert"` es buena base; la UI es adaptador reemplazable, así que estilar es aditivo (no toca dominio/aplicación/idb).
-- **Íconos PWA placeholder** — `public/pwa-192.png` y `pwa-512.png` son placeholders 1×1. Reemplazar por arte real antes de un release. → junto con 1c o antes de release.
-- **Borde de timezone (este de UTC)** — las fechas se construyen como medianoche-UTC (`new Date(`${iso}T00:00:00.000Z`)`) y se comparan contra el reloj real; para usuarios al **este** de UTC puede rechazar "hoy" como fecha futura. Usuario objetivo UTC-3 (oeste) **no afectado**. El arreglo va atado a revisar la comparación de día-calendario del dominio. → cuando se toque la lógica de fechas del dominio.
+- **Subtítulo con el nombre del lote en "Registrar visita"** — se diseñó en 1c (ej. "El Alto · Est. Pérez") pero se difirió: no es CSS, requiere que la pantalla cargue el field por id, y el container no expone esa lectura (haría falta un `GetField` / exponer `findById` → toca aplicación). → mejora funcional chica, pliega bien con Etapa 2 o tarea aparte.
+- **`aria-live` en el estado vacío de "Buscar lote"** — hoy "No se encontró ningún lote." es un `<p>` sin anuncio para lectores de pantalla. → pulido a11y, junto con otras mejoras de accesibilidad.
+- **Íconos PWA placeholder** — `public/pwa-192.png` y `pwa-512.png` son placeholders 1×1. Reemplazar por arte real antes de un release.
+- **Borde de timezone (este de UTC)** — las fechas se construyen como medianoche-UTC (`new Date(`${iso}T00:00:00.000Z`)`) y se comparan contra el reloj real; para usuarios al **este** de UTC puede rechazar "hoy" como fecha futura. Usuario objetivo UTC-3 (oeste) **no afectado**. (En 1c se endureció el helper de tests para que sea date-relative — la bomba de tiempo de los tests ya no existe; el borde de dominio sigue diferido.) El arreglo va atado a revisar la comparación de día-calendario del dominio. → cuando se toque la lógica de fechas del dominio.
 - **Validación de `reminderLeadDays`** — hoy `RecordVisit` no valida el lead; un lead negativo o mayor al intervalo pondría `remindAt` después del vencimiento o antes de `now`. Validar al construir el dispatch. → **Etapa 3**.
 - **`interval.days` sub-cuenta <1 día** — para próxima-visita con fecha manual, `interval.days` se calcula por días-calendario (UTC) mientras `nextVisitDate` conserva la hora, así que el intervalo guardado puede sub-contar el gap real por <1 día. Es diseño documentado, no bug.
 - **Upgrades técnicos anotados (no construidos):** guardar fechas como ISO string (para el LWW de Etapa 5), HLC para conflictos (Etapa 5), TanStack Query y Playwright si el flujo de UI crece.
