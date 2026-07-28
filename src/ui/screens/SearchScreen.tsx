@@ -17,7 +17,7 @@ export function SearchScreen() {
   };
 
   return (
-    <main className="screen search">
+    <main className="screen">
       <header className="search-header">
         <h1 className="screen-title">Buscar lote</h1>
         <div className="search-box">
