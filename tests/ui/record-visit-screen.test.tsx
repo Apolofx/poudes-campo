@@ -6,7 +6,18 @@ import { CampoProvider } from '@/ui/CampoProvider';
 import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
 import { makeInMemoryContainer } from '../support/in-memory-container';
 
-function renderScreen(now = new Date('2026-07-27T12:00:00Z')) {
+// `RecordVisitScreen` builds its default visit date from the real system clock
+// (`todayIso()`), which tests can't inject into the component. So the use-case clock
+// must track the real "today" — a hardcoded past date makes the default date look
+// "future" and breaks these tests once the calendar rolls past it. Derive both the
+// clock and any "future" date from the real now to keep this suite deterministic.
+function isoInDays(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function renderScreen(now = new Date()) {
   return render(
     <CampoProvider container={makeInMemoryContainer(now)}>
       <MemoryRouter initialEntries={['/field/f1/record']}>
@@ -31,7 +42,7 @@ describe('RecordVisitScreen', () => {
     renderScreen();
     const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
     await userEvent.clear(dateInput);
-    await userEvent.type(dateInput, '2026-08-15');
+    await userEvent.type(dateInput, isoInDays(30));
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
     await waitFor(() =>
