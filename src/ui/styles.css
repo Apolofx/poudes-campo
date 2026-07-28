@@ -169,7 +169,7 @@ body {
   color: var(--ink);
 }
 
-.control:focus-visible { outline: none; border-color: var(--accent); }
+.control:focus-visible { border-color: var(--accent); }
 
 .textarea { min-height: 88px; padding: var(--space-3); resize: vertical; }
 
