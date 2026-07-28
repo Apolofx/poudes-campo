@@ -79,4 +79,10 @@ describe('RecordVisitScreen', () => {
     fireEvent.submit(container.querySelector('form')!);
     expect(await screen.findByText('Listado')).toBeInTheDocument();
   });
+
+  it('renders a back link to the search list', async () => {
+    renderScreen();
+    const back = await screen.findByRole('link', { name: /Buscar lote/ });
+    expect(back).toHaveAttribute('href', '/');
+  });
 });
