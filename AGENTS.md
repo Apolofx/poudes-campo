@@ -46,11 +46,34 @@ Correr un test puntual: `npx vitest run tests/ruta/al.test.ts`.
 
 ## Cómo trabajamos (flujo confirmado)
 
-- **Brainstorming técnico antes de código, una decisión por vez.** Presentar opciones con contrapartidas y una recomendación fundada; frenar y esperar. Cuestionar el PRD/documento en vez de asumir que tiene razón. No sobre-ingenierizar (YAGNI explícito).
-- **Por etapa**: brainstorming → spec (`docs/superpowers/specs/`) → plan con código completo y pasos TDD checkbox (`docs/superpowers/plans/`) → ejecución (subagent-driven-development) → merge a `main`.
+Este flujo es **agnóstico a la herramienta**: vale con cualquier agente de IA, o a mano. Los artefactos versionados en `docs/superpowers/specs/` y `docs/superpowers/plans/` son ejemplos vivos de cada paso — usalos de molde.
+
+- **Brainstorming técnico antes de código, una decisión por vez.** Presentar opciones con contrapartidas y una recomendación fundada; frenar y esperar. Cuestionar el PRD/documento en vez de asumir que tiene razón. No sobre-ingenierizar (YAGNI explícito). Al llegar a decisiones visuales, tratarlas como decisión propia (no asumir el estilo).
+- **Por etapa**: brainstorming → **spec** (`docs/superpowers/specs/AAAA-MM-DD-<tema>-design.md`) → **plan** con código completo y pasos TDD en checkbox (`docs/superpowers/plans/AAAA-MM-DD-<tema>.md`) → ejecución TDD tarea por tarea → merge a `main`.
 - **Cada etapa en su propia rama**; merge a `main` al terminar (repo git local, sin remoto).
 - **TDD estricto**: test que falla → verlo fallar → implementación mínima → verde → commit. Commits frecuentes.
 - Actualizar `docs/ROADMAP.md` al cerrar cada etapa.
+
+### Skills de Claude Code (recomendado si usás Claude Code)
+
+El flujo de arriba está automatizado por el plugin **superpowers** (skills de Claude Code). No viven en el repo — cada dev los instala en su propio Claude Code. Instalación (pinneado a la versión que usamos, v6.2.0):
+
+```
+/plugin marketplace add anthropics/claude-plugins-official
+/plugin install superpowers@claude-plugins-official
+```
+
+Skills por fase (invocarlos en este orden):
+
+| Fase | Skill |
+|---|---|
+| Explorar intención y diseño, una decisión por vez | `superpowers:brainstorming` |
+| Escribir el plan de implementación desde el spec | `superpowers:writing-plans` |
+| Ejecutar el plan tarea por tarea (implementador + review por tarea + review final) | `superpowers:subagent-driven-development` |
+| TDD dentro de cada tarea | `superpowers:test-driven-development` |
+| Cerrar la rama (verificar + merge) | `superpowers:finishing-a-development-branch` |
+
+Si usás **otra herramienta** (u ningún agente): seguí el mismo flujo a mano — el proceso importa más que los skills; ellos solo lo hacen turnkey.
 
 ## Mapa de documentos
 
