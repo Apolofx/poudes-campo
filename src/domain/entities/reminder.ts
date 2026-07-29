@@ -33,4 +33,9 @@ export class Reminder {
     if (this._status === 'CANCELLED') return;
     this._status = 'CANCELLED';
   }
+
+  markSent(): void {
+    if (this._status !== 'PENDING') return;
+    this._status = 'SENT';
+  }
 }
