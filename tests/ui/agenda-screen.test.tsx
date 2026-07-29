@@ -123,6 +123,7 @@ describe('AgendaScreen', () => {
     // no se ejercitan en este flujo, así que un stub tipado basta.
     const container = {
       listUpcomingVisits: { execute: () => Promise.reject(new Error('boom')) },
+      reminderAviso: { snapshot: () => [] },
     } as unknown as Container;
     render(
       <CampoProvider container={container}>
