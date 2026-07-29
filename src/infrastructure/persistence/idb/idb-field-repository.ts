@@ -29,8 +29,8 @@ export class IdbFieldRepository implements FieldRepository {
       const field = fromFieldRecord(record);
       return {
         field,
-        clientName: clients.get(field.clientId) ?? '',
-        zoneName: zones.get(field.zoneId) ?? '',
+        clientName: field.clientId ? clients.get(field.clientId) ?? '' : '',
+        zoneName: field.zoneId ? zones.get(field.zoneId) ?? '' : '',
       };
     });
   }

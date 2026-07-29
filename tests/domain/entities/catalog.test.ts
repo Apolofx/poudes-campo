@@ -50,9 +50,32 @@ describe('Field', () => {
   it('rejects an empty name', () => {
     expect(() => new Field({ id: 'f1', name: '', clientId: 'c1', zoneId: 'z1' })).toThrow(EmptyName);
   });
-  it('rejects a missing client or zone reference', () => {
-    expect(() => new Field({ id: 'f1', name: 'X', clientId: '', zoneId: 'z1' })).toThrow(MissingFieldReference);
-    expect(() => new Field({ id: 'f1', name: 'X', clientId: 'c1', zoneId: '' })).toThrow(MissingFieldReference);
+  it('allows an absent client or zone reference (orphan)', () => {
+    const f = new Field({ id: 'f1', name: 'X' });
+    expect(f.clientId).toBeUndefined();
+    expect(f.zoneId).toBeUndefined();
+  });
+  it('rejects a present-but-empty reference', () => {
+    expect(() => new Field({ id: 'f1', name: 'X', clientId: '' })).toThrow(MissingFieldReference);
+    expect(() => new Field({ id: 'f1', name: 'X', zoneId: '' })).toThrow(MissingFieldReference);
+  });
+  it('defaults archived to false and archive()/restore() flip it', () => {
+    const f = new Field({ id: 'f1', name: 'X', clientId: 'c1', zoneId: 'z1' });
+    expect(f.archived).toBe(false);
+    expect(f.archive().archived).toBe(true);
+    expect(f.archive().restore().archived).toBe(false);
+    expect(f.archive().id).toBe('f1');
+  });
+  it('rename() returns a copy with the new name, preserving refs', () => {
+    const f = new Field({ id: 'f1', name: 'X', clientId: 'c1', zoneId: 'z1' }).rename('Y');
+    expect(f.name).toBe('Y');
+    expect(f.clientId).toBe('c1');
+  });
+  it('reassignClient/reassignZone can set and clear references', () => {
+    const f = new Field({ id: 'f1', name: 'X', clientId: 'c1', zoneId: 'z1' });
+    expect(f.reassignClient('c2').clientId).toBe('c2');
+    expect(f.reassignClient(undefined).clientId).toBeUndefined();
+    expect(f.reassignZone(undefined).zoneId).toBeUndefined();
   });
   it('accepts optional coordinates and hectares', () => {
     const f = new Field({

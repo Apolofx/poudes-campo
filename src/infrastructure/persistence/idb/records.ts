@@ -18,11 +18,12 @@ export interface ClientRecord {
 export interface FieldRecord {
   id: string;
   name: string;
-  clientId: string;
-  zoneId: string;
+  clientId?: string;
+  zoneId?: string;
   coordinates?: { latitude: number; longitude: number };
   hectares?: number;
   crop?: string;
+  archived?: boolean;
 }
 
 export interface VisitRecord {
@@ -54,6 +55,7 @@ export function toFieldRecord(f: Field): FieldRecord {
       : undefined,
     hectares: f.hectares?.value,
     crop: f.crop,
+    archived: f.archived,
   };
 }
 
@@ -68,6 +70,7 @@ export function fromFieldRecord(r: FieldRecord): Field {
       : undefined,
     hectares: r.hectares !== undefined ? Hectares.of(r.hectares) : undefined,
     crop: r.crop,
+    archived: r.archived,
   });
 }
 

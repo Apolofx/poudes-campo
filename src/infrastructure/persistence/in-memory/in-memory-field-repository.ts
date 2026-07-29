@@ -27,8 +27,8 @@ export class InMemoryFieldRepository implements FieldRepository {
   async listAllWithHierarchy(): Promise<FieldSearchResult[]> {
     return [...this.fields.values()].map((field) => ({
       field,
-      clientName: this.clients.get(field.clientId)?.name ?? '',
-      zoneName: this.zones.get(field.zoneId)?.name ?? '',
+      clientName: field.clientId ? this.clients.get(field.clientId)?.name ?? '' : '',
+      zoneName: field.zoneId ? this.zones.get(field.zoneId)?.name ?? '' : '',
     }));
   }
 }
