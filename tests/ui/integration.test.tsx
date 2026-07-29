@@ -17,7 +17,7 @@ describe('search → record visit (real IndexedDB adapter)', () => {
 
     render(
       <CampoProvider container={container}>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={['/buscar']}>
           <App />
         </MemoryRouter>
       </CampoProvider>,
@@ -32,8 +32,8 @@ describe('search → record visit (real IndexedDB adapter)', () => {
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
 
-    // Vuelve a la búsqueda y hay una visita persistida.
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Buscar lote' })).toBeInTheDocument());
+    // Aterriza en Inicio y la visita quedó persistida.
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Próximas visitas' })).toBeInTheDocument());
     await waitFor(async () => expect(await db.count('visits')).toBe(1));
     db.close();
   });

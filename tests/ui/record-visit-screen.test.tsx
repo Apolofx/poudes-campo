@@ -83,6 +83,6 @@ describe('RecordVisitScreen', () => {
   it('renders a back link to the search list', async () => {
     renderScreen();
     const back = await screen.findByRole('link', { name: /Buscar lote/ });
-    expect(back).toHaveAttribute('href', '/');
+    expect(back).toHaveAttribute('href', '/buscar');
   });
 });
