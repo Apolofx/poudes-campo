@@ -58,7 +58,7 @@ export function RecordVisitScreen() {
 
   return (
     <main className="screen record">
-      <Link className="back-link" to="/">‹ Buscar lote</Link>
+      <Link className="back-link" to="/buscar">‹ Buscar lote</Link>
       <h1 className="screen-title">Registrar visita</h1>
       <form className="form" onSubmit={onSubmit}>
         <label className="field">
