@@ -36,6 +36,27 @@ describe('CancelVisit', () => {
     expect(await h.reminders.findPendingByField('f1')).toHaveLength(0);
   });
 
+  it("does not cancel another visit's pending reminder on the same field", async () => {
+    const h = makeEditCancelHarness();
+    const { visit: v1, reminder: r1 } = seedVisitWithReminder(h);
+    const v2 = new Visit({
+      id: 'v2', fieldId: 'f1',
+      visitDate: new Date('2026-07-20T10:00:00Z'),
+      createdAt: new Date('2026-07-20T10:00:00Z'),
+      followUp: { nextVisitDate: new Date('2026-07-27T10:00:00Z'), interval: VisitInterval.ofDays(7) },
+    });
+    const r2 = new Reminder({ id: 'r2', visitId: 'v2', fieldId: 'f1', remindAt: new Date('2026-07-27T10:00:00Z') });
+    await h.visits.save(v1);
+    await h.visits.save(v2);
+    await h.reminders.save(r1);
+    await h.reminders.save(r2);
+
+    await h.cancel.execute({ visitId: 'v1' });
+
+    const pending = await h.reminders.findPendingByField('f1');
+    expect(pending.map((r) => r.id)).toEqual(['r2']);
+  });
+
   it('is idempotent — cancelling twice does not throw', async () => {
     const h = makeEditCancelHarness();
     const { visit } = seedVisitWithReminder(h);
