@@ -1,4 +1,5 @@
 import { CancelVisit } from '@/application/use-cases/cancel-visit';
+import { EditVisit } from '@/application/use-cases/edit-visit';
 import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-visit-repository';
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
 import { InMemoryFieldRepository } from '@/infrastructure/persistence/in-memory/in-memory-field-repository';
@@ -19,5 +20,6 @@ export function makeEditCancelHarness(now = new Date('2026-07-27T10:00:00Z')) {
   const clock = new FixedClock(now);
   const ids = new IncrementingIdGenerator('id');
   const cancel = new CancelVisit(visits, reminders, clock);
-  return { cancel, visits, reminders, fields, clock, ids };
+  const edit = new EditVisit(visits, reminders, clock, ids);
+  return { cancel, edit, visits, reminders, fields, clock, ids };
 }
