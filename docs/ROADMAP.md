@@ -16,15 +16,15 @@
 - Registrar una visita: fecha (no futura), notas, y próxima visita (en N días / en una fecha / sin próxima) con aviso X días antes.
 - **Pantalla Inicio (agenda):** ver las próximas visitas ordenadas por urgencia (triage por horizonte: Vencidas / Esta semana / Más adelante, esta última colapsada), con agrupamiento dinámico por Tiempo/Zona/Cliente. Barra de pestañas Inicio · Buscar.
 - **Aviso al abrir la app:** un banner en Inicio resume, agrupados por zona, los lotes cuyo umbral de aviso (`remindAt = próxima − X días antes`) ya se cruzó. Cálculo idempotente al abrir (`PENDING→SENT`, no reaparece salvo que venzan nuevos); se puede cerrar.
+- **Catálogo (ABM):** tercer tab "Catálogo" con alta/edición/archivado (baja lógica reversible) de Zonas, Clientes y Lotes. Archivar un padre con lotes activos pregunta si cascadear (archivar los lotes) o mantenerlos (quedan huérfanos "Sin cliente"/"Sin zona", reasignables al editar el lote). "Ver archivados" + restaurar. Acción "Borrar todos los datos". Buscar/agenda/avisos ocultan lo archivado y muestran "Sin cliente/Sin zona" para huérfanos.
 - Todo offline y persistente en el dispositivo (IndexedDB). Instalable como PWA.
 
 ### ❌ Todavía no se puede
-- Cancelar o editar una visita registrada → **Etapa 4**.
-- Dar de alta / editar lotes, clientes y zonas reales (hoy son datos de ejemplo precargados) → **Etapa 4**.
+- Cancelar o editar una visita registrada → **Etapa 4a**.
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
 
 ### Datos
-Los ~40 lotes actuales son un **fixture de ejemplo** (nombres inventados). Sirven para probar/demostrar el flujo buscar→registrar. Se descartan cuando llegue el ABM de catálogo (Etapa 4).
+El seed de ~40 lotes de ejemplo quedó **gateado a modo dev** (`import.meta.env.DEV`); **producción arranca vacía**. Se cargan los lotes reales a mano por el ABM. Para limpiar un install que ya tiene el fixture: acción "Borrar todos los datos" en Catálogo.
 
 ---
 
@@ -39,7 +39,9 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **1c — pasada de diseño** | Estilo visual de las 2 pantallas (paleta "Campo" verde, fuente del sistema, mobile-first): buscador sticky, filas táctiles, control segmentado, back link, estado vacío | ✅ Completa (103 tests) |
 | **2 — panel de urgencia** | Pantalla Inicio: próximas visitas por urgencia **absoluta** (VO `VisitUrgency` al vuelo, nunca persistido), triage por horizonte temporal, agrupamiento dinámico (toggle Tiempo/Zona/Cliente), tab bar Inicio·Buscar | ✅ Completa (126 tests) |
 | **3 — aviso al abrir** | Cálculo idempotente al abrir la app (`DispatchDueReminders`, PENDING→SENT); backlog colapsado en un resumen por zona; `ReminderNotifier` agnóstico al protocolo con adaptador in-app; clamp de `reminderLeadDays` en `RecordVisit` | ✅ Completa (145 tests) |
-| **4 — cancelar/editar + catálogo** | Cancelar/editar visitas (baja lógica auditable) + ABM de Zone/Client/Field (alta/edición/archivado) | ⏳ Pendiente |
+| **4 — cancelar/editar + catálogo** | Partida en 4a + 4b (dos subsistemas independientes) | — |
+| **4b — catálogo (ABM)** | ABM de Zone/Client/Field: `archived` (baja lógica reversible) + refs opcionales (huérfanos), cascada/nulificado al archivar padre, reset, tab "Catálogo" (ABM genérico Zonas/Clientes + Lotes con pickers), seed gateado a dev | ✅ Completa (209 tests) |
+| **4a — cancelar/editar visitas** | Cancelar/editar visitas registradas (baja lógica auditable sobre eventos) | ⏳ Pendiente |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
@@ -62,6 +64,8 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
 - **Desempate de `createdAt` idéntico en `findCurrentFollowUps`** no está especificado (ambos adaptadores usan "primero en iterar gana", con orden distinto entre in-memory e idb). Improbable (mismo día + mismo lote); documentado en el contrato del puerto. → atado a revisar la lógica de fechas del dominio.
 - **Estilos de Inicio/tab bar sin pasada de diseño dedicada:** la Etapa 2 trajo CSS funcional reutilizando los tokens de 1c (look con datos reales verificado en navegador: contraste, acento de vencidas y tab activo OK); una pasada visual fina (como fue 1c para las 2 primeras pantallas) queda para cuando se quiera subir el nivel.
 - **Upgrades técnicos anotados (no construidos):** guardar fechas como ISO string (para el LWW de Etapa 5), HLC para conflictos (Etapa 5), TanStack Query y Playwright si el flujo de UI crece.
+- **Etapa 4 se partió en 4a + 4b (asentado):** eran dos subsistemas independientes (cancelar/editar visitas vs ABM de catálogo) que peleaban por el foco de un solo spec. Se hizo **4b primero** (tener datos reales le da sentido al resto); 4a queda pendiente.
+- **Diferidos nuevos de 4b (en el spec, sección Diferidos):** campos `crop`/`hectares`/`coordinates` en el form de Lote (la entidad los conserva, el form no los expone); import/CSV de lotes; unicidad de nombres; índices idb por `archived`/por padre (hoy `getAll`+filtro a escala ~40); **cancelar reminders PENDING al archivar un lote** (hoy el aviso se filtra por la jerarquía, no se cancela el reminder); focus-trap en `ConfirmDialog` (a11y); orden de grupos por urgencia en Agenda (sigue alfabético + "Sin X" al final).
 
 ---
 
