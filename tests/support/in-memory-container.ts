@@ -34,24 +34,42 @@ import { InAppReminderNotifier } from '@/infrastructure/notification/in-app-remi
 import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
+import type { IdGenerator } from '@/domain/ports/outbound/id-generator';
 import type { Container } from '@/composition/container';
 import { FixedClock } from './fixed-clock';
 import { IncrementingIdGenerator } from './incrementing-id-generator';
 
-export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): Container {
-  const zoneMap = new Map([['z1', new Zone('z1', 'Norte')]]);
-  const clientMap = new Map([['c1', new Client('c1', 'Pérez')]]);
-  const fields = new InMemoryFieldRepository(zoneMap, clientMap, [
-    new Field({ id: 'f1', name: 'Lote El Alto', clientId: 'c1', zoneId: 'z1' }),
-    new Field({ id: 'f2', name: 'Lote La Baja', clientId: 'c1', zoneId: 'z1' }),
-  ]);
-  const zones = new InMemoryZoneRepository(zoneMap);
-  const clients = new InMemoryClientRepository(clientMap);
-  const visits = new InMemoryVisitRepository();
-  const reminders = new InMemoryReminderRepository();
-  const clock = new FixedClock(now);
-  const ids = new IncrementingIdGenerator();
-  const notifier = new InAppReminderNotifier();
+/**
+ * Builds the catalog slice of a Container (zone/client/field CRUD + clearAllData)
+ * over in-memory repos. Shared by makeInMemoryContainer and any test that needs
+ * a hand-rolled Container satisfying the full interface.
+ */
+export function wireCatalogUseCases(
+  zones: InMemoryZoneRepository,
+  clients: InMemoryClientRepository,
+  fields: InMemoryFieldRepository,
+  visits: InMemoryVisitRepository,
+  reminders: InMemoryReminderRepository,
+  ids: IdGenerator,
+): Pick<
+  Container,
+  | 'createZone'
+  | 'editZone'
+  | 'archiveZone'
+  | 'restoreZone'
+  | 'listZones'
+  | 'createClient'
+  | 'editClient'
+  | 'archiveClient'
+  | 'restoreClient'
+  | 'listClients'
+  | 'createField'
+  | 'editField'
+  | 'archiveField'
+  | 'restoreField'
+  | 'listCatalogFields'
+  | 'clearAllData'
+> {
   const dataReset = new InMemoryDataReset([
     () => zones.clear(),
     () => clients.clear(),
@@ -60,11 +78,6 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
     () => reminders.clear(),
   ]);
   return {
-    searchFields: new SearchFields(fields),
-    recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
-    listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
-    dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
-    reminderAviso: notifier,
     createZone: new CreateZone(zones, ids),
     editZone: new EditZone(zones),
     archiveZone: new ArchiveZone(zones, fields),
@@ -81,5 +94,29 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
     restoreField: new RestoreField(fields),
     listCatalogFields: new ListCatalogFields(fields),
     clearAllData: new ClearAllData(dataReset),
+  };
+}
+
+export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): Container {
+  const zoneMap = new Map([['z1', new Zone('z1', 'Norte')]]);
+  const clientMap = new Map([['c1', new Client('c1', 'Pérez')]]);
+  const fields = new InMemoryFieldRepository(zoneMap, clientMap, [
+    new Field({ id: 'f1', name: 'Lote El Alto', clientId: 'c1', zoneId: 'z1' }),
+    new Field({ id: 'f2', name: 'Lote La Baja', clientId: 'c1', zoneId: 'z1' }),
+  ]);
+  const zones = new InMemoryZoneRepository(zoneMap);
+  const clients = new InMemoryClientRepository(clientMap);
+  const visits = new InMemoryVisitRepository();
+  const reminders = new InMemoryReminderRepository();
+  const clock = new FixedClock(now);
+  const ids = new IncrementingIdGenerator();
+  const notifier = new InAppReminderNotifier();
+  return {
+    searchFields: new SearchFields(fields),
+    recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
+    listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
+    dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
+    reminderAviso: notifier,
+    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
 }
