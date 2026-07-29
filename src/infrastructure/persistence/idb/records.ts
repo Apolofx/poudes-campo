@@ -1,6 +1,8 @@
 import { Field } from '@/domain/entities/field';
 import { Visit, type VisitStatus } from '@/domain/entities/visit';
 import { Reminder, type ReminderStatus } from '@/domain/entities/reminder';
+import { Zone } from '@/domain/entities/zone';
+import { Client } from '@/domain/entities/client';
 import { Coordinates } from '@/domain/value-objects/coordinates';
 import { Hectares } from '@/domain/value-objects/hectares';
 import { VisitInterval } from '@/domain/value-objects/visit-interval';
@@ -46,6 +48,22 @@ export interface ReminderRecord {
   status: ReminderStatus;
 }
 
+export function toZoneRecord(z: Zone): ZoneRecord {
+  return { id: z.id, name: z.name, archived: z.archived };
+}
+
+export function fromZoneRecord(r: ZoneRecord): Zone {
+  return new Zone(r.id, r.name, r.archived ?? false);
+}
+
+export function toClientRecord(c: Client): ClientRecord {
+  return { id: c.id, name: c.name, archived: c.archived };
+}
+
+export function fromClientRecord(r: ClientRecord): Client {
+  return new Client(r.id, r.name, r.archived ?? false);
+}
+
 export function toFieldRecord(f: Field): FieldRecord {
   return {
     id: f.id,
@@ -72,7 +90,7 @@ export function fromFieldRecord(r: FieldRecord): Field {
       : undefined,
     hectares: r.hectares !== undefined ? Hectares.of(r.hectares) : undefined,
     crop: r.crop,
-    archived: r.archived,
+    archived: r.archived ?? false,
   });
 }
 
