@@ -159,10 +159,15 @@ otras entidades (visits/reminders quedan como historia; ver §3 sobre reminders)
   la fila pinta "Sin cliente"/"Sin zona". Archivados no aparecen.
 - **Agenda**: `agenda-presentation.groupUpcoming` agrupa `undefined` en un bucket
   **"Sin zona"/"Sin cliente"**, ordenado **al final** (después del alfabético). `UpcomingVisit.clientName`/`zoneName` → opcionales.
-- **Avisos**: un lote archivado sale del join → sus reminders quedan `PENDING` inertes
-  (nunca `SENT`). Si el lote se **restaura**, reaparecen (posiblemente vencidos) —
-  comportamiento correcto (vuelve a la rotación). **No** se agrega cancelación
-  cross-agregado al archivar (se evita el write extra).
+- **Avisos**: `DispatchDueReminders` ya lee `listAllWithHierarchy`, así que un lote
+  archivado sale del join (`hierByField.get(id)` → `undefined` → `continue`) y **no**
+  aparece en el banner. `DueReminder.clientName`/`zoneName` pasan a opcionales (un lote
+  **activo pero huérfano** sí llega al batch con nombre `undefined`), y
+  `ReminderAvisoBanner` agrupa esos casos bajo **"Sin zona"**. Nota de mecánica: el
+  dispatch marca `SENT` **antes** del `continue`, así que el reminder de un lote
+  archivado se consume igual (no reaparece al restaurar; se genera un follow-up nuevo
+  al registrar la próxima visita). **No** se agrega cancelación cross-agregado al
+  archivar (se evita el write extra; queda como diferido).
 
 ## 4. UI / navegación
 
