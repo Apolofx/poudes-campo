@@ -14,4 +14,10 @@ describe('TabBar', () => {
     render(<MemoryRouter initialEntries={['/buscar']}><TabBar /></MemoryRouter>);
     expect(screen.getByRole('link', { name: /Buscar/ })).toHaveAttribute('aria-current', 'page');
   });
+
+  it('shows a Catálogo tab linking to /catalogo', () => {
+    render(<MemoryRouter initialEntries={['/']}><TabBar /></MemoryRouter>);
+    const link = screen.getByRole('link', { name: /Catálogo/ });
+    expect(link).toHaveAttribute('href', '/catalogo');
+  });
 });

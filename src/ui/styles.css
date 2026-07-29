@@ -385,3 +385,77 @@ body {
 
 .reminder-aviso-list li { margin-top: var(--space-1); }
 .reminder-aviso-zone { font-weight: 700; color: var(--ink); }
+
+/* ---- Catálogo (hub) ---- */
+.catalog-menu { list-style: none; margin: 0; padding: 0; }
+
+.danger-zone {
+  margin: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--divider);
+}
+
+.btn-danger {
+  border: 1.5px solid var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-radius: var(--radius-lg);
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius-lg);
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ---- ConfirmDialog ---- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(28, 42, 33, 0.45);
+  padding: var(--space-4);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: 0 -4px 24px rgba(28, 42, 33, 0.2);
+}
+
+.dialog-title {
+  margin: 0 0 var(--space-2);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.dialog-message {
+  margin: 0 0 var(--space-4);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

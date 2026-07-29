@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from 'react-router-dom';
 import { AgendaScreen } from '@/ui/screens/AgendaScreen';
 import { SearchScreen } from '@/ui/screens/SearchScreen';
 import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
+import { CatalogHubScreen } from '@/ui/screens/CatalogHubScreen';
 import { TabBar } from '@/ui/components/TabBar';
 
 function TabsLayout() {
@@ -21,6 +22,7 @@ export function App() {
       <Route element={<TabsLayout />}>
         <Route path="/" element={<AgendaScreen />} />
         <Route path="/buscar" element={<SearchScreen />} />
+        <Route path="/catalogo" element={<CatalogHubScreen />} />
       </Route>
       <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
     </Routes>
