@@ -13,11 +13,31 @@ describe('Zone', () => {
   it('rejects an empty name', () => {
     expect(() => new Zone('z1', '   ')).toThrow(EmptyName);
   });
+  it('defaults archived to false', () => {
+    expect(new Zone('z1', 'Quiroga').archived).toBe(false);
+  });
+  it('archive() returns an archived copy without mutating the original', () => {
+    const z = new Zone('z1', 'Quiroga');
+    const archived = z.archive();
+    expect(archived.archived).toBe(true);
+    expect(archived.id).toBe('z1');
+    expect(archived.name).toBe('Quiroga');
+    expect(z.archived).toBe(false);
+  });
+  it('restore() returns an active copy', () => {
+    expect(new Zone('z1', 'Q', true).restore().archived).toBe(false);
+  });
 });
 
 describe('Client', () => {
   it('rejects an empty name', () => {
     expect(() => new Client('c1', '')).toThrow(EmptyName);
+  });
+  it('archive() and restore() flip the archived flag', () => {
+    const c = new Client('c1', 'Pérez');
+    expect(c.archive().archived).toBe(true);
+    expect(c.archive().restore().archived).toBe(false);
+    expect(c.archived).toBe(false);
   });
 });
 

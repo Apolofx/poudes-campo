@@ -14,3 +14,5 @@ export class IncompleteFollowUp extends DomainError {}
 export class FieldNotFound extends DomainError {}
 export class FutureVisitDate extends DomainError {}
 export class DuplicateVisitForDay extends DomainError {}
+export class ZoneNotFound extends DomainError {}
+export class ClientNotFound extends DomainError {}
