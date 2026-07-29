@@ -14,4 +14,10 @@ export class InMemoryReminderRepository implements ReminderRepository {
       (reminder) => reminder.fieldId === fieldId && reminder.status === 'PENDING',
     );
   }
+
+  async findDue(now: Date): Promise<Reminder[]> {
+    return [...this.reminders.values()].filter(
+      (reminder) => reminder.status === 'PENDING' && reminder.remindAt.getTime() <= now.getTime(),
+    );
+  }
 }

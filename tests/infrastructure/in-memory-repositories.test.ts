@@ -55,4 +55,20 @@ describe('InMemoryReminderRepository', () => {
     const pending = await repo.findPendingByField('f1');
     expect(pending.map((r) => r.id)).toEqual(['r1']);
   });
+
+  describe('InMemoryReminderRepository.findDue', () => {
+    const mk = (id: string, remindAt: string, status: 'PENDING' | 'SENT' | 'CANCELLED') =>
+      new Reminder({ id, visitId: `v-${id}`, fieldId: `f-${id}`, remindAt: new Date(remindAt), status });
+
+    it('returns PENDING reminders with remindAt <= now, across fields', async () => {
+      const repo = new InMemoryReminderRepository();
+      await repo.save(mk('due', '2026-07-29T00:00:00Z', 'PENDING'));
+      await repo.save(mk('future', '2026-08-10T00:00:00Z', 'PENDING'));
+      await repo.save(mk('sent', '2026-07-20T00:00:00Z', 'SENT'));
+      await repo.save(mk('cancelled', '2026-07-20T00:00:00Z', 'CANCELLED'));
+      const now = new Date('2026-07-29T12:00:00Z');
+      const due = await repo.findDue(now);
+      expect(due.map((r) => r.id)).toEqual(['due']);
+    });
+  });
 });
