@@ -57,7 +57,7 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
 - **Etapa 2 reencuadró el roadmap (asentado):** la urgencia se mide **absoluta** (cuándo vence), no proporcional al intervalo del lote; y el agrupamiento es **dinámico** (toggle Tiempo/Zona/Cliente), no fijo por zona. El VO `VisitUrgency` ya no depende de `intervalDays`. Detalle en el spec/plan de Etapa 2.
 - **Orden de grupos en Zona/Cliente = alfabético** (locale es). Posible mejora: ordenar los grupos por urgencia (el más apremiante primero). → cuando el uso lo pida.
 - **Desempate de `createdAt` idéntico en `findCurrentFollowUps`** no está especificado (ambos adaptadores usan "primero en iterar gana", con orden distinto entre in-memory e idb). Improbable (mismo día + mismo lote); documentado en el contrato del puerto. → atado a revisar la lógica de fechas del dominio.
-- **Estilos de Inicio/tab bar sin pasada de diseño dedicada:** la Etapa 2 trajo CSS funcional reutilizando los tokens de 1c; una pasada visual fina (como fue 1c para las 2 primeras pantallas) queda para cuando se quiera subir el nivel. Verificación visual con datos reales pendiente de hacer en navegador.
+- **Estilos de Inicio/tab bar sin pasada de diseño dedicada:** la Etapa 2 trajo CSS funcional reutilizando los tokens de 1c (look con datos reales verificado en navegador: contraste, acento de vencidas y tab activo OK); una pasada visual fina (como fue 1c para las 2 primeras pantallas) queda para cuando se quiera subir el nivel.
 - **Upgrades técnicos anotados (no construidos):** guardar fechas como ISO string (para el LWW de Etapa 5), HLC para conflictos (Etapa 5), TanStack Query y Playwright si el flujo de UI crece.
 
 ---
