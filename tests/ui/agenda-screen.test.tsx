@@ -8,6 +8,8 @@ import { AgendaScreen } from '@/ui/screens/AgendaScreen';
 import { InMemoryFieldRepository } from '@/infrastructure/persistence/in-memory/in-memory-field-repository';
 import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-visit-repository';
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
+import { InMemoryZoneRepository } from '@/infrastructure/persistence/in-memory/in-memory-zone-repository';
+import { InMemoryClientRepository } from '@/infrastructure/persistence/in-memory/in-memory-client-repository';
 import { SearchFields } from '@/application/use-cases/search-fields';
 import { RecordVisit } from '@/application/use-cases/record-visit';
 import { ListUpcomingVisits } from '@/application/use-cases/list-upcoming-visits';
@@ -21,13 +23,14 @@ import { VisitInterval } from '@/domain/value-objects/visit-interval';
 import type { Container } from '@/composition/container';
 import { FixedClock } from '../support/fixed-clock';
 import { IncrementingIdGenerator } from '../support/incrementing-id-generator';
+import { wireCatalogUseCases } from '../support/in-memory-container';
 
 const at = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 async function makeContainer(): Promise<Container> {
-  const zones = new Map([['z1', new Zone('z1', 'El Séptimo')], ['z2', new Zone('z2', 'La Costa')]]);
-  const clients = new Map([['c1', new Client('c1', 'La Querencia')], ['c2', new Client('c2', 'Pérez')]]);
-  const fields = new InMemoryFieldRepository(zones, clients, [
+  const zoneMap = new Map([['z1', new Zone('z1', 'El Séptimo')], ['z2', new Zone('z2', 'La Costa')]]);
+  const clientMap = new Map([['c1', new Client('c1', 'La Querencia')], ['c2', new Client('c2', 'Pérez')]]);
+  const fields = new InMemoryFieldRepository(zoneMap, clientMap, [
     new Field({ id: 'f1', name: 'El Alto', clientId: 'c1', zoneId: 'z1' }),
     new Field({ id: 'f2', name: 'La Cañada', clientId: 'c1', zoneId: 'z1' }),
     new Field({ id: 'f3', name: 'Potrero 4', clientId: 'c2', zoneId: 'z2' }),
@@ -44,12 +47,16 @@ async function makeContainer(): Promise<Container> {
   await seed('v3', 'f3', '2026-08-30'); // en 33 d (LATER)
   const reminders = new InMemoryReminderRepository();
   const notifier = new InAppReminderNotifier();
+  const ids = new IncrementingIdGenerator();
+  const zones = new InMemoryZoneRepository(zoneMap);
+  const clients = new InMemoryClientRepository(clientMap);
   return {
     searchFields: new SearchFields(fields),
-    recordVisit: new RecordVisit(fields, visits, reminders, clock, new IncrementingIdGenerator()),
+    recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     reminderAviso: notifier,
+    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
 }
 
@@ -94,21 +101,25 @@ describe('AgendaScreen', () => {
   });
 
   it('muestra estado vacío cuando no hay visitas agendadas', async () => {
-    const zones = new Map([['z1', new Zone('z1', 'El Séptimo')]]);
-    const clients = new Map([['c1', new Client('c1', 'La Querencia')]]);
-    const fields = new InMemoryFieldRepository(zones, clients, [
+    const zoneMap = new Map([['z1', new Zone('z1', 'El Séptimo')]]);
+    const clientMap = new Map([['c1', new Client('c1', 'La Querencia')]]);
+    const fields = new InMemoryFieldRepository(zoneMap, clientMap, [
       new Field({ id: 'f1', name: 'El Alto', clientId: 'c1', zoneId: 'z1' }),
     ]);
     const visits = new InMemoryVisitRepository();
     const clock = new FixedClock(at('2026-07-28'));
     const reminders = new InMemoryReminderRepository();
     const notifier = new InAppReminderNotifier();
+    const ids = new IncrementingIdGenerator();
+    const zones = new InMemoryZoneRepository(zoneMap);
+    const clients = new InMemoryClientRepository(clientMap);
     const container: Container = {
       searchFields: new SearchFields(fields),
-      recordVisit: new RecordVisit(fields, visits, reminders, clock, new IncrementingIdGenerator()),
+      recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
       listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
       dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
       reminderAviso: notifier,
+      ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
     };
     render(
       <CampoProvider container={container}>

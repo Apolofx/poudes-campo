@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAgenda } from '@/ui/hooks/use-agenda';
 import { groupUpcoming, formatRelativeDays, type GroupBy } from '@/ui/agenda-presentation';
 import { ReminderAvisoBanner } from '@/ui/components/ReminderAvisoBanner';
+import { clientLabel, zoneLabel } from '@/ui/labels';
 
 const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
   { value: 'time', label: 'Tiempo' },
@@ -65,7 +66,7 @@ export function AgendaScreen() {
                     >
                       <span className="agenda-row-text">
                         <span className="agenda-row-name">{item.field.name}</span>
-                        <span className="agenda-row-sub">{item.clientName} · {item.zoneName}</span>
+                        <span className="agenda-row-sub">{clientLabel(item.clientName)} · {zoneLabel(item.zoneName)}</span>
                       </span>
                       <span className="agenda-row-when">{formatRelativeDays(item.urgency.daysUntil)}</span>
                     </Link>

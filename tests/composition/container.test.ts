@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { openCampoDb } from '@/infrastructure/persistence/idb/open-campo-db';
 import { seedIfEmpty } from '@/composition/seed';
 import { buildContainer } from '@/composition/container';
+import { makeInMemoryContainer } from '../support/in-memory-container';
 
 describe('buildContainer', () => {
   it('wires searchFields over the db', async () => {
@@ -43,5 +44,13 @@ describe('buildContainer', () => {
     expect(batch.length).toBeGreaterThan(0);
     expect(container.reminderAviso.snapshot()).toEqual(batch);
     db.close();
+  });
+
+  it('wires the catalog use cases', () => {
+    const c = makeInMemoryContainer();
+    expect(c.createZone).toBeDefined();
+    expect(c.archiveClient).toBeDefined();
+    expect(c.listCatalogFields).toBeDefined();
+    expect(c.clearAllData).toBeDefined();
   });
 });

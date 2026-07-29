@@ -10,7 +10,9 @@ import { App } from '@/ui/App';
 
 async function main() {
   const db = await openCampoDb();
-  await seedIfEmpty(db);
+  if (import.meta.env.DEV) {
+    await seedIfEmpty(db);
+  }
   const container = buildContainer(db);
 
   try {

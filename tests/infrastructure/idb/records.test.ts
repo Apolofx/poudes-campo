@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { Field } from '@/domain/entities/field';
 import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
+import { Zone } from '@/domain/entities/zone';
+import { Client } from '@/domain/entities/client';
 import { Coordinates } from '@/domain/value-objects/coordinates';
 import { Hectares } from '@/domain/value-objects/hectares';
 import { VisitInterval } from '@/domain/value-objects/visit-interval';
@@ -9,6 +11,8 @@ import {
   toFieldRecord, fromFieldRecord,
   toVisitRecord, fromVisitRecord,
   toReminderRecord, fromReminderRecord,
+  toZoneRecord, fromZoneRecord,
+  toClientRecord, fromClientRecord,
 } from '@/infrastructure/persistence/idb/records';
 
 describe('field record mapping', () => {
@@ -73,5 +77,29 @@ describe('reminder record mapping', () => {
     expect(back.visitId).toBe('v1');
     expect(back.status).toBe('PENDING');
     expect(back.remindAt.getTime()).toBe(new Date('2026-07-31T10:05:00Z').getTime());
+  });
+});
+
+describe('zone/client record mappers', () => {
+  it('round-trips a zone with archived', () => {
+    const z = fromZoneRecord(toZoneRecord(new Zone('z1', 'Norte', true)));
+    expect(z.name).toBe('Norte');
+    expect(z.archived).toBe(true);
+  });
+  it('defaults archived to false for legacy records without the flag', () => {
+    expect(fromZoneRecord({ id: 'z1', name: 'Norte' }).archived).toBe(false);
+    expect(fromClientRecord({ id: 'c1', name: 'Pérez' }).archived).toBe(false);
+  });
+});
+
+describe('field record mappers with optional refs + archived', () => {
+  it('round-trips an orphan archived field', () => {
+    const f = fromFieldRecord(toFieldRecord(new Field({ id: 'f1', name: 'X', archived: true })));
+    expect(f.clientId).toBeUndefined();
+    expect(f.zoneId).toBeUndefined();
+    expect(f.archived).toBe(true);
+  });
+  it('defaults archived to false for legacy field records', () => {
+    expect(fromFieldRecord({ id: 'f1', name: 'X', clientId: 'c1', zoneId: 'z1' }).archived).toBe(false);
   });
 });

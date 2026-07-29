@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCampo } from '@/ui/CampoProvider';
 import type { DueReminder } from '@/domain/ports/outbound/reminder-notifier';
+import { zoneLabel } from '@/ui/labels';
 
 interface ZoneGroup {
   zoneName: string;
@@ -10,9 +11,10 @@ interface ZoneGroup {
 function groupByZone(batch: DueReminder[]): ZoneGroup[] {
   const byZone = new Map<string, string[]>();
   for (const item of batch) {
-    const names = byZone.get(item.zoneName) ?? [];
+    const key = zoneLabel(item.zoneName);
+    const names = byZone.get(key) ?? [];
     names.push(item.fieldName);
-    byZone.set(item.zoneName, names);
+    byZone.set(key, names);
   }
   return [...byZone.entries()]
     .sort(([a], [b]) => a.localeCompare(b, 'es'))

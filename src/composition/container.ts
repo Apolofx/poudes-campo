@@ -2,9 +2,34 @@ import { SearchFields } from '@/application/use-cases/search-fields';
 import { RecordVisit } from '@/application/use-cases/record-visit';
 import { ListUpcomingVisits } from '@/application/use-cases/list-upcoming-visits';
 import { DispatchDueReminders } from '@/application/use-cases/dispatch-due-reminders';
+import {
+  CreateZone,
+  EditZone,
+  ArchiveZone,
+  RestoreZone,
+  ListZones,
+} from '@/application/use-cases/zone-catalog';
+import {
+  CreateClient,
+  EditClient,
+  ArchiveClient,
+  RestoreClient,
+  ListClients,
+} from '@/application/use-cases/client-catalog';
+import {
+  CreateField,
+  EditField,
+  ArchiveField,
+  RestoreField,
+  ListCatalogFields,
+} from '@/application/use-cases/field-catalog';
+import { ClearAllData } from '@/application/use-cases/clear-all-data';
 import { IdbFieldRepository } from '@/infrastructure/persistence/idb/idb-field-repository';
 import { IdbVisitRepository } from '@/infrastructure/persistence/idb/idb-visit-repository';
 import { IdbReminderRepository } from '@/infrastructure/persistence/idb/idb-reminder-repository';
+import { IdbZoneRepository } from '@/infrastructure/persistence/idb/idb-zone-repository';
+import { IdbClientRepository } from '@/infrastructure/persistence/idb/idb-client-repository';
+import { IdbDataReset } from '@/infrastructure/persistence/idb/idb-data-reset';
 import { InAppReminderNotifier } from '@/infrastructure/notification/in-app-reminder-notifier';
 import { SystemClock } from '@/infrastructure/clock/system-clock';
 import { Uuidv7IdGenerator } from '@/infrastructure/id/uuidv7-id-generator';
@@ -17,19 +42,55 @@ export interface Container {
   listUpcomingVisits: ListUpcomingVisits;
   dispatchDueReminders: DispatchDueReminders;
   reminderAviso: ReminderAvisoStore;
+  createZone: CreateZone;
+  editZone: EditZone;
+  archiveZone: ArchiveZone;
+  restoreZone: RestoreZone;
+  listZones: ListZones;
+  createClient: CreateClient;
+  editClient: EditClient;
+  archiveClient: ArchiveClient;
+  restoreClient: RestoreClient;
+  listClients: ListClients;
+  createField: CreateField;
+  editField: EditField;
+  archiveField: ArchiveField;
+  restoreField: RestoreField;
+  listCatalogFields: ListCatalogFields;
+  clearAllData: ClearAllData;
 }
 
 export function buildContainer(db: CampoDb): Container {
   const fields = new IdbFieldRepository(db);
   const visits = new IdbVisitRepository(db);
   const reminders = new IdbReminderRepository(db);
+  const zones = new IdbZoneRepository(db);
+  const clients = new IdbClientRepository(db);
+  const dataReset = new IdbDataReset(db);
   const clock = new SystemClock();
+  const ids = new Uuidv7IdGenerator();
   const notifier = new InAppReminderNotifier();
   return {
     searchFields: new SearchFields(fields),
-    recordVisit: new RecordVisit(fields, visits, reminders, clock, new Uuidv7IdGenerator()),
+    recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     reminderAviso: notifier,
+    createZone: new CreateZone(zones, ids),
+    editZone: new EditZone(zones),
+    archiveZone: new ArchiveZone(zones, fields),
+    restoreZone: new RestoreZone(zones),
+    listZones: new ListZones(zones),
+    createClient: new CreateClient(clients, ids),
+    editClient: new EditClient(clients),
+    archiveClient: new ArchiveClient(clients, fields),
+    restoreClient: new RestoreClient(clients),
+    listClients: new ListClients(clients),
+    createField: new CreateField(fields, ids),
+    editField: new EditField(fields),
+    archiveField: new ArchiveField(fields),
+    restoreField: new RestoreField(fields),
+    listCatalogFields: new ListCatalogFields(fields),
+    clearAllData: new ClearAllData(dataReset),
   };
 }

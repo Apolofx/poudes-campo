@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Search } from 'lucide-react';
+import { Home, Search, FolderOpen } from 'lucide-react';
 
 export function TabBar() {
   return (
@@ -11,6 +11,10 @@ export function TabBar() {
       <NavLink to="/buscar" className="tab">
         <Search className="tab-icon" size={20} aria-hidden="true" />
         <span>Buscar</span>
+      </NavLink>
+      <NavLink to="/catalogo" className="tab">
+        <FolderOpen className="tab-icon" size={20} aria-hidden="true" />
+        <span>Catálogo</span>
       </NavLink>
     </nav>
   );

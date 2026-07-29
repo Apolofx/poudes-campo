@@ -233,14 +233,19 @@ body {
 }
 
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   background: var(--accent);
   color: var(--accent-ink);
   border-radius: var(--radius-lg);
   min-height: 48px;
+  padding: 0 var(--space-4);
   font: inherit;
   font-weight: 700;
   font-size: 15px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -385,3 +390,146 @@ body {
 
 .reminder-aviso-list li { margin-top: var(--space-1); }
 .reminder-aviso-zone { font-weight: 700; color: var(--ink); }
+
+/* ---- Catálogo (hub) ---- */
+.catalog-menu { list-style: none; margin: 0; padding: 0; }
+
+.danger-zone {
+  margin: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--divider);
+}
+
+.btn-danger {
+  border: 1.5px solid var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-radius: var(--radius-lg);
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius-lg);
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ---- Catálogo (ABM genérico: lista/form) ---- */
+.list-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--header-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.list-header .screen-title { margin: 0; flex: 1; }
+
+.list-header .btn-primary { align-self: flex-start; }
+
+.toggle-archived {
+  display: block;
+  margin: var(--space-3) var(--space-4) 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0;
+  cursor: pointer;
+  min-height: var(--touch);
+}
+
+.catalog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--divider);
+}
+
+.catalog-form { display: flex; flex-direction: column; gap: var(--space-4); padding: 0 var(--space-4); margin-top: var(--space-2); }
+
+.form-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.form-input {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 var(--space-3);
+  min-height: var(--touch);
+  font: inherit;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+}
+
+.form-input:focus-visible { border-color: var(--accent); }
+
+/* ---- ConfirmDialog ---- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(28, 42, 33, 0.45);
+  padding: var(--space-4);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: 0 -4px 24px rgba(28, 42, 33, 0.2);
+}
+
+.dialog-title {
+  margin: 0 0 var(--space-2);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.dialog-message {
+  margin: 0 0 var(--space-4);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

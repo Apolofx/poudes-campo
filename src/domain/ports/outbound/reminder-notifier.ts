@@ -4,8 +4,8 @@ export interface DueReminder {
   reminderId: ReminderId;
   fieldId: FieldId;
   fieldName: string;
-  clientName: string;
-  zoneName: string;
+  clientName?: string;
+  zoneName?: string;
   nextVisitDate: Date;
   remindAt: Date;
 }

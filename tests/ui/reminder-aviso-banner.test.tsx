@@ -45,4 +45,16 @@ describe('ReminderAvisoBanner', () => {
     await userEvent.click(screen.getByRole('button', { name: /cerrar/i }));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
+
+  it('groups an orphan reminder (undefined zoneName) under "Sin zona"', () => {
+    renderBanner([
+      {
+        reminderId: 'r1', fieldId: 'f1', fieldName: 'El Alto',
+        clientName: undefined, zoneName: undefined,
+        nextVisitDate: new Date(), remindAt: new Date(),
+      },
+    ]);
+    expect(screen.getByText('Sin zona')).toBeInTheDocument();
+    expect(screen.getByText(/El Alto/)).toBeInTheDocument();
+  });
 });

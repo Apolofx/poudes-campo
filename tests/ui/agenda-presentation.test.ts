@@ -40,6 +40,15 @@ describe('groupUpcoming (zone)', () => {
     expect(sections[1].bucket).toBeUndefined();
     expect(sections[1].items.map((i) => i.field.id)).toEqual(['a', 'c']); // a (overdue) antes que c
   });
+
+  it('groups orphan fields under "Sin zona" and sorts that group last', () => {
+    const items = [
+      { field: { id: 'a' }, zoneName: 'Norte', clientName: 'X', urgency: { bucket: 'THIS_WEEK', daysUntil: 1 } },
+      { field: { id: 'b' }, zoneName: undefined, clientName: 'X', urgency: { bucket: 'THIS_WEEK', daysUntil: 2 } },
+    ] as any;
+    const sections = groupUpcoming(items, 'zone');
+    expect(sections.map((s) => s.label)).toEqual(['Norte', 'Sin zona']);
+  });
 });
 
 describe('formatRelativeDays', () => {
