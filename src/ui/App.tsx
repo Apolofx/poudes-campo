@@ -5,6 +5,8 @@ import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
 import { CatalogHubScreen } from '@/ui/screens/CatalogHubScreen';
 import { ZonesListScreen } from '@/ui/screens/ZonesListScreen';
 import { ZoneFormScreen } from '@/ui/screens/ZoneFormScreen';
+import { ClientsListScreen } from '@/ui/screens/ClientsListScreen';
+import { ClientFormScreen } from '@/ui/screens/ClientFormScreen';
 import { TabBar } from '@/ui/components/TabBar';
 
 function TabsLayout() {
@@ -26,10 +28,13 @@ export function App() {
         <Route path="/buscar" element={<SearchScreen />} />
         <Route path="/catalogo" element={<CatalogHubScreen />} />
         <Route path="/catalogo/zonas" element={<ZonesListScreen />} />
+        <Route path="/catalogo/clientes" element={<ClientsListScreen />} />
       </Route>
       <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
       <Route path="/catalogo/zonas/nueva" element={<ZoneFormScreen />} />
       <Route path="/catalogo/zonas/:id" element={<ZoneFormScreen />} />
+      <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />
+      <Route path="/catalogo/clientes/:id" element={<ClientFormScreen />} />
     </Routes>
   );
 }
