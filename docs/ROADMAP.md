@@ -4,7 +4,7 @@
 
 **Qué es Campo:** PWA offline-first para un asesor agronómico que recorre ~40 lotes: registrar visitas y saber cuándo volver. Arquitectura hexagonal (TypeScript + Vitest, dominio puro sin infra). Regla dura: **ningún dato de dosis/agroquímicos/prescripciones entra jamás al sistema**.
 
-Última actualización: 2026-07-28.
+Última actualización: 2026-07-29.
 
 ---
 
@@ -15,10 +15,10 @@
 - Buscar/filtrar lotes por nombre de lote, cliente o zona.
 - Registrar una visita: fecha (no futura), notas, y próxima visita (en N días / en una fecha / sin próxima) con aviso X días antes.
 - **Pantalla Inicio (agenda):** ver las próximas visitas ordenadas por urgencia (triage por horizonte: Vencidas / Esta semana / Más adelante, esta última colapsada), con agrupamiento dinámico por Tiempo/Zona/Cliente. Barra de pestañas Inicio · Buscar.
+- **Aviso al abrir la app:** un banner en Inicio resume, agrupados por zona, los lotes cuyo umbral de aviso (`remindAt = próxima − X días antes`) ya se cruzó. Cálculo idempotente al abrir (`PENDING→SENT`, no reaparece salvo que venzan nuevos); se puede cerrar.
 - Todo offline y persistente en el dispositivo (IndexedDB). Instalable como PWA.
 
 ### ❌ Todavía no se puede
-- Que la app avise al abrir que hay visitas por vencer → **Etapa 3**.
 - Cancelar o editar una visita registrada → **Etapa 4**.
 - Dar de alta / editar lotes, clientes y zonas reales (hoy son datos de ejemplo precargados) → **Etapa 4**.
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
@@ -38,7 +38,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **1b — IndexedDB + UI + PWA** | Persistencia real, UI React (2 pantallas), PWA instalable offline | ✅ Completa (merge `46d23ed`, 100 tests) |
 | **1c — pasada de diseño** | Estilo visual de las 2 pantallas (paleta "Campo" verde, fuente del sistema, mobile-first): buscador sticky, filas táctiles, control segmentado, back link, estado vacío | ✅ Completa (103 tests) |
 | **2 — panel de urgencia** | Pantalla Inicio: próximas visitas por urgencia **absoluta** (VO `VisitUrgency` al vuelo, nunca persistido), triage por horizonte temporal, agrupamiento dinámico (toggle Tiempo/Zona/Cliente), tab bar Inicio·Buscar | ✅ Completa (126 tests) |
-| **3 — aviso al abrir** | Cálculo idempotente al abrir la app (`DispatchDueReminders`, PENDING→SENT); backlog colapsado en un resumen por zona; `ReminderNotifier` agnóstico al protocolo | ⏳ Pendiente |
+| **3 — aviso al abrir** | Cálculo idempotente al abrir la app (`DispatchDueReminders`, PENDING→SENT); backlog colapsado en un resumen por zona; `ReminderNotifier` agnóstico al protocolo con adaptador in-app; clamp de `reminderLeadDays` en `RecordVisit` | ✅ Completa (145 tests) |
 | **4 — cancelar/editar + catálogo** | Cancelar/editar visitas (baja lógica auditable) + ABM de Zone/Client/Field (alta/edición/archivado) | ⏳ Pendiente |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
@@ -52,7 +52,10 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
 - **`aria-live` en el estado vacío de "Buscar lote"** — hoy "No se encontró ningún lote." es un `<p>` sin anuncio para lectores de pantalla. → pulido a11y, junto con otras mejoras de accesibilidad.
 - **Íconos PWA placeholder** — `public/pwa-192.png` y `pwa-512.png` son placeholders 1×1. Reemplazar por arte real antes de un release.
 - **Borde de timezone (este de UTC)** — las fechas se construyen como medianoche-UTC (`new Date(`${iso}T00:00:00.000Z`)`) y se comparan contra el reloj real; para usuarios al **este** de UTC puede rechazar "hoy" como fecha futura. Usuario objetivo UTC-3 (oeste) **no afectado**. (En 1c se endureció el helper de tests para que sea date-relative — la bomba de tiempo de los tests ya no existe; el borde de dominio sigue diferido.) El arreglo va atado a revisar la comparación de día-calendario del dominio. → cuando se toque la lógica de fechas del dominio.
-- **Validación de `reminderLeadDays`** — hoy `RecordVisit` no valida el lead; un lead negativo o mayor al intervalo pondría `remindAt` después del vencimiento o antes de `now`. Validar al construir el dispatch. → **Etapa 3**.
+- ~~**Validación de `reminderLeadDays`**~~ — **resuelto en Etapa 3**: `RecordVisit` ahora clampa el lead a `[0, intervalo]` (lead negativo → 0, exceso → intervalo); la UI además topea el input con `max = intervalo`. Clampa, no rechaza: nunca se pierde el registro de la visita por un lead fuera de rango.
+- **Índice idb `by-status` para `findDue`** — hoy `IdbReminderRepository.findDue` hace `getAll` + filtro en memoria (trivial a escala de un usuario). Si el volumen de reminders crece, agregar un índice `by-status` (implica bump de versión del esquema idb + migración). → cuando el volumen lo pida.
+- **Fallback `nextVisitDate ?? remindAt` en `DispatchDueReminders` sin test** — la rama para un lote presente en la jerarquía pero sin follow-up vigente no está cubierta (raro: registrar visita cancela el reminder y fija el follow-up). No es load-bearing (el banner no muestra `nextVisitDate`). → follow-up test barato si se toca el dispatch.
+- **Persistir `SENT` antes de notificar (dispatch)** — el dispatch marca `SENT` dentro del loop y notifica una sola vez al final; si un `save` idb fallara a mitad de loop, esos avisos quedan `SENT` sin haberse mostrado y no reaparecen. Aceptado como tradeoff del diseño best-effort offline (la alternativa notificar-antes-de-persistir arriesga doble-show). → revisar si se endurece el canal de notificación.
 - **`interval.days` sub-cuenta <1 día** — para próxima-visita con fecha manual, `interval.days` se calcula por días-calendario (UTC) mientras `nextVisitDate` conserva la hora, así que el intervalo guardado puede sub-contar el gap real por <1 día. Es diseño documentado, no bug.
 - **Etapa 2 reencuadró el roadmap (asentado):** la urgencia se mide **absoluta** (cuándo vence), no proporcional al intervalo del lote; y el agrupamiento es **dinámico** (toggle Tiempo/Zona/Cliente), no fijo por zona. El VO `VisitUrgency` ya no depende de `intervalDays`. Detalle en el spec/plan de Etapa 2.
 - **Orden de grupos en Zona/Cliente = alfabético** (locale es). Posible mejora: ordenar los grupos por urgencia (el más apremiante primero). → cuando el uso lo pida.
