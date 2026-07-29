@@ -36,12 +36,12 @@ describe('IdbFieldRepository', () => {
     db.close();
   });
 
-  it('uses empty names when references are missing', async () => {
+  it('uses undefined names when references are missing', async () => {
     const { db, repo } = await freshRepo();
     await repo.save(new Field({ id: 'f1', name: 'Lote 1', clientId: 'c1', zoneId: 'z1' }));
     const [r] = await repo.listAllWithHierarchy();
-    expect(r.clientName).toBe('');
-    expect(r.zoneName).toBe('');
+    expect(r.clientName).toBeUndefined();
+    expect(r.zoneName).toBeUndefined();
     db.close();
   });
 });

@@ -6,8 +6,8 @@ import { VisitUrgency } from '@/domain/value-objects/visit-urgency';
 
 export interface UpcomingVisit {
   field: Field;
-  clientName: string;
-  zoneName: string;
+  clientName?: string;
+  zoneName?: string;
   nextVisitDate: Date;
   urgency: VisitUrgency;
 }

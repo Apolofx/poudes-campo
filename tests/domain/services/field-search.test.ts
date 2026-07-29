@@ -24,4 +24,9 @@ describe('fieldMatchesQuery', () => {
   it('treats an empty query as matching everything', () => {
     expect(fieldMatchesQuery(result('X', 'Perez', 'Quiroga'), '   ')).toBe(true);
   });
+  it('matches when client/zone name is undefined (orphan field)', () => {
+    const result = { field: { name: 'El Alto' } as any, clientName: undefined, zoneName: undefined };
+    expect(fieldMatchesQuery(result, 'alto')).toBe(true);
+    expect(fieldMatchesQuery(result, 'perez')).toBe(false);
+  });
 });

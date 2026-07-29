@@ -8,11 +8,13 @@ import { VisitInterval } from '@/domain/value-objects/visit-interval';
 export interface ZoneRecord {
   id: string;
   name: string;
+  archived?: boolean;
 }
 
 export interface ClientRecord {
   id: string;
   name: string;
+  archived?: boolean;
 }
 
 export interface FieldRecord {

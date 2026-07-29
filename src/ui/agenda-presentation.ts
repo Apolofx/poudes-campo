@@ -10,6 +10,11 @@ export interface AgendaSection {
   items: UpcomingVisit[];
 }
 
+const ORPHAN_LABEL: Record<Exclude<GroupBy, 'time'>, string> = {
+  zone: 'Sin zona',
+  client: 'Sin cliente',
+};
+
 const TIME_SECTIONS: { bucket: UrgencyBucket; key: string; label: string }[] = [
   { bucket: 'OVERDUE', key: 'overdue', label: 'Vencidas' },
   { bucket: 'THIS_WEEK', key: 'this-week', label: 'Esta semana' },
@@ -28,7 +33,8 @@ export function groupUpcoming(items: UpcomingVisit[], mode: GroupBy): AgendaSect
       .filter((s) => s.items.length > 0);
   }
 
-  const nameOf = (i: UpcomingVisit) => (mode === 'zone' ? i.zoneName : i.clientName);
+  const orphan = ORPHAN_LABEL[mode];
+  const nameOf = (i: UpcomingVisit) => (mode === 'zone' ? i.zoneName : i.clientName) ?? orphan;
   const order: string[] = [];
   const groups = new Map<string, UpcomingVisit[]>();
   for (const item of items) {
@@ -39,7 +45,11 @@ export function groupUpcoming(items: UpcomingVisit[], mode: GroupBy): AgendaSect
     }
     groups.get(name)!.push(item);
   }
-  order.sort((a, b) => a.localeCompare(b, 'es'));
+  order.sort((a, b) => {
+    if (a === orphan) return 1;
+    if (b === orphan) return -1;
+    return a.localeCompare(b, 'es');
+  });
   return order.map((name) => ({ key: `${mode}:${name}`, label: name, items: groups.get(name)! }));
 }
 

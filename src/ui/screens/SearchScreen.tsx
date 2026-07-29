@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useSearchFields } from '@/ui/hooks/use-search-fields';
+import { clientLabel, zoneLabel } from '@/ui/labels';
 
 export function SearchScreen() {
   const { results, search, loading } = useSearchFields();
@@ -44,7 +45,7 @@ export function SearchScreen() {
               <Link className="field-row" to={`/field/${r.field.id}/record`}>
                 <span className="field-text">
                   <span className="field-name">{r.field.name}</span>
-                  <span className="field-sub">{r.clientName} · {r.zoneName}</span>
+                  <span className="field-sub">{clientLabel(r.clientName)} · {zoneLabel(r.zoneName)}</span>
                 </span>
                 <span className="chevron" aria-hidden="true">›</span>
               </Link>
