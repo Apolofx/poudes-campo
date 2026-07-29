@@ -8,6 +8,10 @@ import { SearchFields } from '@/application/use-cases/search-fields';
 import { RecordVisit } from '@/application/use-cases/record-visit';
 import { ListUpcomingVisits } from '@/application/use-cases/list-upcoming-visits';
 import { DispatchDueReminders } from '@/application/use-cases/dispatch-due-reminders';
+import { CancelVisit } from '@/application/use-cases/cancel-visit';
+import { EditVisit } from '@/application/use-cases/edit-visit';
+import { GetFieldHistory } from '@/application/use-cases/get-field-history';
+import { GetVisit } from '@/application/use-cases/get-visit';
 import {
   CreateZone,
   EditZone,
@@ -114,6 +118,10 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
   return {
     searchFields: new SearchFields(fields),
     recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
+    cancelVisit: new CancelVisit(visits, reminders, clock),
+    editVisit: new EditVisit(visits, reminders, clock, ids),
+    getFieldHistory: new GetFieldHistory(fields, visits),
+    getVisit: new GetVisit(visits),
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     reminderAviso: notifier,
