@@ -13,6 +13,9 @@ type FollowUpKind = 'interval' | 'date' | 'none';
 function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
+function dateLabel(d: Date): string {
+  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 function utcDate(iso: string): Date {
   return new Date(`${iso}T00:00:00.000Z`);
 }
@@ -63,7 +66,7 @@ export function VisitDetailScreen() {
     return (
       <main className="screen record">
         <Link className="back-link" to={back}>‹ Historial</Link>
-        <h1 className="screen-title">Visita del {isoDay(visit.visitDate)}</h1>
+        <h1 className="screen-title">Visita del {dateLabel(visit.visitDate)}</h1>
         <p className="visit-badge is-cancelled">Cancelada</p>
         {visit.notes && <p className="field-sub">{visit.notes}</p>}
       </main>

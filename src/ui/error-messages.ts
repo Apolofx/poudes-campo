@@ -13,7 +13,7 @@ export function domainErrorMessage(error: Error): string {
     case 'VisitAlreadyCancelled':
       return 'La visita ya fue cancelada.';
     default:
-      return 'Ocurrió un error al registrar la visita.';
+      return 'Ocurrió un error con la visita.';
   }
 }
 

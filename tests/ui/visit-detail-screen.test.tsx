@@ -74,6 +74,7 @@ describe('VisitDetailScreen', () => {
     await c.cancelVisit.execute({ visitId: id });
     renderAt(c, id);
     expect(await screen.findByText(/Cancelada/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Visita del.*jul/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Cancelar visita/ })).not.toBeInTheDocument();
   });
