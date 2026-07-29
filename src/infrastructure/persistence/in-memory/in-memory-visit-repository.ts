@@ -1,6 +1,6 @@
 import type { Visit } from '@/domain/entities/visit';
 import type { VisitId, FieldId } from '@/domain/shared/ids';
-import type { VisitRepository } from '@/domain/ports/outbound/visit-repository';
+import type { VisitRepository, CurrentFollowUp } from '@/domain/ports/outbound/visit-repository';
 import { isSameCalendarDay } from '@/domain/shared/date-utils';
 
 export class InMemoryVisitRepository implements VisitRepository {
@@ -29,5 +29,23 @@ export class InMemoryVisitRepository implements VisitRepository {
 
   async listByField(fieldId: FieldId): Promise<Visit[]> {
     return [...this.visits.values()].filter((visit) => visit.fieldId === fieldId);
+  }
+
+  async findCurrentFollowUps(): Promise<CurrentFollowUp[]> {
+    const latestByField = new Map<FieldId, Visit>();
+    for (const visit of this.visits.values()) {
+      if (visit.status !== 'ACTIVE') continue;
+      const current = latestByField.get(visit.fieldId);
+      if (!current || visit.createdAt.getTime() > current.createdAt.getTime()) {
+        latestByField.set(visit.fieldId, visit);
+      }
+    }
+    const result: CurrentFollowUp[] = [];
+    for (const visit of latestByField.values()) {
+      if (visit.followUp) {
+        result.push({ fieldId: visit.fieldId, nextVisitDate: visit.followUp.nextVisitDate });
+      }
+    }
+    return result;
   }
 }

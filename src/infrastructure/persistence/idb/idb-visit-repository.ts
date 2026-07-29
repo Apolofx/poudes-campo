@@ -1,4 +1,4 @@
-import type { VisitRepository } from '@/domain/ports/outbound/visit-repository';
+import type { VisitRepository, CurrentFollowUp } from '@/domain/ports/outbound/visit-repository';
 import type { Visit } from '@/domain/entities/visit';
 import type { VisitId, FieldId } from '@/domain/shared/ids';
 import { isSameCalendarDay } from '@/domain/shared/date-utils';
@@ -28,5 +28,9 @@ export class IdbVisitRepository implements VisitRepository {
   async listByField(fieldId: FieldId): Promise<Visit[]> {
     const records = await this.db.getAllFromIndex('visits', 'by-field', fieldId);
     return records.map(fromVisitRecord);
+  }
+
+  async findCurrentFollowUps(): Promise<CurrentFollowUp[]> {
+    throw new Error('Not implemented');
   }
 }
