@@ -2189,21 +2189,33 @@ git commit -m "feat(ui): tab Catálogo + hub + ConfirmDialog + Borrar todos los 
 
 ---
 
-## Task 14: UI — ABM de Zonas (lista + form + archivar con cascada)
+## Task 14: UI — ABM genérico de catálogo + Zonas
 
 **Files:**
-- Create: `src/ui/hooks/use-zones.ts`
-- Create: `src/ui/screens/ZonesListScreen.tsx`
-- Create: `src/ui/screens/ZoneFormScreen.tsx`
+- Create: `src/ui/catalog/catalog-section.ts` (tipos + config de sección)
+- Create: `src/ui/catalog/use-catalog-entity.ts` (hook genérico de estado/acciones)
+- Create: `src/ui/catalog/CatalogListScreen.tsx` (pantalla lista genérica)
+- Create: `src/ui/catalog/CatalogFormScreen.tsx` (pantalla form genérica)
+- Create: `src/ui/catalog/use-zone-section.ts` (config de la sección Zonas)
+- Create: `src/ui/screens/ZonesListScreen.tsx` (wrapper fino)
+- Create: `src/ui/screens/ZoneFormScreen.tsx` (wrapper fino)
 - Modify: `src/ui/App.tsx` (rutas)
 - Modify: `src/ui/error-messages.ts` (`catalogErrorMessage`)
-- Test: `tests/ui/zones-abm.test.tsx`
+- Modify: `src/ui/styles.css` (estilos reusando tokens existentes)
+- Test: `tests/ui/catalog-abm-zones.test.tsx`
 
 **Interfaces:**
-- Consumes: casos de uso de Zone + `listCatalogFields` (para contar lotes activos al archivar).
-- Produces: `useZones()` → `{ zones, loading, error, reload, create, rename, archive, restore, activeFieldCount }`. Rutas `/catalogo/zonas`, `/catalogo/zonas/nueva`, `/catalogo/zonas/:id`. `catalogErrorMessage(error)`.
+- Consumes: casos de uso de Zone + `listCatalogFields` (contar lotes activos al archivar). `ConfirmDialog` (Task 13), `catalogErrorMessage`.
+- Produces:
+  - `CatalogEntity { id: string; name: string; archived: boolean }` (Zone y Client lo satisfacen).
+  - `CatalogSection<E>` = `{ basePath; newPath; labels; actions }` (ver código).
+  - `useCatalogEntity(section): { entities; loading; reload; create; rename; archive; restore; countActiveFields }`.
+  - `CatalogListScreen({ useSection })`, `CatalogFormScreen({ useSection })` genéricos.
+  - `useZoneSection(): CatalogSection<Zone>`.
+  - Rutas `/catalogo/zonas`, `/catalogo/zonas/nueva`, `/catalogo/zonas/:id`.
+- Nota DRY: esta tarea construye el ABM genérico; Task 15 (Clientes) es solo `useClientSection` + wrappers. La duplicación Zona/Cliente queda eliminada por diseño (decisión del usuario en el pre-flight).
 
-- [ ] **Step 1: Escribir los tests que fallan** `tests/ui/zones-abm.test.tsx`
+- [ ] **Step 1: Escribir los tests que fallan** `tests/ui/catalog-abm-zones.test.tsx`
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -2214,8 +2226,6 @@ import { CampoProvider } from '@/ui/CampoProvider';
 import { ZonesListScreen } from '@/ui/screens/ZonesListScreen';
 import { ZoneFormScreen } from '@/ui/screens/ZoneFormScreen';
 import { makeInMemoryContainer } from '../support/in-memory-container';
-import { Zone } from '@/domain/entities/zone';
-import { Field } from '@/domain/entities/field';
 
 function renderAt(path: string, container = makeInMemoryContainer()) {
   render(
@@ -2232,7 +2242,7 @@ function renderAt(path: string, container = makeInMemoryContainer()) {
   return container;
 }
 
-describe('ZonesListScreen', () => {
+describe('ZonesListScreen (ABM genérico)', () => {
   it('lists active zones and hides archived by default', async () => {
     const c = makeInMemoryContainer();
     await c.createZone.execute('Sur');
@@ -2252,27 +2262,35 @@ describe('ZonesListScreen', () => {
     await waitFor(async () => expect((await c.listZones.execute()).find((z) => z.id === 'z1')?.archived).toBe(false));
   });
 
-  it('prompts to cascade when archiving a zone with active fields', async () => {
+  it('prompts to cascade when archiving a zone with active fields; "keep fields" orphans them', async () => {
     const c = makeInMemoryContainer(); // fixture: z1 Norte con f1/f2 activos en z1
     renderAt('/catalogo/zonas', c);
     await screen.findByText('Norte');
     await userEvent.click(screen.getByRole('button', { name: /archivar Norte/i }));
-    // aparece el diálogo de cascada
     expect(await screen.findByText(/lotes activos/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /mantener los lotes/i })); // cascade=false
     await waitFor(async () => expect((await c.listZones.execute()).find((z) => z.id === 'z1')?.archived).toBe(true));
-    // los lotes siguen activos pero huérfanos de zona
     const rows = await c.listCatalogFields.execute();
     expect(rows.filter((r) => !r.field.archived && r.field.zoneId === undefined).length).toBe(2);
   });
 });
 
-describe('ZoneFormScreen', () => {
+describe('ZoneFormScreen (ABM genérico)', () => {
   it('creates a zone', async () => {
     const c = renderAt('/catalogo/zonas/nueva');
     await userEvent.type(screen.getByLabelText(/nombre/i), 'Oeste');
     await userEvent.click(screen.getByRole('button', { name: /guardar/i }));
     await waitFor(async () => expect((await c.listZones.execute()).some((z) => z.name === 'Oeste')).toBe(true));
+  });
+
+  it('edits an existing zone (preloads the name)', async () => {
+    const c = renderAt('/catalogo/zonas/z1'); // Norte
+    expect(await screen.findByDisplayValue('Norte')).toBeInTheDocument();
+    const input = screen.getByLabelText(/nombre/i);
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Noreste');
+    await userEvent.click(screen.getByRole('button', { name: /guardar/i }));
+    await waitFor(async () => expect((await c.listZones.execute()).find((z) => z.id === 'z1')?.name).toBe('Noreste'));
   });
 
   it('shows an error for an empty name', async () => {
@@ -2285,8 +2303,8 @@ describe('ZoneFormScreen', () => {
 
 - [ ] **Step 2: Correr y verlos fallar**
 
-Run: `npx vitest run tests/ui/zones-abm.test.tsx`
-Expected: FAIL.
+Run: `npx vitest run tests/ui/catalog-abm-zones.test.tsx`
+Expected: FAIL (módulos no existen).
 
 - [ ] **Step 3: Implementar**
 
@@ -2309,69 +2327,107 @@ export function catalogErrorMessage(error: Error): string {
 }
 ```
 
-`src/ui/hooks/use-zones.ts`:
+`src/ui/catalog/catalog-section.ts`:
+
+```ts
+export interface CatalogEntity {
+  id: string;
+  name: string;
+  archived: boolean;
+}
+
+export interface CatalogSectionLabels {
+  listTitle: string;                          // "Zonas"
+  newAction: string;                          // "Nueva zona"
+  formTitleNew: string;                       // "Nueva zona"
+  formTitleEdit: string;                      // "Editar zona"
+  backToList: string;                         // "‹ Zonas"
+  emptyMessage: string;                       // "No hay zonas."
+  cascadeTitle: (name: string) => string;     // `Archivar ${name}`
+  cascadeMessage: (count: number) => string;  // `Esta zona tiene ${count} lotes activos. ¿Archivar también los lotes?`
+}
+
+export interface CatalogSectionActions<E extends CatalogEntity> {
+  list: () => Promise<E[]>;
+  create: (name: string) => Promise<unknown>;
+  rename: (id: string, name: string) => Promise<unknown>;
+  archive: (id: string, cascadeFields: boolean) => Promise<void>;
+  restore: (id: string) => Promise<void>;
+  countActiveFields: (id: string) => Promise<number>;
+}
+
+export interface CatalogSection<E extends CatalogEntity> {
+  basePath: string;  // '/catalogo/zonas'
+  newPath: string;   // '/catalogo/zonas/nueva'
+  labels: CatalogSectionLabels;
+  actions: CatalogSectionActions<E>;
+}
+```
+
+`src/ui/catalog/use-catalog-entity.ts`:
 
 ```ts
 import { useCallback, useEffect, useState } from 'react';
-import type { Zone } from '@/domain/entities/zone';
-import type { ZoneId } from '@/domain/shared/ids';
-import { useCampo } from '@/ui/CampoProvider';
+import type { CatalogEntity, CatalogSection } from './catalog-section';
 
-export function useZones() {
-  const { listZones, createZone, editZone, archiveZone, restoreZone, listCatalogFields } = useCampo();
-  const [zones, setZones] = useState<Zone[]>([]);
+export function useCatalogEntity<E extends CatalogEntity>(section: CatalogSection<E>) {
+  const { actions } = section;
+  const [entities, setEntities] = useState<E[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>();
 
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      setZones(await listZones.execute());
-    } catch (e) {
-      setError(e as Error);
+      setEntities(await actions.list());
     } finally {
       setLoading(false);
     }
-  }, [listZones]);
+  }, [actions]);
 
   useEffect(() => { void reload(); }, [reload]);
 
-  const create = useCallback((name: string) => createZone.execute(name), [createZone]);
-  const rename = useCallback((id: ZoneId, name: string) => editZone.execute(id, name), [editZone]);
   const archive = useCallback(
-    async (id: ZoneId, cascadeFields: boolean) => { await archiveZone.execute(id, cascadeFields); await reload(); },
-    [archiveZone, reload],
+    async (id: string, cascadeFields: boolean) => { await actions.archive(id, cascadeFields); await reload(); },
+    [actions, reload],
   );
   const restore = useCallback(
-    async (id: ZoneId) => { await restoreZone.execute(id); await reload(); },
-    [restoreZone, reload],
-  );
-  const activeFieldCount = useCallback(
-    async (id: ZoneId) => (await listCatalogFields.execute()).filter((r) => !r.field.archived && r.field.zoneId === id).length,
-    [listCatalogFields],
+    async (id: string) => { await actions.restore(id); await reload(); },
+    [actions, reload],
   );
 
-  return { zones, loading, error, reload, create, rename, archive, restore, activeFieldCount };
+  return {
+    entities,
+    loading,
+    reload,
+    create: actions.create,
+    rename: actions.rename,
+    archive,
+    restore,
+    countActiveFields: actions.countActiveFields,
+  };
 }
 ```
 
-`src/ui/screens/ZonesListScreen.tsx`:
+`src/ui/catalog/CatalogListScreen.tsx`:
 
 ```tsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useZones } from '@/ui/hooks/use-zones';
+import type { CatalogEntity, CatalogSection } from './catalog-section';
+import { useCatalogEntity } from './use-catalog-entity';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 
-export function ZonesListScreen() {
-  const { zones, loading, archive, restore, activeFieldCount } = useZones();
+export function CatalogListScreen<E extends CatalogEntity>({ useSection }: { useSection: () => CatalogSection<E> }) {
+  const section = useSection();
+  const { labels, basePath, newPath } = section;
+  const { entities, loading, archive, restore, countActiveFields } = useCatalogEntity(section);
   const [showArchived, setShowArchived] = useState(false);
   const [cascade, setCascade] = useState<{ id: string; name: string; count: number } | null>(null);
 
-  const visible = zones.filter((z) => z.archived === showArchived);
+  const visible = entities.filter((e) => e.archived === showArchived);
 
   const onArchive = async (id: string, name: string) => {
-    const count = await activeFieldCount(id);
+    const count = await countActiveFields(id);
     if (count > 0) setCascade({ id, name, count });
     else await archive(id, false);
   };
@@ -2380,29 +2436,29 @@ export function ZonesListScreen() {
     <main className="screen">
       <header className="list-header">
         <Link className="back-link" to="/catalogo">‹ Catálogo</Link>
-        <h1 className="screen-title">Zonas</h1>
-        <Link className="btn-primary" to="/catalogo/zonas/nueva">Nueva zona</Link>
+        <h1 className="screen-title">{labels.listTitle}</h1>
+        <Link className="btn-primary" to={newPath}>{labels.newAction}</Link>
       </header>
 
       <button type="button" className="toggle-archived" onClick={() => setShowArchived((v) => !v)}>
-        {showArchived ? 'Ver activas' : 'Ver archivados'}
+        {showArchived ? 'Ver activos' : 'Ver archivados'}
       </button>
 
       {loading && <p className="hint">Cargando…</p>}
-      {!loading && visible.length === 0 && <p className="empty">No hay zonas.</p>}
+      {!loading && visible.length === 0 && <p className="empty">{labels.emptyMessage}</p>}
 
       <ul className="field-list">
-        {visible.map((z) => (
-          <li key={z.id} className="catalog-row">
+        {visible.map((e) => (
+          <li key={e.id} className="catalog-row">
             {showArchived ? (
               <>
-                <span className="field-name">{z.name}</span>
-                <button type="button" className="btn-secondary" onClick={() => restore(z.id)}>Restaurar</button>
+                <span className="field-name">{e.name}</span>
+                <button type="button" className="btn-secondary" onClick={() => restore(e.id)}>Restaurar</button>
               </>
             ) : (
               <>
-                <Link className="field-name" to={`/catalogo/zonas/${z.id}`}>{z.name}</Link>
-                <button type="button" className="btn-secondary" aria-label={`Archivar ${z.name}`} onClick={() => onArchive(z.id, z.name)}>Archivar</button>
+                <Link className="field-name" to={`${basePath}/${e.id}`}>{e.name}</Link>
+                <button type="button" className="btn-secondary" aria-label={`Archivar ${e.name}`} onClick={() => onArchive(e.id, e.name)}>Archivar</button>
               </>
             )}
           </li>
@@ -2411,8 +2467,8 @@ export function ZonesListScreen() {
 
       <ConfirmDialog
         open={cascade !== null}
-        title={`Archivar ${cascade?.name ?? ''}`}
-        message={`Esta zona tiene ${cascade?.count ?? 0} lotes activos. ¿Archivar también los lotes?`}
+        title={cascade ? labels.cascadeTitle(cascade.name) : ''}
+        message={cascade ? labels.cascadeMessage(cascade.count) : ''}
         confirmLabel="Archivar también los lotes"
         cancelLabel="Mantener los lotes"
         onConfirm={async () => { if (cascade) await archive(cascade.id, true); setCascade(null); }}
@@ -2423,32 +2479,33 @@ export function ZonesListScreen() {
 }
 ```
 
-> Nota de UX: en este diálogo **ambos** botones ejecutan una acción (cascada vs mantener); no hay "cancelar puro". El backdrop-click cae en `onCancel` = mantener los lotes. Es un tradeoff aceptable; si se quiere un tercer camino "no archivar nada", agregar un botón extra — diferido.
+> Nota de UX: en el diálogo de cascada **ambos** botones ejecutan una acción (cascada vs mantener); el backdrop-click cae en `onCancel` = mantener los lotes. Un tercer camino "no archivar nada" queda diferido.
 
-`src/ui/screens/ZoneFormScreen.tsx`:
+`src/ui/catalog/CatalogFormScreen.tsx`:
 
 ```tsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useZones } from '@/ui/hooks/use-zones';
-import { useCampo } from '@/ui/CampoProvider';
+import type { CatalogEntity, CatalogSection } from './catalog-section';
+import { useCatalogEntity } from './use-catalog-entity';
 import { catalogErrorMessage } from '@/ui/error-messages';
 
-export function ZoneFormScreen() {
+export function CatalogFormScreen<E extends CatalogEntity>({ useSection }: { useSection: () => CatalogSection<E> }) {
+  const section = useSection();
+  const { labels, basePath } = section;
   const { id } = useParams();
   const navigate = useNavigate();
-  const { create, rename } = useZones();
-  const { listZones } = useCampo();
+  const { entities, create, rename } = useCatalogEntity(section);
   const [name, setName] = useState('');
+  const [touched, setTouched] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
+  // Precarga el nombre en edición cuando la lista termina de cargar (sin sobrescribir lo que el usuario tipeó).
   useEffect(() => {
-    if (!id) return;
-    void listZones.execute().then((zs) => {
-      const z = zs.find((x) => x.id === id);
-      if (z) setName(z.name);
-    });
-  }, [id, listZones]);
+    if (!id || touched) return;
+    const found = entities.find((e) => e.id === id);
+    if (found) setName(found.name);
+  }, [id, entities, touched]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2456,7 +2513,7 @@ export function ZoneFormScreen() {
     try {
       if (id) await rename(id, name);
       else await create(name);
-      navigate('/catalogo/zonas');
+      navigate(basePath);
     } catch (err) {
       setError(catalogErrorMessage(err as Error));
     }
@@ -2464,12 +2521,17 @@ export function ZoneFormScreen() {
 
   return (
     <main className="screen">
-      <button type="button" className="back-link" onClick={() => navigate('/catalogo/zonas')}>‹ Zonas</button>
-      <h1 className="screen-title">{id ? 'Editar zona' : 'Nueva zona'}</h1>
+      <button type="button" className="back-link" onClick={() => navigate(basePath)}>{labels.backToList}</button>
+      <h1 className="screen-title">{id ? labels.formTitleEdit : labels.formTitleNew}</h1>
       <form onSubmit={onSubmit} className="catalog-form">
         <label className="form-label">
           Nombre
-          <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <input
+            className="form-input"
+            value={name}
+            onChange={(e) => { setTouched(true); setName(e.target.value); }}
+            autoFocus
+          />
         </label>
         {error && <p className="alert" role="alert">{error}</p>}
         <button type="submit" className="btn-primary">Guardar</button>
@@ -2479,7 +2541,65 @@ export function ZoneFormScreen() {
 }
 ```
 
-En `src/ui/App.tsx` agregar, dentro de `TabsLayout`, la lista, y fuera (pantalla completa) los forms:
+`src/ui/catalog/use-zone-section.ts`:
+
+```ts
+import { useMemo } from 'react';
+import type { Zone } from '@/domain/entities/zone';
+import type { CatalogSection } from './catalog-section';
+import { useCampo } from '@/ui/CampoProvider';
+
+export function useZoneSection(): CatalogSection<Zone> {
+  const { listZones, createZone, editZone, archiveZone, restoreZone, listCatalogFields } = useCampo();
+  return useMemo<CatalogSection<Zone>>(() => ({
+    basePath: '/catalogo/zonas',
+    newPath: '/catalogo/zonas/nueva',
+    labels: {
+      listTitle: 'Zonas',
+      newAction: 'Nueva zona',
+      formTitleNew: 'Nueva zona',
+      formTitleEdit: 'Editar zona',
+      backToList: '‹ Zonas',
+      emptyMessage: 'No hay zonas.',
+      cascadeTitle: (name) => `Archivar ${name}`,
+      cascadeMessage: (count) => `Esta zona tiene ${count} lotes activos. ¿Archivar también los lotes?`,
+    },
+    actions: {
+      list: () => listZones.execute(),
+      create: (name) => createZone.execute(name),
+      rename: (id, name) => editZone.execute(id, name),
+      archive: (id, cascade) => archiveZone.execute(id, cascade),
+      restore: (id) => restoreZone.execute(id),
+      countActiveFields: async (id) =>
+        (await listCatalogFields.execute()).filter((r) => !r.field.archived && r.field.zoneId === id).length,
+    },
+  }), [listZones, createZone, editZone, archiveZone, restoreZone, listCatalogFields]);
+}
+```
+
+`src/ui/screens/ZonesListScreen.tsx`:
+
+```tsx
+import { CatalogListScreen } from '@/ui/catalog/CatalogListScreen';
+import { useZoneSection } from '@/ui/catalog/use-zone-section';
+
+export function ZonesListScreen() {
+  return <CatalogListScreen useSection={useZoneSection} />;
+}
+```
+
+`src/ui/screens/ZoneFormScreen.tsx`:
+
+```tsx
+import { CatalogFormScreen } from '@/ui/catalog/CatalogFormScreen';
+import { useZoneSection } from '@/ui/catalog/use-zone-section';
+
+export function ZoneFormScreen() {
+  return <CatalogFormScreen useSection={useZoneSection} />;
+}
+```
+
+En `src/ui/App.tsx` agregar la lista dentro de `TabsLayout` y los forms fuera (pantalla completa):
 
 ```tsx
         <Route path="/catalogo/zonas" element={<ZonesListScreen />} />
@@ -2488,111 +2608,179 @@ En `src/ui/App.tsx` agregar, dentro de `TabsLayout`, la lista, y fuera (pantalla
       <Route path="/catalogo/zonas/:id" element={<ZoneFormScreen />} />
 ```
 
-Agregar a `styles.css` lo que falte (`.list-header`, `.catalog-row`, `.toggle-archived`, `.btn-primary`, `.catalog-form`, `.form-label`, `.form-input`) reusando tokens.
+En `styles.css` agregar lo que falte (`.list-header`, `.catalog-row`, `.toggle-archived`, `.btn-primary`, `.catalog-form`, `.form-label`, `.form-input`) reusando tokens.
 
 - [ ] **Step 4: Correr y verlos pasar + typecheck**
 
-Run: `npx vitest run tests/ui/zones-abm.test.tsx` y `npm run typecheck`
+Run: `npx vitest run tests/ui/catalog-abm-zones.test.tsx` y `npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ui/hooks/use-zones.ts src/ui/screens/ZonesListScreen.tsx src/ui/screens/ZoneFormScreen.tsx src/ui/App.tsx src/ui/error-messages.ts src/ui/styles.css tests/ui/zones-abm.test.tsx
-git commit -m "feat(ui): ABM de Zonas (lista con ver-archivados/restaurar + form + archivar con cascada)"
+git add src/ui/catalog/ src/ui/screens/ZonesListScreen.tsx src/ui/screens/ZoneFormScreen.tsx src/ui/App.tsx src/ui/error-messages.ts src/ui/styles.css tests/ui/catalog-abm-zones.test.tsx
+git commit -m "feat(ui): ABM genérico de catálogo (lista/form/cascada/restaurar) + sección Zonas"
 ```
 
 ---
 
-## Task 15: UI — ABM de Clientes (espejo de Zonas)
+## Task 15: UI — Clientes sobre el ABM genérico
 
 **Files:**
-- Create: `src/ui/hooks/use-clients.ts`
-- Create: `src/ui/screens/ClientsListScreen.tsx`
-- Create: `src/ui/screens/ClientFormScreen.tsx`
+- Create: `src/ui/catalog/use-client-section.ts`
+- Create: `src/ui/screens/ClientsListScreen.tsx` (wrapper fino)
+- Create: `src/ui/screens/ClientFormScreen.tsx` (wrapper fino)
 - Modify: `src/ui/App.tsx` (rutas `/catalogo/clientes*`)
-- Test: `tests/ui/clients-abm.test.tsx`
+- Test: `tests/ui/catalog-abm-clients.test.tsx`
 
 **Interfaces:**
-- Produces: `useClients()` (misma forma que `useZones` con casos de uso de Client y `activeFieldCount` por `clientId`). Pantallas espejo. Rutas `/catalogo/clientes`, `/catalogo/clientes/nuevo`, `/catalogo/clientes/:id`.
+- Consumes: el ABM genérico de Task 14 (`CatalogListScreen`, `CatalogFormScreen`, `CatalogSection`, `useCatalogEntity`), casos de uso de Client + `listCatalogFields`.
+- Produces: `useClientSection(): CatalogSection<Client>`; wrappers `ClientsListScreen`/`ClientFormScreen`; rutas `/catalogo/clientes`, `/catalogo/clientes/nuevo`, `/catalogo/clientes/:id`.
 
-> Espejo estructural de Task 14: reutiliza `ConfirmDialog` y `catalogErrorMessage`. El diálogo de cascada dice "Este cliente tiene N lotes activos…". El filtro de conteo usa `r.field.clientId === id`.
-
-- [ ] **Step 1: Escribir los tests que fallan** `tests/ui/clients-abm.test.tsx`
-
-Mismo set que zonas, adaptado a Client: listar activos/ocultar archivados; ver-archivados + restaurar; cascada al archivar un cliente con lotes activos (fixture: `c1` Pérez con f1/f2). Crear cliente; error de nombre vacío. Rutas de clientes. (Copiar la estructura del test de Task 14 cambiando `Zone→Client`, `zonas→clientes`, `zoneId→clientId`, `z1→c1`, ids/textos correspondientes: "Este cliente tiene N lotes activos".)
+- [ ] **Step 1: Escribir los tests que fallan** `tests/ui/catalog-abm-clients.test.tsx`
 
 ```ts
-// Cabecera y helper análogos a zones-abm.test.tsx, montando:
-//   <Route path="/catalogo/clientes" element={<ClientsListScreen />} />
-//   <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />
-//   <Route path="/catalogo/clientes/:id" element={<ClientFormScreen />} />
-// Casos (idénticos en intención a los de zonas):
-//  - lista activos, oculta archivados (archivar c1 con cascade y crear otro cliente para ver la lista)
-//  - ver archivados + restaurar (assert vía c.listClients.execute())
-//  - cascada al archivar c1 (fixture con f1/f2 en c1): click "Archivar Pérez",
-//    aparece /lotes activos/i, click "Mantener los lotes",
-//    assert cliente archivado y 2 lotes activos con clientId undefined
-//  - crear cliente "Gómez"; error de nombre vacío "el nombre no puede estar vacío"
+import { describe, it, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { CampoProvider } from '@/ui/CampoProvider';
+import { ClientsListScreen } from '@/ui/screens/ClientsListScreen';
+import { ClientFormScreen } from '@/ui/screens/ClientFormScreen';
+import { makeInMemoryContainer } from '../support/in-memory-container';
+
+function renderAt(path: string, container = makeInMemoryContainer()) {
+  render(
+    <CampoProvider container={container}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/catalogo/clientes" element={<ClientsListScreen />} />
+          <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />
+          <Route path="/catalogo/clientes/:id" element={<ClientFormScreen />} />
+        </Routes>
+      </MemoryRouter>
+    </CampoProvider>,
+  );
+  return container;
+}
+
+describe('ClientsListScreen (ABM genérico)', () => {
+  it('lists active clients and hides archived by default', async () => {
+    const c = makeInMemoryContainer();
+    await c.createClient.execute('Gómez');
+    await c.archiveClient.execute('c1', true); // Pérez del fixture (con f1/f2) → cascada
+    renderAt('/catalogo/clientes', c);
+    expect(await screen.findByText('Gómez')).toBeInTheDocument();
+    expect(screen.queryByText('Pérez')).not.toBeInTheDocument();
+  });
+
+  it('prompts to cascade when archiving a client with active fields; "keep fields" orphans them', async () => {
+    const c = makeInMemoryContainer(); // fixture: c1 Pérez con f1/f2 activos
+    renderAt('/catalogo/clientes', c);
+    await screen.findByText('Pérez');
+    await userEvent.click(screen.getByRole('button', { name: /archivar Pérez/i }));
+    expect(await screen.findByText(/este cliente tiene 2 lotes activos/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /mantener los lotes/i }));
+    await waitFor(async () => expect((await c.listClients.execute()).find((x) => x.id === 'c1')?.archived).toBe(true));
+    const rows = await c.listCatalogFields.execute();
+    expect(rows.filter((r) => !r.field.archived && r.field.clientId === undefined).length).toBe(2);
+  });
+
+  it('creates a client and shows an error for an empty name', async () => {
+    const c = renderAt('/catalogo/clientes/nuevo');
+    await userEvent.click(screen.getByRole('button', { name: /guardar/i }));
+    expect(await screen.findByText(/el nombre no puede estar vacío/i)).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/nombre/i), 'Gómez');
+    await userEvent.click(screen.getByRole('button', { name: /guardar/i }));
+    await waitFor(async () => expect((await c.listClients.execute()).some((x) => x.name === 'Gómez')).toBe(true));
+  });
+});
 ```
 
 - [ ] **Step 2: Correr y verlos fallar**
 
-Run: `npx vitest run tests/ui/clients-abm.test.tsx`
+Run: `npx vitest run tests/ui/catalog-abm-clients.test.tsx`
 Expected: FAIL.
 
 - [ ] **Step 3: Implementar**
 
-`src/ui/hooks/use-clients.ts` — igual a `use-zones.ts` con `listClients/createClient/editClient/archiveClient/restoreClient` y `activeFieldCount` filtrando por `r.field.clientId === id`:
+`src/ui/catalog/use-client-section.ts`:
 
 ```ts
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { Client } from '@/domain/entities/client';
-import type { ClientId } from '@/domain/shared/ids';
+import type { CatalogSection } from './catalog-section';
 import { useCampo } from '@/ui/CampoProvider';
 
-export function useClients() {
+export function useClientSection(): CatalogSection<Client> {
   const { listClients, createClient, editClient, archiveClient, restoreClient, listCatalogFields } = useCampo();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>();
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try { setClients(await listClients.execute()); }
-    catch (e) { setError(e as Error); }
-    finally { setLoading(false); }
-  }, [listClients]);
-
-  useEffect(() => { void reload(); }, [reload]);
-
-  const create = useCallback((name: string) => createClient.execute(name), [createClient]);
-  const rename = useCallback((id: ClientId, name: string) => editClient.execute(id, name), [editClient]);
-  const archive = useCallback(async (id: ClientId, c: boolean) => { await archiveClient.execute(id, c); await reload(); }, [archiveClient, reload]);
-  const restore = useCallback(async (id: ClientId) => { await restoreClient.execute(id); await reload(); }, [restoreClient, reload]);
-  const activeFieldCount = useCallback(
-    async (id: ClientId) => (await listCatalogFields.execute()).filter((r) => !r.field.archived && r.field.clientId === id).length,
-    [listCatalogFields],
-  );
-
-  return { clients, loading, error, reload, create, rename, archive, restore, activeFieldCount };
+  return useMemo<CatalogSection<Client>>(() => ({
+    basePath: '/catalogo/clientes',
+    newPath: '/catalogo/clientes/nuevo',
+    labels: {
+      listTitle: 'Clientes',
+      newAction: 'Nuevo cliente',
+      formTitleNew: 'Nuevo cliente',
+      formTitleEdit: 'Editar cliente',
+      backToList: '‹ Clientes',
+      emptyMessage: 'No hay clientes.',
+      cascadeTitle: (name) => `Archivar ${name}`,
+      cascadeMessage: (count) => `Este cliente tiene ${count} lotes activos. ¿Archivar también los lotes?`,
+    },
+    actions: {
+      list: () => listClients.execute(),
+      create: (name) => createClient.execute(name),
+      rename: (id, name) => editClient.execute(id, name),
+      archive: (id, cascade) => archiveClient.execute(id, cascade),
+      restore: (id) => restoreClient.execute(id),
+      countActiveFields: async (id) =>
+        (await listCatalogFields.execute()).filter((r) => !r.field.archived && r.field.clientId === id).length,
+    },
+  }), [listClients, createClient, editClient, archiveClient, restoreClient, listCatalogFields]);
 }
 ```
 
-`src/ui/screens/ClientsListScreen.tsx` y `src/ui/screens/ClientFormScreen.tsx`: copias de las pantallas de zonas con textos "Clientes"/"Nuevo cliente"/"Editar cliente", rutas `/catalogo/clientes*`, hook `useClients`, y mensaje de cascada "Este cliente tiene N lotes activos. ¿Archivar también los lotes?". La lista navega a `/catalogo/clientes/${c.id}`; el back-link va a `/catalogo`.
+`src/ui/screens/ClientsListScreen.tsx`:
 
-En `src/ui/App.tsx` agregar la lista dentro de `TabsLayout` y los forms fuera (igual patrón que zonas).
+```tsx
+import { CatalogListScreen } from '@/ui/catalog/CatalogListScreen';
+import { useClientSection } from '@/ui/catalog/use-client-section';
+
+export function ClientsListScreen() {
+  return <CatalogListScreen useSection={useClientSection} />;
+}
+```
+
+`src/ui/screens/ClientFormScreen.tsx`:
+
+```tsx
+import { CatalogFormScreen } from '@/ui/catalog/CatalogFormScreen';
+import { useClientSection } from '@/ui/catalog/use-client-section';
+
+export function ClientFormScreen() {
+  return <CatalogFormScreen useSection={useClientSection} />;
+}
+```
+
+En `src/ui/App.tsx` agregar la lista dentro de `TabsLayout` y los forms fuera:
+
+```tsx
+        <Route path="/catalogo/clientes" element={<ClientsListScreen />} />
+// ...fuera del layout de tabs:
+      <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />
+      <Route path="/catalogo/clientes/:id" element={<ClientFormScreen />} />
+```
 
 - [ ] **Step 4: Correr y verlos pasar + typecheck**
 
-Run: `npx vitest run tests/ui/clients-abm.test.tsx` y `npm run typecheck`
+Run: `npx vitest run tests/ui/catalog-abm-clients.test.tsx` y `npm run typecheck`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/ui/hooks/use-clients.ts src/ui/screens/ClientsListScreen.tsx src/ui/screens/ClientFormScreen.tsx src/ui/App.tsx tests/ui/clients-abm.test.tsx
-git commit -m "feat(ui): ABM de Clientes (espejo de Zonas)"
+git add src/ui/catalog/use-client-section.ts src/ui/screens/ClientsListScreen.tsx src/ui/screens/ClientFormScreen.tsx src/ui/App.tsx tests/ui/catalog-abm-clients.test.tsx
+git commit -m "feat(ui): sección Clientes sobre el ABM genérico de catálogo"
 ```
 
 ---
