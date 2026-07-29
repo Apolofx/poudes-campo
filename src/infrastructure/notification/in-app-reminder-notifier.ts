@@ -6,10 +6,10 @@ export class InAppReminderNotifier implements ReminderNotifier, ReminderAvisoSto
   private last: DueReminder[] = [];
 
   notify(batch: DueReminder[]): void {
-    this.last = batch;
+    this.last = [...batch];
   }
 
   snapshot(): DueReminder[] {
-    return this.last;
+    return [...this.last];
   }
 }

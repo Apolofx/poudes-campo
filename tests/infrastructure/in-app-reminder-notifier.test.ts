@@ -23,4 +23,11 @@ describe('InAppReminderNotifier', () => {
     await n.notify([]);
     expect(n.snapshot()).toEqual([]);
   });
+  it('snapshot returns a defensive copy; mutations do not affect the store', async () => {
+    const n = new InAppReminderNotifier();
+    await n.notify([item]);
+    const snapshotCopy = n.snapshot();
+    snapshotCopy.pop();
+    expect(n.snapshot()).toEqual([item]);
+  });
 });
