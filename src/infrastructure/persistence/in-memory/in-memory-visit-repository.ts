@@ -48,4 +48,8 @@ export class InMemoryVisitRepository implements VisitRepository {
     }
     return result;
   }
+
+  clear(): void {
+    this.visits.clear();
+  }
 }

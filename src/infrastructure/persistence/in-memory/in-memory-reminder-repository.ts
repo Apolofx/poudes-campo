@@ -20,4 +20,8 @@ export class InMemoryReminderRepository implements ReminderRepository {
       (reminder) => reminder.status === 'PENDING' && reminder.remindAt.getTime() <= now.getTime(),
     );
   }
+
+  clear(): void {
+    this.reminders.clear();
+  }
 }
