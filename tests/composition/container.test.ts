@@ -27,4 +27,21 @@ describe('buildContainer', () => {
     expect(result.visitId).toBeTruthy();
     db.close();
   });
+
+  it('dispatches due reminders and exposes them via reminderAviso', async () => {
+    const db = await openCampoDb(`t-${Math.random()}`);
+    await seedIfEmpty(db);
+    const container = buildContainer(db);
+    const [first] = await container.searchFields.execute('');
+    // Registrar una visita con próxima ya vencida hoy (lead grande sobre intervalo corto).
+    await container.recordVisit.execute({
+      fieldId: first.field.id,
+      visitDate: new Date(),
+      followUp: { kind: 'interval', days: 1, reminderLeadDays: 1 }, // remindAt = ahora
+    });
+    const batch = await container.dispatchDueReminders.execute();
+    expect(batch.length).toBeGreaterThan(0);
+    expect(container.reminderAviso.snapshot()).toEqual(batch);
+    db.close();
+  });
 });

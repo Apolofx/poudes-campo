@@ -13,6 +13,12 @@ async function main() {
   await seedIfEmpty(db);
   const container = buildContainer(db);
 
+  try {
+    await container.dispatchDueReminders.execute();
+  } catch (error) {
+    console.error('reminder dispatch failed', error);
+  }
+
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <CampoProvider container={container}>
