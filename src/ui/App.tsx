@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from 'react-router-dom';
 import { AgendaScreen } from '@/ui/screens/AgendaScreen';
 import { SearchScreen } from '@/ui/screens/SearchScreen';
 import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
+import { FieldHistoryScreen } from '@/ui/screens/FieldHistoryScreen';
 import { CatalogHubScreen } from '@/ui/screens/CatalogHubScreen';
 import { ZonesListScreen } from '@/ui/screens/ZonesListScreen';
 import { ZoneFormScreen } from '@/ui/screens/ZoneFormScreen';
@@ -34,6 +35,7 @@ export function App() {
         <Route path="/catalogo/lotes" element={<FieldsListScreen />} />
       </Route>
       <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
+      <Route path="/field/:fieldId/visitas" element={<FieldHistoryScreen />} />
       <Route path="/catalogo/zonas/nueva" element={<ZoneFormScreen />} />
       <Route path="/catalogo/zonas/:id" element={<ZoneFormScreen />} />
       <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />

@@ -23,9 +23,13 @@ describe('search → record visit (real IndexedDB adapter)', () => {
       </CampoProvider>,
     );
 
-    // Buscar y abrir el primer lote sembrado.
+    // Buscar y abrir el historial del primer lote sembrado.
     const link = await screen.findByRole('link', { name: /^El Alto(?!\s*2)/ });
     await userEvent.click(link);
+
+    // Desde el historial, ir a registrar visita.
+    const recordLink = await screen.findByRole('link', { name: /Registrar visita/ });
+    await userEvent.click(recordLink);
 
     // Registrar sin próxima visita.
     await screen.findByRole('heading', { name: 'Registrar visita' });
