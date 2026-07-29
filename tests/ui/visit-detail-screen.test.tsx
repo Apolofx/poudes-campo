@@ -46,6 +46,18 @@ describe('VisitDetailScreen', () => {
     expect((await c.getVisit.execute(id))?.notes).toBe('corregido');
   });
 
+  it('editing only the date keeps the prefilled notes intact', async () => {
+    const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
+    const id = await seedActive(c);
+    renderAt(c, id);
+    const date = await screen.findByLabelText('Fecha');
+    await userEvent.clear(date);
+    await userEvent.type(date, '2026-07-26');
+    await userEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+    expect(await screen.findByText('Historial')).toBeInTheDocument();
+    expect((await c.getVisit.execute(id))?.notes).toBe('orig');
+  });
+
   it('cancels the visit after confirming and navigates back', async () => {
     const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
     const id = await seedActive(c);
@@ -63,5 +75,6 @@ describe('VisitDetailScreen', () => {
     renderAt(c, id);
     expect(await screen.findByText(/Cancelada/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Cancelar visita/ })).not.toBeInTheDocument();
   });
 });
