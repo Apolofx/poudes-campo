@@ -70,7 +70,8 @@ export class RecordVisit {
 
     if (!followUp) return { visitId: visit.id };
 
-    const leadDays = input.followUp.kind === 'none' ? 0 : input.followUp.reminderLeadDays ?? 0;
+    const requestedLead = input.followUp.kind === 'none' ? 0 : input.followUp.reminderLeadDays ?? 0;
+    const leadDays = Math.min(Math.max(requestedLead, 0), followUp.interval.days);
     const reminder = new Reminder({
       id: this.ids.next(),
       visitId: visit.id,
