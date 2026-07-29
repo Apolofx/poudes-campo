@@ -58,8 +58,16 @@ export function CatalogListScreen<E extends CatalogEntity>({ useSection }: { use
         message={cascade ? labels.cascadeMessage(cascade.count) : ''}
         confirmLabel="Archivar también los lotes"
         cancelLabel="Mantener los lotes"
-        onConfirm={async () => { if (cascade) await archive(cascade.id, true); setCascade(null); }}
-        onCancel={async () => { if (cascade) await archive(cascade.id, false); setCascade(null); }}
+        onConfirm={async () => {
+          const id = cascade?.id;
+          setCascade(null);
+          if (id) await archive(id, true);
+        }}
+        onCancel={async () => {
+          const id = cascade?.id;
+          setCascade(null);
+          if (id) await archive(id, false);
+        }}
       />
     </main>
   );

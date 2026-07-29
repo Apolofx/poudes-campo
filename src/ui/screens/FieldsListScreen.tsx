@@ -33,7 +33,7 @@ export function FieldsListScreen() {
               <span className="field-sub">{clientLabel(r.clientName)} · {zoneLabel(r.zoneName)}</span>
             </span>
             {showArchived
-              ? <button type="button" className="btn-secondary" onClick={() => restore(r.field.id)}>Restaurar</button>
+              ? <button type="button" className="btn-secondary" aria-label={`Restaurar ${r.field.name}`} onClick={() => restore(r.field.id)}>Restaurar</button>
               : <button type="button" className="btn-secondary" aria-label={`Archivar ${r.field.name}`} onClick={() => archive(r.field.id)}>Archivar</button>}
           </li>
         ))}

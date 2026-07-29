@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCatalogFields } from '@/ui/hooks/use-catalog-fields';
 import { useCampo } from '@/ui/CampoProvider';
@@ -7,24 +7,24 @@ import { catalogErrorMessage } from '@/ui/error-messages';
 export function FieldFormScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { zones, clients } = useCatalogFields();
-  const { createField, editField, listCatalogFields } = useCampo();
+  const { zones, clients, rows } = useCatalogFields();
+  const { createField, editField } = useCampo();
   const [name, setName] = useState('');
   const [clientId, setClientId] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const preloaded = useRef(false);
 
   useEffect(() => {
-    if (!id) return;
-    void listCatalogFields.execute().then((rows) => {
-      const row = rows.find((r) => r.field.id === id);
-      if (row) {
-        setName(row.field.name);
-        setClientId(row.field.clientId ?? '');
-        setZoneId(row.field.zoneId ?? '');
-      }
-    });
-  }, [id, listCatalogFields]);
+    if (!id || preloaded.current) return;
+    const row = rows.find((r) => r.field.id === id);
+    if (row) {
+      setName(row.field.name);
+      setClientId(row.field.clientId ?? '');
+      setZoneId(row.field.zoneId ?? '');
+      preloaded.current = true;
+    }
+  }, [id, rows]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
