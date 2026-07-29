@@ -17,10 +17,11 @@
 - **Pantalla Inicio (agenda):** ver las próximas visitas ordenadas por urgencia (triage por horizonte: Vencidas / Esta semana / Más adelante, esta última colapsada), con agrupamiento dinámico por Tiempo/Zona/Cliente. Barra de pestañas Inicio · Buscar.
 - **Aviso al abrir la app:** un banner en Inicio resume, agrupados por zona, los lotes cuyo umbral de aviso (`remindAt = próxima − X días antes`) ya se cruzó. Cálculo idempotente al abrir (`PENDING→SENT`, no reaparece salvo que venzan nuevos); se puede cerrar.
 - **Catálogo (ABM):** tercer tab "Catálogo" con alta/edición/archivado (baja lógica reversible) de Zonas, Clientes y Lotes. Archivar un padre con lotes activos pregunta si cascadear (archivar los lotes) o mantenerlos (quedan huérfanos "Sin cliente"/"Sin zona", reasignables al editar el lote). "Ver archivados" + restaurar. Acción "Borrar todos los datos". Buscar/agenda/avisos ocultan lo archivado y muestran "Sin cliente/Sin zona" para huérfanos.
+- **Historial de visitas por lote:** desde Buscar, tocar un lote lleva a su historial (la fila de Agenda sigue yendo directo a Registrar). Cada visita del historial abre su detalle.
+- **Editar y cancelar una visita:** desde el detalle de una visita, **Editar** permite corregir notas, fecha y follow-up (reusa la resolución de follow-up de Registrar, con "ahora" como ancla); **Cancelar** es una baja lógica auditable (`cancelledAt`), no un borrado. Se preserva el invariante de que solo la última visita activa de un lote puede tener un reminder pendiente.
 - Todo offline y persistente en el dispositivo (IndexedDB). Instalable como PWA.
 
 ### ❌ Todavía no se puede
-- Cancelar o editar una visita registrada → **Etapa 4a**.
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
 
 ### Datos
@@ -41,7 +42,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **3 — aviso al abrir** | Cálculo idempotente al abrir la app (`DispatchDueReminders`, PENDING→SENT); backlog colapsado en un resumen por zona; `ReminderNotifier` agnóstico al protocolo con adaptador in-app; clamp de `reminderLeadDays` en `RecordVisit` | ✅ Completa (145 tests) |
 | **4 — cancelar/editar + catálogo** | Partida en 4a + 4b (dos subsistemas independientes) | — |
 | **4b — catálogo (ABM)** | ABM de Zone/Client/Field: `archived` (baja lógica reversible) + refs opcionales (huérfanos), cascada/nulificado al archivar padre, reset, tab "Catálogo" (ABM genérico Zonas/Clientes + Lotes con pickers), seed gateado a dev | ✅ Completa (209 tests) |
-| **4a — cancelar/editar visitas** | Cancelar/editar visitas registradas (baja lógica auditable sobre eventos) | ⏳ Pendiente |
+| **4a — cancelar/editar visitas** | Cancelar/editar visitas registradas (baja lógica auditable sobre eventos), historial por lote | ✅ Completa (244 tests) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
@@ -64,8 +65,15 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
 - **Desempate de `createdAt` idéntico en `findCurrentFollowUps`** no está especificado (ambos adaptadores usan "primero en iterar gana", con orden distinto entre in-memory e idb). Improbable (mismo día + mismo lote); documentado en el contrato del puerto. → atado a revisar la lógica de fechas del dominio.
 - **Estilos de Inicio/tab bar sin pasada de diseño dedicada:** la Etapa 2 trajo CSS funcional reutilizando los tokens de 1c (look con datos reales verificado en navegador: contraste, acento de vencidas y tab activo OK); una pasada visual fina (como fue 1c para las 2 primeras pantallas) queda para cuando se quiera subir el nivel.
 - **Upgrades técnicos anotados (no construidos):** guardar fechas como ISO string (para el LWW de Etapa 5), HLC para conflictos (Etapa 5), TanStack Query y Playwright si el flujo de UI crece.
-- **Etapa 4 se partió en 4a + 4b (asentado):** eran dos subsistemas independientes (cancelar/editar visitas vs ABM de catálogo) que peleaban por el foco de un solo spec. Se hizo **4b primero** (tener datos reales le da sentido al resto); 4a queda pendiente.
+- **Etapa 4 se partió en 4a + 4b (asentado):** eran dos subsistemas independientes (cancelar/editar visitas vs ABM de catálogo) que peleaban por el foco de un solo spec. Se hizo **4b primero** (tener datos reales le da sentido al resto), después 4a.
 - **Diferidos nuevos de 4b (en el spec, sección Diferidos):** campos `crop`/`hectares`/`coordinates` en el form de Lote (la entidad los conserva, el form no los expone); import/CSV de lotes; unicidad de nombres; índices idb por `archived`/por padre (hoy `getAll`+filtro a escala ~40); **cancelar reminders PENDING al archivar un lote** (hoy el aviso se filtra por la jerarquía, no se cancela el reminder); focus-trap en `ConfirmDialog` (a11y); orden de grupos por urgencia en Agenda (sigue alfabético + "Sin X" al final).
+- **Diferidos nuevos de 4a:**
+  - **Lead del aviso al editar un follow-up**: al editar una visita que ya tenía follow-up, la pantalla de detalle no puede recuperar el "avisar días antes" original (no se guarda en `Visit.followUp`, solo vive implícito en `Reminder.remindAt`), así que **defaultea a 3 días** y editar puede resetear silenciosamente el lead del aviso. → si molesta, guardar el lead en el follow-up o leer el reminder al abrir el detalle.
+  - **Historial pre-edición**: editar es corrección in-place; no se guarda el valor anterior. Traza de cambios queda para el modelo de eventos de Etapa 5.
+  - **Motivo de cancelación**: no se pide (solo `cancelledAt`); fácil de agregar si el uso lo pide.
+  - **Revivir el aviso de la visita anterior al cancelar**: diferido; se aceptó el desfase (la agenda cae al follow-up anterior pero sin aviso PENDING).
+  - **Editar una visita que no es la última** con cambio de follow-up: actualiza datos pero no toca reminders (mantiene el invariante). Documentado como comportamiento, no bug.
+  - **Índices idb** por `visitId` en reminders / por `status` en visitas: hoy getAll+filtro a escala ~40; cuando el volumen lo pida.
 
 ---
 
