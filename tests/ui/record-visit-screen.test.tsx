@@ -85,4 +85,10 @@ describe('RecordVisitScreen', () => {
     const back = await screen.findByRole('link', { name: /Buscar lote/ });
     expect(back).toHaveAttribute('href', '/buscar');
   });
+
+  it('limita el aviso al intervalo (max en el input de lead)', () => {
+    renderScreen();
+    const lead = screen.getByLabelText('Avisar días antes') as HTMLInputElement;
+    expect(lead).toHaveAttribute('max', '14');
+  });
 });

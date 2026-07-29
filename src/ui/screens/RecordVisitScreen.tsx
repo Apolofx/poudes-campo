@@ -56,6 +56,11 @@ export function RecordVisitScreen() {
     });
   };
 
+  const leadMax =
+    kind === 'interval'
+      ? Math.max(1, intervalDays)
+      : Math.max(1, Math.round((utcDate(nextDate).getTime() - utcDate(todayIso()).getTime()) / 86_400_000));
+
   return (
     <main className="screen record">
       <Link className="back-link" to="/buscar">‹ Buscar lote</Link>
@@ -125,6 +130,7 @@ export function RecordVisitScreen() {
                   className="control"
                   type="number"
                   min="0"
+                  max={leadMax}
                   value={leadDays}
                   onChange={(e) => setLeadDays(Number(e.target.value))}
                 />
