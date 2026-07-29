@@ -11,6 +11,8 @@ import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memo
 import { SearchFields } from '@/application/use-cases/search-fields';
 import { RecordVisit } from '@/application/use-cases/record-visit';
 import { ListUpcomingVisits } from '@/application/use-cases/list-upcoming-visits';
+import { DispatchDueReminders } from '@/application/use-cases/dispatch-due-reminders';
+import { InAppReminderNotifier } from '@/infrastructure/notification/in-app-reminder-notifier';
 import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
@@ -40,10 +42,14 @@ async function makeContainer(): Promise<Container> {
   await seed('v1', 'f1', '2026-07-23'); // vencida 5 d
   await seed('v2', 'f2', '2026-07-30'); // en 2 d
   await seed('v3', 'f3', '2026-08-30'); // en 33 d (LATER)
+  const reminders = new InMemoryReminderRepository();
+  const notifier = new InAppReminderNotifier();
   return {
     searchFields: new SearchFields(fields),
-    recordVisit: new RecordVisit(fields, visits, new InMemoryReminderRepository(), clock, new IncrementingIdGenerator()),
+    recordVisit: new RecordVisit(fields, visits, reminders, clock, new IncrementingIdGenerator()),
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
+    dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
+    reminderAviso: notifier,
   };
 }
 
@@ -95,10 +101,14 @@ describe('AgendaScreen', () => {
     ]);
     const visits = new InMemoryVisitRepository();
     const clock = new FixedClock(at('2026-07-28'));
+    const reminders = new InMemoryReminderRepository();
+    const notifier = new InAppReminderNotifier();
     const container: Container = {
       searchFields: new SearchFields(fields),
-      recordVisit: new RecordVisit(fields, visits, new InMemoryReminderRepository(), clock, new IncrementingIdGenerator()),
+      recordVisit: new RecordVisit(fields, visits, reminders, clock, new IncrementingIdGenerator()),
       listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
+      dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
+      reminderAviso: notifier,
     };
     render(
       <CampoProvider container={container}>
@@ -113,6 +123,7 @@ describe('AgendaScreen', () => {
     // no se ejercitan en este flujo, así que un stub tipado basta.
     const container = {
       listUpcomingVisits: { execute: () => Promise.reject(new Error('boom')) },
+      reminderAviso: { snapshot: () => [] },
     } as unknown as Container;
     render(
       <CampoProvider container={container}>

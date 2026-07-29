@@ -4,6 +4,8 @@ import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memo
 import { SearchFields } from '@/application/use-cases/search-fields';
 import { RecordVisit } from '@/application/use-cases/record-visit';
 import { ListUpcomingVisits } from '@/application/use-cases/list-upcoming-visits';
+import { DispatchDueReminders } from '@/application/use-cases/dispatch-due-reminders';
+import { InAppReminderNotifier } from '@/infrastructure/notification/in-app-reminder-notifier';
 import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
@@ -20,11 +22,13 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
   ]);
   const visits = new InMemoryVisitRepository();
   const clock = new FixedClock(now);
+  const reminders = new InMemoryReminderRepository();
+  const notifier = new InAppReminderNotifier();
   return {
     searchFields: new SearchFields(fields),
-    recordVisit: new RecordVisit(
-      fields, visits, new InMemoryReminderRepository(), clock, new IncrementingIdGenerator(),
-    ),
+    recordVisit: new RecordVisit(fields, visits, reminders, clock, new IncrementingIdGenerator()),
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
+    dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
+    reminderAviso: notifier,
   };
 }

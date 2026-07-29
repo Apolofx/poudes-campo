@@ -66,3 +66,32 @@ describe('RecordVisit — rules and edges', () => {
     ).rejects.toThrow(InvalidVisitInterval);
   });
 });
+
+describe('RecordVisit reminderLeadDays clamp', () => {
+  it('clamps a lead greater than the interval down to the interval (remindAt = now)', async () => {
+    const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
+    await h.uc.execute({
+      fieldId: 'f1',
+      visitDate: new Date('2026-07-27T10:00:00Z'),
+      followUp: { kind: 'interval', days: 14, reminderLeadDays: 20 },
+    });
+    const pending = await h.reminders.findPendingByField('f1');
+    expect(pending).toHaveLength(1);
+    // nextVisitDate = now + 14; lead clamped to 14 => remindAt = now
+    expect(pending[0].remindAt.getTime()).toBe(h.clock.now().getTime());
+  });
+
+  it('clamps a negative lead up to 0 (remindAt = nextVisitDate)', async () => {
+    const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
+    await h.uc.execute({
+      fieldId: 'f1',
+      visitDate: new Date('2026-07-27T10:00:00Z'),
+      followUp: { kind: 'interval', days: 14, reminderLeadDays: -3 },
+    });
+    const pending = await h.reminders.findPendingByField('f1');
+    expect(pending).toHaveLength(1);
+    // nextVisitDate = now + 14; lead clamped to 0 => remindAt = nextVisitDate = now + 14
+    const expected = new Date(h.clock.now().getTime() + 14 * 86_400_000);
+    expect(pending[0].remindAt.getTime()).toBe(expected.getTime());
+  });
+});

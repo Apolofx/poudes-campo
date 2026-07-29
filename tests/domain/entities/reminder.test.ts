@@ -23,4 +23,20 @@ describe('Reminder', () => {
     r.cancel();
     expect(r.status).toBe('CANCELLED');
   });
+  it('markSent moves PENDING to SENT', () => {
+    const r = new Reminder({ ...base });
+    r.markSent();
+    expect(r.status).toBe('SENT');
+  });
+  it('markSent is idempotent', () => {
+    const r = new Reminder({ ...base });
+    r.markSent();
+    r.markSent();
+    expect(r.status).toBe('SENT');
+  });
+  it('markSent does not resurrect a CANCELLED reminder', () => {
+    const r = new Reminder({ ...base, status: 'CANCELLED' });
+    r.markSent();
+    expect(r.status).toBe('CANCELLED');
+  });
 });

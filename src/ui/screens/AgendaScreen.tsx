@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAgenda } from '@/ui/hooks/use-agenda';
 import { groupUpcoming, formatRelativeDays, type GroupBy } from '@/ui/agenda-presentation';
+import { ReminderAvisoBanner } from '@/ui/components/ReminderAvisoBanner';
 
 const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
   { value: 'time', label: 'Tiempo' },
@@ -19,6 +20,7 @@ export function AgendaScreen() {
 
   return (
     <main className="screen agenda">
+      <ReminderAvisoBanner />
       <header className="agenda-header">
         <h1 className="screen-title">Próximas visitas</h1>
         <div className="segmented" role="group" aria-label="Agrupar por">

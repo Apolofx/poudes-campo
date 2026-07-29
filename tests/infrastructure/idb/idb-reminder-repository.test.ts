@@ -36,4 +36,16 @@ describe('IdbReminderRepository', () => {
     expect(await repo.findPendingByField('f1')).toEqual([]);
     db.close();
   });
+
+  it('findDue returns PENDING reminders with remindAt <= now', async () => {
+    const { db, repo } = await freshRepo();
+    const mk = (id: string, remindAt: string, status: 'PENDING' | 'SENT' | 'CANCELLED') =>
+      new Reminder({ id, visitId: `v-${id}`, fieldId: `f-${id}`, remindAt: new Date(remindAt), status });
+    await repo.save(mk('due', '2026-07-29T00:00:00Z', 'PENDING'));
+    await repo.save(mk('future', '2026-08-10T00:00:00Z', 'PENDING'));
+    await repo.save(mk('sent', '2026-07-20T00:00:00Z', 'SENT'));
+    const due = await repo.findDue(new Date('2026-07-29T12:00:00Z'));
+    expect(due.map((r) => r.id)).toEqual(['due']);
+    db.close();
+  });
 });
