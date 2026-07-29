@@ -11,7 +11,7 @@ const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
 ];
 
 export function AgendaScreen() {
-  const { items, loading } = useAgenda();
+  const { items, loading, error } = useAgenda();
   const [groupBy, setGroupBy] = useState<GroupBy>('time');
   const [showLater, setShowLater] = useState(false);
 
@@ -37,7 +37,10 @@ export function AgendaScreen() {
       </header>
 
       {loading && <p className="hint">Cargando…</p>}
-      {!loading && items.length === 0 && <p className="empty">No hay visitas agendadas.</p>}
+      {!loading && error && (
+        <p className="alert" role="alert">No se pudieron cargar las visitas. Reintentá.</p>
+      )}
+      {!loading && !error && items.length === 0 && <p className="empty">No hay visitas agendadas.</p>}
 
       {sections.map((section) => {
         const collapsed = section.bucket === 'LATER' && !showLater;

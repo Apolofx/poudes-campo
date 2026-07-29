@@ -11,5 +11,9 @@ export interface VisitRepository {
   findById(id: VisitId): Promise<Visit | null>;
   findActiveByFieldOnDay(fieldId: FieldId, day: Date): Promise<Visit | null>;
   listByField(fieldId: FieldId): Promise<Visit[]>;
+  /**
+   * Returns, per field, the nextVisitDate of the latest ACTIVE visit by createdAt
+   * when it has a followUp. Ties on identical createdAt are unspecified.
+   */
   findCurrentFollowUps(): Promise<CurrentFollowUp[]>;
 }

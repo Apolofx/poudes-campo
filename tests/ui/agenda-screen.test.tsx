@@ -1,6 +1,6 @@
 // tests/ui/agenda-screen.test.tsx
 import { describe, it, expect } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { CampoProvider } from '@/ui/CampoProvider';
@@ -106,5 +106,20 @@ describe('AgendaScreen', () => {
       </CampoProvider>,
     );
     expect(await screen.findByText('No hay visitas agendadas.')).toBeInTheDocument();
+  });
+
+  it('muestra un error en vez del estado vacío cuando falla la carga', async () => {
+    // Container mínimo: la pantalla solo usa listUpcomingVisits; los otros miembros
+    // no se ejercitan en este flujo, así que un stub tipado basta.
+    const container = {
+      listUpcomingVisits: { execute: () => Promise.reject(new Error('boom')) },
+    } as unknown as Container;
+    render(
+      <CampoProvider container={container}>
+        <MemoryRouter><AgendaScreen /></MemoryRouter>
+      </CampoProvider>,
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron cargar las visitas. Reintentá.');
+    expect(screen.queryByText('No hay visitas agendadas.')).not.toBeInTheDocument();
   });
 });
