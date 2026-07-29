@@ -53,6 +53,21 @@ describe('ZonesListScreen (ABM genérico)', () => {
     const rows = await c.listCatalogFields.execute();
     expect(rows.filter((r) => !r.field.archived && r.field.zoneId === undefined).length).toBe(2);
   });
+
+  it('prompts to cascade when archiving a zone with active fields; "archive fields too" cascades', async () => {
+    const c = makeInMemoryContainer(); // fixture: z1 Norte con f1/f2 activos en z1
+    renderAt('/catalogo/zonas', c);
+    await screen.findByText('Norte');
+    await userEvent.click(screen.getByRole('button', { name: /archivar Norte/i }));
+    expect(await screen.findByText(/lotes activos/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /archivar también los lotes/i })); // cascade=true
+    await waitFor(async () => expect((await c.listZones.execute()).find((z) => z.id === 'z1')?.archived).toBe(true));
+    const rows = await c.listCatalogFields.execute();
+    const f1 = rows.find((r) => r.field.id === 'f1');
+    const f2 = rows.find((r) => r.field.id === 'f2');
+    expect(f1?.field.archived).toBe(true);
+    expect(f2?.field.archived).toBe(true);
+  });
 });
 
 describe('ZoneFormScreen (ABM genérico)', () => {

@@ -40,7 +40,7 @@ export function CatalogListScreen<E extends CatalogEntity>({ useSection }: { use
             {showArchived ? (
               <>
                 <span className="field-name">{e.name}</span>
-                <button type="button" className="btn-secondary" onClick={() => restore(e.id)}>Restaurar</button>
+                <button type="button" className="btn-secondary" aria-label={`Restaurar ${e.name}`} onClick={() => restore(e.id)}>Restaurar</button>
               </>
             ) : (
               <>
