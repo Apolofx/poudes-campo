@@ -60,9 +60,10 @@ export function AgendaScreen() {
               <ul className="agenda-list">
                 {section.items.map((item) => (
                   <li key={item.field.id}>
-                    <Link
+                      <Link
                       className={`agenda-row${item.urgency.bucket === 'OVERDUE' ? ' is-overdue' : ''}`}
                       to={`/field/${item.field.id}/record`}
+                      state={{ back: { label: 'Próximas visitas', to: '/' } }}
                     >
                       <span className="agenda-row-text">
                         <span className="agenda-row-name">{item.field.name}</span>

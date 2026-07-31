@@ -29,7 +29,6 @@ function renderScreen(now = new Date()) {
     </CampoProvider>,
   );
 }
-
 describe('RecordVisitScreen', () => {
   it('records a visit and navigates back to the list', async () => {
     renderScreen();
@@ -84,6 +83,23 @@ describe('RecordVisitScreen', () => {
     renderScreen();
     const back = await screen.findByRole('link', { name: /Buscar lote/ });
     expect(back).toHaveAttribute('href', '/buscar');
+  });
+
+  it('uses the previous view passed in location state as back link', async () => {
+    render(
+      <CampoProvider container={makeInMemoryContainer()}>
+        <MemoryRouter
+          initialEntries={[{ pathname: '/field/f1/record', state: { back: { label: 'Próximas visitas', to: '/' } } }]}
+        >
+          <Routes>
+            <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
+            <Route path="/" element={<div>Listado</div>} />
+          </Routes>
+        </MemoryRouter>
+      </CampoProvider>,
+    );
+    const back = await screen.findByRole('link', { name: /Próximas visitas/ });
+    expect(back).toHaveAttribute('href', '/');
   });
 
   it('limita el aviso al intervalo (max en el input de lead)', () => {

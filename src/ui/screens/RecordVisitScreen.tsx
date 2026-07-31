@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { FollowUpInput } from '@/application/use-cases/record-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
 import { domainErrorMessage } from '@/ui/error-messages';
 
 type FollowUpKind = 'interval' | 'date' | 'none';
+
+interface BackNav {
+  label: string;
+  to: string;
+}
+
+const DEFAULT_BACK: BackNav = { label: 'Buscar lote', to: '/buscar' };
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -23,7 +30,10 @@ function utcDate(iso: string): Date {
 export function RecordVisitScreen() {
   const { fieldId = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { submit, submitting, error, result } = useRecordVisit();
+
+  const back = (location.state as { back?: BackNav } | null)?.back ?? DEFAULT_BACK;
 
   const [visitDate, setVisitDate] = useState(todayIso());
   const [notes, setNotes] = useState('');
@@ -63,7 +73,7 @@ export function RecordVisitScreen() {
 
   return (
     <main className="screen record">
-      <Link className="back-link" to="/buscar">‹ Buscar lote</Link>
+      <Link className="back-link" to={back.to}>‹ {back.label}</Link>
       <h1 className="screen-title">Registrar visita</h1>
       <form className="form" onSubmit={onSubmit}>
         <label className="field">
