@@ -18,3 +18,7 @@ export class ZoneNotFound extends DomainError {}
 export class ClientNotFound extends DomainError {}
 export class VisitNotFound extends DomainError {}
 export class VisitAlreadyCancelled extends DomainError {}
+export class InvalidScheduledVisit extends DomainError {}
+export class ScheduledDateNotFuture extends DomainError {}
+export class ScheduledVisitNotFound extends DomainError {}
+export class ScheduledVisitAlreadyCancelled extends DomainError {}
