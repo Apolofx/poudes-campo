@@ -15,11 +15,13 @@ export function FieldHistoryScreen() {
 
   return (
     <main className="screen">
-      <Link className="back-link" to="/buscar">‹ Buscar lote</Link>
-      <h1 className="screen-title">{view.field.name}</h1>
-      <p className="field-sub">{clientLabel(view.clientName)} · {zoneLabel(view.zoneName)}</p>
+      <header className="list-header">
+        <Link className="back-link" to="/buscar">‹ Buscar lote</Link>
+        <h1 className="screen-title">{view.field.name}</h1>
+        <p className="field-sub">{clientLabel(view.clientName)} · {zoneLabel(view.zoneName)}</p>
 
-      <Link className="btn-primary" to={`/field/${fieldId}/record`}>Registrar visita</Link>
+        <Link className="btn-primary" to={`/field/${fieldId}/record`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Registrar visita</Link>
+      </header>
 
       {view.visits.length === 0 ? (
         <p className="empty">Este lote no tiene visitas registradas.</p>
