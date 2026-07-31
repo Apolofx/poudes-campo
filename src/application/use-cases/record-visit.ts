@@ -1,11 +1,13 @@
 import type { FieldRepository } from '@/domain/ports/outbound/field-repository';
 import type { VisitRepository } from '@/domain/ports/outbound/visit-repository';
 import type { ReminderRepository } from '@/domain/ports/outbound/reminder-repository';
+import type { ScheduledVisitRepository } from '@/domain/ports/outbound/scheduled-visit-repository';
 import type { Clock } from '@/domain/ports/outbound/clock';
 import type { IdGenerator } from '@/domain/ports/outbound/id-generator';
 import type { FieldId, VisitId, ReminderId } from '@/domain/shared/ids';
 import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
+import { ScheduledVisit } from '@/domain/entities/scheduled-visit';
 import { FieldNotFound, FutureVisitDate, DuplicateVisitForDay } from '@/domain/shared/errors';
 import { resolveFollowUp, remindAtFor, type FollowUpInput } from '@/application/use-cases/follow-up';
 
@@ -28,6 +30,7 @@ export class RecordVisit {
     private readonly fields: FieldRepository,
     private readonly visits: VisitRepository,
     private readonly reminders: ReminderRepository,
+    private readonly scheduled: ScheduledVisitRepository,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
   ) {}
@@ -56,6 +59,22 @@ export class RecordVisit {
       followUp,
     });
     await this.visits.save(visit);
+
+    const activeScheduled = await this.scheduled.findActiveByField(input.fieldId);
+    if (activeScheduled) {
+      await this.scheduled.save(
+        new ScheduledVisit({
+          id: activeScheduled.id,
+          fieldId: activeScheduled.fieldId,
+          scheduledDate: activeScheduled.scheduledDate,
+          reminderLeadDays: activeScheduled.reminderLeadDays,
+          createdAt: activeScheduled.createdAt,
+          notes: activeScheduled.notes,
+          status: 'CANCELLED',
+          cancelledAt: now,
+        }),
+      );
+    }
 
     // Recording any visit supersedes prior pending reminders for the field.
     const pending = await this.reminders.findPendingByField(input.fieldId);
