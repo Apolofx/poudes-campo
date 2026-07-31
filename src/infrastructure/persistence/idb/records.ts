@@ -1,6 +1,7 @@
 import { Field } from '@/domain/entities/field';
 import { Visit, type VisitStatus } from '@/domain/entities/visit';
 import { Reminder, type ReminderStatus } from '@/domain/entities/reminder';
+import { ScheduledVisit, type ScheduledVisitStatus } from '@/domain/entities/scheduled-visit';
 import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Coordinates } from '@/domain/value-objects/coordinates';
@@ -47,6 +48,18 @@ export interface ReminderRecord {
   fieldId: string;
   remindAt: Date;
   status: ReminderStatus;
+  scheduledVisitId?: string;
+}
+
+export interface ScheduledVisitRecord {
+  id: string;
+  fieldId: string;
+  scheduledDate: Date;
+  reminderLeadDays: number;
+  createdAt: Date;
+  notes?: string;
+  status: ScheduledVisitStatus;
+  cancelledAt?: Date;
 }
 
 export function toZoneRecord(z: Zone): ZoneRecord {
@@ -132,6 +145,7 @@ export function toReminderRecord(rm: Reminder): ReminderRecord {
     fieldId: rm.fieldId,
     remindAt: rm.remindAt,
     status: rm.status,
+    scheduledVisitId: rm.scheduledVisitId,
   };
 }
 
@@ -142,5 +156,32 @@ export function fromReminderRecord(r: ReminderRecord): Reminder {
     fieldId: r.fieldId,
     remindAt: r.remindAt,
     status: r.status,
+    scheduledVisitId: r.scheduledVisitId,
+  });
+}
+
+export function toScheduledVisitRecord(s: ScheduledVisit): ScheduledVisitRecord {
+  return {
+    id: s.id,
+    fieldId: s.fieldId,
+    scheduledDate: s.scheduledDate,
+    reminderLeadDays: s.reminderLeadDays,
+    createdAt: s.createdAt,
+    notes: s.notes,
+    status: s.status,
+    cancelledAt: s.cancelledAt,
+  };
+}
+
+export function fromScheduledVisitRecord(r: ScheduledVisitRecord): ScheduledVisit {
+  return new ScheduledVisit({
+    id: r.id,
+    fieldId: r.fieldId,
+    scheduledDate: r.scheduledDate,
+    reminderLeadDays: r.reminderLeadDays,
+    createdAt: r.createdAt,
+    notes: r.notes,
+    status: r.status,
+    cancelledAt: r.cancelledAt,
   });
 }
