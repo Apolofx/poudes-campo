@@ -8,8 +8,12 @@ export function domainErrorMessage(error: Error): string {
       return 'No se encontró el lote.';
     case 'InvalidVisitInterval':
       return 'La próxima visita debe ser posterior a la fecha de la visita.';
+    case 'VisitNotFound':
+      return 'No se encontró la visita.';
+    case 'VisitAlreadyCancelled':
+      return 'La visita ya fue cancelada.';
     default:
-      return 'Ocurrió un error al registrar la visita.';
+      return 'Ocurrió un error con la visita.';
   }
 }
 

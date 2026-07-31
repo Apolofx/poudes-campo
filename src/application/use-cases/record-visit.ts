@@ -4,16 +4,12 @@ import type { ReminderRepository } from '@/domain/ports/outbound/reminder-reposi
 import type { Clock } from '@/domain/ports/outbound/clock';
 import type { IdGenerator } from '@/domain/ports/outbound/id-generator';
 import type { FieldId, VisitId, ReminderId } from '@/domain/shared/ids';
-import { Visit, type FollowUp } from '@/domain/entities/visit';
+import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
-import { VisitInterval } from '@/domain/value-objects/visit-interval';
-import { addDays, daysBetween } from '@/domain/shared/date-utils';
 import { FieldNotFound, FutureVisitDate, DuplicateVisitForDay } from '@/domain/shared/errors';
+import { resolveFollowUp, remindAtFor, type FollowUpInput } from '@/application/use-cases/follow-up';
 
-export type FollowUpInput =
-  | { kind: 'interval'; days: number; reminderLeadDays?: number }
-  | { kind: 'date'; date: Date; reminderLeadDays?: number }
-  | { kind: 'none' };
+export type { FollowUpInput };
 
 export interface RecordVisitInput {
   fieldId: FieldId;
@@ -49,7 +45,7 @@ export class RecordVisit {
     const clash = await this.visits.findActiveByFieldOnDay(input.fieldId, input.visitDate);
     if (clash) throw new DuplicateVisitForDay(`field ${input.fieldId} already has a visit that day`);
 
-    const followUp = this.resolveFollowUp(input.followUp, now);
+    const followUp = resolveFollowUp(input.followUp, now);
 
     const visit = new Visit({
       id: this.ids.next(),
@@ -71,25 +67,14 @@ export class RecordVisit {
     if (!followUp) return { visitId: visit.id };
 
     const requestedLead = input.followUp.kind === 'none' ? 0 : input.followUp.reminderLeadDays ?? 0;
-    const leadDays = Math.min(Math.max(requestedLead, 0), followUp.interval.days);
     const reminder = new Reminder({
       id: this.ids.next(),
       visitId: visit.id,
       fieldId: input.fieldId,
-      remindAt: addDays(followUp.nextVisitDate, -leadDays),
+      remindAt: remindAtFor(followUp, requestedLead),
     });
     await this.reminders.save(reminder);
 
     return { visitId: visit.id, reminderId: reminder.id };
-  }
-
-  private resolveFollowUp(input: FollowUpInput, now: Date): FollowUp | undefined {
-    if (input.kind === 'interval') {
-      return { nextVisitDate: addDays(now, input.days), interval: VisitInterval.ofDays(input.days) };
-    }
-    if (input.kind === 'date') {
-      return { nextVisitDate: input.date, interval: VisitInterval.ofDays(daysBetween(now, input.date)) };
-    }
-    return undefined;
   }
 }

@@ -42,7 +42,7 @@ export function SearchScreen() {
         <ul className="field-list">
           {results.map((r) => (
             <li key={r.field.id}>
-              <Link className="field-row" to={`/field/${r.field.id}/record`}>
+              <Link className="field-row" to={`/field/${r.field.id}/visitas`}>
                 <span className="field-text">
                   <span className="field-name">{r.field.name}</span>
                   <span className="field-sub">{clientLabel(r.clientName)} · {zoneLabel(r.zoneName)}</span>

@@ -16,3 +16,5 @@ export class FutureVisitDate extends DomainError {}
 export class DuplicateVisitForDay extends DomainError {}
 export class ZoneNotFound extends DomainError {}
 export class ClientNotFound extends DomainError {}
+export class VisitNotFound extends DomainError {}
+export class VisitAlreadyCancelled extends DomainError {}

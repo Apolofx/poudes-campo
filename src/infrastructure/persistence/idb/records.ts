@@ -38,6 +38,7 @@ export interface VisitRecord {
   notes?: string;
   followUp?: { nextVisitDate: Date; intervalDays: number };
   status: VisitStatus;
+  cancelledAt?: Date;
 }
 
 export interface ReminderRecord {
@@ -105,6 +106,7 @@ export function toVisitRecord(v: Visit): VisitRecord {
       ? { nextVisitDate: v.followUp.nextVisitDate, intervalDays: v.followUp.interval.days }
       : undefined,
     status: v.status,
+    cancelledAt: v.cancelledAt,
   };
 }
 
@@ -119,6 +121,7 @@ export function fromVisitRecord(r: VisitRecord): Visit {
       ? { nextVisitDate: r.followUp.nextVisitDate, interval: VisitInterval.ofDays(r.followUp.intervalDays) }
       : undefined,
     status: r.status,
+    cancelledAt: r.cancelledAt,
   });
 }
 

@@ -17,6 +17,7 @@ export interface VisitProps {
   notes?: string;
   followUp?: FollowUp;
   status?: VisitStatus;
+  cancelledAt?: Date;
 }
 
 export class Visit {
@@ -27,6 +28,7 @@ export class Visit {
   readonly notes?: string;
   readonly followUp?: FollowUp;
   readonly status: VisitStatus;
+  readonly cancelledAt?: Date;
 
   constructor(props: VisitProps) {
     if (props.followUp && (!props.followUp.nextVisitDate || !props.followUp.interval)) {
@@ -40,5 +42,6 @@ export class Visit {
     this.notes = props.notes;
     this.followUp = props.followUp;
     this.status = props.status ?? 'ACTIVE';
+    this.cancelledAt = props.cancelledAt;
   }
 }

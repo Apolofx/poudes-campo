@@ -33,4 +33,13 @@ describe('Visit', () => {
       () => new Visit({ ...base, followUp: { nextVisitDate: new Date('2026-08-03T10:00:00Z') } as never }),
     ).toThrow(IncompleteFollowUp);
   });
+  it('defaults cancelledAt to undefined', () => {
+    expect(new Visit({ ...base }).cancelledAt).toBeUndefined();
+  });
+  it('stores an optional cancelledAt', () => {
+    const at = new Date('2026-07-28T09:00:00Z');
+    const v = new Visit({ ...base, status: 'CANCELLED', cancelledAt: at });
+    expect(v.status).toBe('CANCELLED');
+    expect(v.cancelledAt?.toISOString()).toBe('2026-07-28T09:00:00.000Z');
+  });
 });

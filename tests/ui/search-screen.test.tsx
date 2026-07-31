@@ -31,10 +31,10 @@ describe('SearchScreen', () => {
     expect(screen.getByText(/Lote El Alto/)).toBeInTheDocument();
   });
 
-  it('links each field to its record-visit route', async () => {
+  it('links each field to its history route', async () => {
     renderScreen();
     const link = await screen.findByRole('link', { name: /Lote El Alto/ });
-    expect(link).toHaveAttribute('href', '/field/f1/record');
+    expect(link).toHaveAttribute('href', '/field/f1/visitas');
   });
 
   it('shows an empty message when a non-empty query matches nothing', async () => {

@@ -133,6 +133,10 @@ body {
 
 .chevron { color: var(--chevron); font-size: 20px; line-height: 1; flex: none; }
 
+.visit-badge { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 999px; align-self: center; }
+.visit-badge.is-active { background: var(--campo-green-soft, #e6f2e6); color: var(--campo-green, #2e6b2e); }
+.visit-badge.is-cancelled { background: #eee; color: #777; text-decoration: line-through; }
+
 /* ---- Registrar visita ---- */
 .record { padding: var(--space-4); }
 
