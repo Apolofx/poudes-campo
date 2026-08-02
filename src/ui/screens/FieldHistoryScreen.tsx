@@ -13,28 +13,15 @@ export function FieldHistoryScreen() {
   const hasContent = view.visits.length > 0;
 
   return (
-    <main className="screen">
+    <main className="screen with-bottom-bar">
       <header className="list-header">
         <Link className="back-link" to="/buscar">‹ Buscar lote</Link>
         <h1 className="screen-title">{view.field.name}</h1>
         <p className="field-sub">{clientLabel(view.clientName)} · {zoneLabel(view.zoneName)}</p>
-
-        {hasContent && (
-          <div className="list-actions">
-            <Link className="btn-primary" to={`/field/${fieldId}/record`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Registrar visita</Link>
-            <Link className="btn-secondary" to={`/field/${fieldId}/programar`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Programar visita</Link>
-          </div>
-        )}
       </header>
 
       {!hasContent ? (
-        <>
-          <p className="empty">Este lote no tiene visitas registradas.</p>
-          <div className="empty-actions">
-            <Link className="btn-primary" to={`/field/${fieldId}/record`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Registrar tu primera visita</Link>
-            <Link className="btn-secondary" to={`/field/${fieldId}/programar`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Programar visita</Link>
-          </div>
-        </>
+        <p className="empty">Este lote no tiene visitas registradas.</p>
       ) : (
         <ul className="field-list">
           {view.visits.map((v) => (
@@ -52,6 +39,11 @@ export function FieldHistoryScreen() {
           ))}
         </ul>
       )}
+
+      <div className="bottom-actions">
+        <Link className="btn-primary" to={`/field/${fieldId}/record`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Registrar visita</Link>
+        <Link className="btn-secondary" to={`/field/${fieldId}/programar`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Programar visita</Link>
+      </div>
     </main>
   );
 }

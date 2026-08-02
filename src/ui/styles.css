@@ -487,6 +487,24 @@ body {
   cursor: pointer;
 }
 
+.btn-danger-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: var(--danger);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.screen.record > .btn-danger { margin-top: var(--space-4); }
+
 .btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -500,6 +518,7 @@ body {
   font: inherit;
   font-weight: 700;
   font-size: 14px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -522,6 +541,29 @@ body {
 
 .list-actions { display: flex; gap: var(--space-2); }
 .list-actions > .btn-primary, .list-actions > .btn-secondary { flex: 1; }
+
+/* acciones fijas al pie de pantalla, apiladas y de ancho completo */
+.screen.with-bottom-bar { padding-bottom: calc(var(--touch) * 3); }
+
+.bottom-actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) calc(var(--space-4) + 12px);
+  background: linear-gradient(to top, var(--bg) 75%, transparent);
+  z-index: 20;
+}
+
+.bottom-actions .btn-primary,
+.bottom-actions .btn-secondary {
+  width: 100%;
+}
 
 .toggle-archived {
   display: block;

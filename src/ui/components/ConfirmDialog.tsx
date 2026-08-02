@@ -35,7 +35,7 @@ export function ConfirmDialog({
         <p className="dialog-message">{message}</p>
         <div className="dialog-actions">
           <button ref={cancelRef} type="button" className="btn-secondary" onClick={onCancel}>{cancelLabel}</button>
-          <button type="button" className="btn-danger" onClick={onConfirm}>{confirmLabel}</button>
+          <button type="button" className="btn-danger-solid" onClick={onConfirm}>{confirmLabel}</button>
         </div>
       </div>
     </div>

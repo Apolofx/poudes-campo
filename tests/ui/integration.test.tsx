@@ -34,7 +34,7 @@ describe('search → record visit (real IndexedDB adapter)', () => {
     await userEvent.click(link);
 
     // Desde el historial, ir a registrar visita (campo sin visitas: CTA del empty state).
-    const recordLink = await screen.findByRole('link', { name: /Registrar tu primera visita/ });
+    const recordLink = await screen.findByRole('link', { name: /Registrar visita/ });
     await userEvent.click(recordLink);
 
     // Registrar sin próxima visita.
