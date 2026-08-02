@@ -114,7 +114,7 @@ export function ScheduledVisitFormScreen() {
   };
 
   const fieldName = !isEditing && fieldId ? fieldHistory.view?.field.name : undefined;
-  const error = loadError ?? edit.error ?? create.error ?? localError;
+  const domainError = loadError ?? edit.error ?? create.error;
   const submitting = isEditing ? edit.submitting : create.submitting;
   const gapMax = Math.max(
     1,
@@ -193,7 +193,8 @@ export function ScheduledVisitFormScreen() {
             onChange={(e) => setNotes(e.target.value)}
           />
         </label>
-        {error && <p className="alert" role="alert">{domainErrorMessage(error)}</p>}
+        {localError && <p className="alert" role="alert">{localError}</p>}
+        {domainError && <p className="alert" role="alert">{domainErrorMessage(domainError)}</p>}
         <button className="btn-primary" type="submit" disabled={submitting}>
           {isEditing ? 'Guardar' : 'Programar'}
         </button>
