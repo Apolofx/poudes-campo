@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { domainErrorMessage } from '@/ui/error-messages';
+import { ScheduledDateNotFuture, ScheduledVisitNotFound, ScheduledVisitAlreadyCancelled } from '@/domain/shared/errors';
 
 function errorNamed(name: string): Error {
   const error = new Error('boom');
@@ -34,5 +35,11 @@ describe('domainErrorMessage', () => {
     expect(domainErrorMessage(errorNamed('SomethingElse'))).toBe(
       'Ocurrió un error con la visita.',
     );
+  });
+
+  it('maps the new scheduled-visit errors', () => {
+    expect(domainErrorMessage(new ScheduledDateNotFuture(''))).toContain('futura');
+    expect(domainErrorMessage(new ScheduledVisitNotFound(''))).toContain('programada');
+    expect(domainErrorMessage(new ScheduledVisitAlreadyCancelled(''))).toContain('cancelada');
   });
 });
