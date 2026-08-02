@@ -10,7 +10,7 @@ describe('IdbDataReset', () => {
     await db.put('zones', { id: 'z1', name: 'Norte' });
     await db.put('clients', { id: 'c1', name: 'Pérez' });
     await db.put('fields', { id: 'f1', name: 'X', clientId: 'c1', zoneId: 'z1' });
-    await db.put('visits', { id: 'v1', fieldId: 'f1', visitDate: now, createdAt: now, status: 'ACTIVE' });
+    await db.put('visits', { id: 'v1', fieldId: 'f1', status: 'DONE', visitedAt: now, createdAt: now });
     await db.put('reminders', { id: 'r1', visitId: 'v1', fieldId: 'f1', remindAt: now, status: 'PENDING' });
 
     expect(await db.count('zones')).toBe(1);

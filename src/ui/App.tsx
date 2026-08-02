@@ -12,7 +12,6 @@ import { FieldsListScreen } from '@/ui/screens/FieldsListScreen';
 import { FieldFormScreen } from '@/ui/screens/FieldFormScreen';
 import { VisitDetailScreen } from '@/ui/screens/VisitDetailScreen';
 import { ScheduledVisitFormScreen } from '@/ui/screens/ScheduledVisitFormScreen';
-import { ScheduledVisitDetailScreen } from '@/ui/screens/ScheduledVisitDetailScreen';
 import { TabBar } from '@/ui/components/TabBar';
 
 function TabsLayout() {
@@ -42,8 +41,7 @@ export function App() {
       <Route path="/field/:fieldId/visitas/:visitId" element={<VisitDetailScreen />} />
       <Route path="/field/:fieldId/programar" element={<ScheduledVisitFormScreen />} />
       <Route path="/programar" element={<ScheduledVisitFormScreen />} />
-      <Route path="/field/:fieldId/programar/:scheduledVisitId" element={<ScheduledVisitFormScreen />} />
-      <Route path="/field/:fieldId/programadas/:scheduledVisitId" element={<ScheduledVisitDetailScreen />} />
+      <Route path="/field/:fieldId/programar/:visitId" element={<ScheduledVisitFormScreen />} />
       <Route path="/catalogo/zonas/nueva" element={<ZoneFormScreen />} />
       <Route path="/catalogo/zonas/:id" element={<ZoneFormScreen />} />
       <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />

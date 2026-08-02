@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Hectares } from '@/domain/value-objects/hectares';
 import { Coordinates } from '@/domain/value-objects/coordinates';
-import { VisitInterval } from '@/domain/value-objects/visit-interval';
-import { InvalidHectares, InvalidCoordinates, InvalidVisitInterval } from '@/domain/shared/errors';
+import { InvalidHectares, InvalidCoordinates } from '@/domain/shared/errors';
 
 describe('Hectares', () => {
   it('accepts a positive value', () => {
@@ -23,16 +22,5 @@ describe('Coordinates', () => {
   it('rejects out-of-range values', () => {
     expect(() => Coordinates.of(-91, 0)).toThrow(InvalidCoordinates);
     expect(() => Coordinates.of(0, 181)).toThrow(InvalidCoordinates);
-  });
-});
-
-describe('VisitInterval', () => {
-  it('accepts a positive integer of days', () => {
-    expect(VisitInterval.ofDays(7).days).toBe(7);
-  });
-  it('rejects zero, negatives and non-integers', () => {
-    expect(() => VisitInterval.ofDays(0)).toThrow(InvalidVisitInterval);
-    expect(() => VisitInterval.ofDays(-5)).toThrow(InvalidVisitInterval);
-    expect(() => VisitInterval.ofDays(7.5)).toThrow(InvalidVisitInterval);
   });
 });

@@ -1,7 +1,6 @@
 import { InMemoryFieldRepository } from '@/infrastructure/persistence/in-memory/in-memory-field-repository';
 import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-visit-repository';
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
-import { InMemoryScheduledVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-scheduled-visit-repository';
 import { InMemoryZoneRepository } from '@/infrastructure/persistence/in-memory/in-memory-zone-repository';
 import { InMemoryClientRepository } from '@/infrastructure/persistence/in-memory/in-memory-client-repository';
 import { InMemoryDataReset } from '@/infrastructure/persistence/in-memory/in-memory-data-reset';
@@ -15,9 +14,6 @@ import { GetFieldHistory } from '@/application/use-cases/get-field-history';
 import { GetVisit } from '@/application/use-cases/get-visit';
 import { ScheduleVisit } from '@/application/use-cases/schedule-visit';
 import { ScheduleVisitEnsuringField } from '@/application/use-cases/schedule-visit-ensuring-field';
-import { CancelScheduledVisit } from '@/application/use-cases/cancel-scheduled-visit';
-import { EditScheduledVisit } from '@/application/use-cases/edit-scheduled-visit';
-import { GetScheduledVisit } from '@/application/use-cases/get-scheduled-visit';
 import {
   CreateZone,
   EditZone,
@@ -60,7 +56,6 @@ export function wireCatalogUseCases(
   fields: InMemoryFieldRepository,
   visits: InMemoryVisitRepository,
   reminders: InMemoryReminderRepository,
-  scheduledVisits: InMemoryScheduledVisitRepository,
   ids: IdGenerator,
 ): Pick<
   Container,
@@ -87,7 +82,6 @@ export function wireCatalogUseCases(
     () => fields.clear(),
     () => visits.clear(),
     () => reminders.clear(),
-    () => scheduledVisits.clear(),
   ]);
   return {
     createZone: new CreateZone(zones, ids),
@@ -120,29 +114,25 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
   const clients = new InMemoryClientRepository(clientMap);
   const visits = new InMemoryVisitRepository();
   const reminders = new InMemoryReminderRepository();
-  const scheduledVisits = new InMemoryScheduledVisitRepository();
   const clock = new FixedClock(now);
   const ids = new IncrementingIdGenerator();
   const notifier = new InAppReminderNotifier();
   const createZone = new CreateZone(zones, ids);
   const createClient = new CreateClient(clients, ids);
   const createField = new CreateField(fields, ids);
-  const scheduleVisit = new ScheduleVisit(fields, scheduledVisits, reminders, clock, ids);
+  const scheduleVisit = new ScheduleVisit(fields, visits, reminders, clock, ids);
   return {
     searchFields: new SearchFields(fields),
-    recordVisit: new RecordVisit(fields, visits, reminders, scheduledVisits, clock, ids),
+    recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
     cancelVisit: new CancelVisit(visits, reminders, clock),
     editVisit: new EditVisit(visits, reminders, clock, ids),
-    getFieldHistory: new GetFieldHistory(fields, visits, scheduledVisits),
+    getFieldHistory: new GetFieldHistory(fields, visits),
     getVisit: new GetVisit(visits),
-    listUpcomingVisits: new ListUpcomingVisits(fields, visits, scheduledVisits, clock),
+    listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     scheduleVisit,
     scheduleVisitEnsuringField: new ScheduleVisitEnsuringField(createZone, createClient, createField, scheduleVisit),
-    cancelScheduledVisit: new CancelScheduledVisit(scheduledVisits, reminders, clock),
-    editScheduledVisit: new EditScheduledVisit(scheduledVisits, reminders, clock, ids),
-    getScheduledVisit: new GetScheduledVisit(scheduledVisits),
     reminderAviso: notifier,
-    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, scheduledVisits, ids),
+    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
 }

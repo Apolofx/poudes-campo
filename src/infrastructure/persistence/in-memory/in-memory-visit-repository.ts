@@ -1,6 +1,6 @@
 import type { Visit } from '@/domain/entities/visit';
 import type { VisitId, FieldId } from '@/domain/shared/ids';
-import type { VisitRepository, CurrentFollowUp } from '@/domain/ports/outbound/visit-repository';
+import type { VisitRepository } from '@/domain/ports/outbound/visit-repository';
 import { isSameCalendarDay } from '@/domain/shared/date-utils';
 
 export class InMemoryVisitRepository implements VisitRepository {
@@ -14,12 +14,13 @@ export class InMemoryVisitRepository implements VisitRepository {
     return this.visits.get(id) ?? null;
   }
 
-  async findActiveByFieldOnDay(fieldId: FieldId, day: Date): Promise<Visit | null> {
+  async findDoneByFieldOnDay(fieldId: FieldId, day: Date): Promise<Visit | null> {
     for (const visit of this.visits.values()) {
       if (
         visit.fieldId === fieldId &&
-        visit.status === 'ACTIVE' &&
-        isSameCalendarDay(visit.visitDate, day)
+        visit.status === 'DONE' &&
+        visit.visitedAt &&
+        isSameCalendarDay(visit.visitedAt, day)
       ) {
         return visit;
       }
@@ -31,22 +32,15 @@ export class InMemoryVisitRepository implements VisitRepository {
     return [...this.visits.values()].filter((visit) => visit.fieldId === fieldId);
   }
 
-  async findCurrentFollowUps(): Promise<CurrentFollowUp[]> {
-    const latestByField = new Map<FieldId, Visit>();
+  async findPendingByField(fieldId: FieldId): Promise<Visit | null> {
     for (const visit of this.visits.values()) {
-      if (visit.status !== 'ACTIVE') continue;
-      const current = latestByField.get(visit.fieldId);
-      if (!current || visit.createdAt.getTime() > current.createdAt.getTime()) {
-        latestByField.set(visit.fieldId, visit);
-      }
+      if (visit.fieldId === fieldId && visit.status === 'PENDING') return visit;
     }
-    const result: CurrentFollowUp[] = [];
-    for (const visit of latestByField.values()) {
-      if (visit.followUp) {
-        result.push({ fieldId: visit.fieldId, nextVisitDate: visit.followUp.nextVisitDate });
-      }
-    }
-    return result;
+    return null;
+  }
+
+  async findPendings(): Promise<Visit[]> {
+    return [...this.visits.values()].filter((visit) => visit.status === 'PENDING');
   }
 
   clear(): void {

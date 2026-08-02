@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { domainErrorMessage } from '@/ui/error-messages';
-import { ScheduledDateNotFuture, ScheduledVisitNotFound, ScheduledVisitAlreadyCancelled } from '@/domain/shared/errors';
+import { PlannedDateNotFuture, InvalidVisit } from '@/domain/shared/errors';
 
 function errorNamed(name: string): Error {
   const error = new Error('boom');
@@ -25,9 +25,9 @@ describe('domainErrorMessage', () => {
     expect(domainErrorMessage(errorNamed('FieldNotFound'))).toBe('No se encontró el lote.');
   });
 
-  it('maps InvalidVisitInterval', () => {
-    expect(domainErrorMessage(errorNamed('InvalidVisitInterval'))).toBe(
-      'La próxima visita debe ser posterior a la fecha de la visita.',
+  it('maps InvalidVisit', () => {
+    expect(domainErrorMessage(errorNamed('InvalidVisit'))).toBe(
+      'La visita no admite esa edición.',
     );
   });
 
@@ -37,9 +37,8 @@ describe('domainErrorMessage', () => {
     );
   });
 
-  it('maps the new scheduled-visit errors', () => {
-    expect(domainErrorMessage(new ScheduledDateNotFuture(''))).toContain('futura');
-    expect(domainErrorMessage(new ScheduledVisitNotFound(''))).toContain('programada');
-    expect(domainErrorMessage(new ScheduledVisitAlreadyCancelled(''))).toContain('cancelada');
+  it('maps the new unified-visit errors', () => {
+    expect(domainErrorMessage(new PlannedDateNotFuture(''))).toContain('futura');
+    expect(domainErrorMessage(new InvalidVisit(''))).toContain('edición');
   });
 });

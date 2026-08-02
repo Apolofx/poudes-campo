@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import type { FollowUpInput } from '@/application/use-cases/record-visit';
+import type { NextVisitInput } from '@/application/use-cases/next-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
-import { useCancelScheduledVisit } from '@/ui/hooks/use-cancel-scheduled-visit';
+import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { domainErrorMessage } from '@/ui/error-messages';
 import { dateLabel, localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
-type FollowUpKind = 'interval' | 'date' | 'none';
+type NextKind = 'interval' | 'date' | 'none';
 
 interface BackNav {
   label: string;
@@ -23,45 +23,49 @@ export function RecordVisitScreen() {
   const location = useLocation();
   const { submit, submitting, error, result } = useRecordVisit();
   const fieldHistory = useFieldHistory(fieldId);
-  const cancelScheduled = useCancelScheduledVisit();
+  const cancelHook = useCancelVisit();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
-  const activeScheduled = fieldHistory.view?.scheduledVisits.find((s) => s.status === 'ACTIVE') ?? null;
+  const pending = fieldHistory.view?.visits.find((v) => v.status === 'PENDING') ?? null;
 
   const back = (location.state as { back?: BackNav } | null)?.back ?? DEFAULT_BACK;
 
   const [visitDate, setVisitDate] = useState(localTodayIso());
   const [notes, setNotes] = useState('');
-  const [kind, setKind] = useState<FollowUpKind>('interval');
+  const [kind, setKind] = useState<NextKind>('interval');
   const [intervalDays, setIntervalDays] = useState(14);
   const [nextDate, setNextDate] = useState(localFutureIso(14));
   const [leadDays, setLeadDays] = useState(3);
+
+  useEffect(() => {
+    if (pending) setNotes(pending.notes ?? '');
+  }, [pending?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (result) navigate('/');
   }, [result, navigate]);
 
   useEffect(() => {
-    if (cancelScheduled.done) navigate(back.to);
-  }, [cancelScheduled.done, navigate, back]);
+    if (cancelHook.done) navigate(back.to);
+  }, [cancelHook.done, navigate, back]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const safeInterval = Number.isFinite(intervalDays) && intervalDays > 0 ? intervalDays : 14;
     const safeLead = Number.isFinite(leadDays) && leadDays >= 0 ? leadDays : 0;
-    let followUp: FollowUpInput;
+    let next: NextVisitInput;
     if (kind === 'interval') {
-      followUp = { kind: 'interval', days: safeInterval, reminderLeadDays: safeLead };
+      next = { kind: 'interval', days: safeInterval, reminderLeadDays: safeLead };
     } else if (kind === 'date') {
-      followUp = { kind: 'date', date: utcDate(nextDate), reminderLeadDays: safeLead };
+      next = { kind: 'date', date: utcDate(nextDate), reminderLeadDays: safeLead };
     } else {
-      followUp = { kind: 'none' };
+      next = { kind: 'none' };
     }
     submit({
       fieldId,
-      visitDate: utcDate(visitDate),
+      visitedAt: utcDate(visitDate),
       notes: notes.trim() === '' ? undefined : notes,
-      followUp,
+      next,
     });
   };
 
@@ -74,6 +78,9 @@ export function RecordVisitScreen() {
     <main className="screen record">
       <Link className="back-link" to={back.to}>‹ {back.label}</Link>
       <h1 className="screen-title">Registrar visita</h1>
+      {pending && (
+        <p className="field-sub">Estaba programada para el {dateLabel(pending.plannedFor!)}.</p>
+      )}
       <form className="form" onSubmit={onSubmit}>
         <label className="field">
           <span className="field-label">Fecha</span>
@@ -148,33 +155,33 @@ export function RecordVisitScreen() {
             )}
           </div>
         </fieldset>
-        {(error || cancelScheduled.error) && (
-          <p className="alert" role="alert">{domainErrorMessage((error ?? cancelScheduled.error)!)}</p>
+        {(error || cancelHook.error) && (
+          <p className="alert" role="alert">{domainErrorMessage((error ?? cancelHook.error)!)}</p>
         )}
         <button className="btn-primary" type="submit" disabled={submitting}>
           Registrar
         </button>
       </form>
-      {activeScheduled && (
+      {pending && (
         <>
           <button
             type="button"
             className="btn-danger"
             onClick={() => setConfirmingCancel(true)}
-            disabled={cancelScheduled.cancelling}
+            disabled={cancelHook.cancelling}
           >
             Cancelar visita programada
           </button>
           <ConfirmDialog
             open={confirmingCancel}
             title="Cancelar visita programada"
-            message={`La visita programada para el ${dateLabel(activeScheduled.scheduledDate)} quedará cancelada y no aparecerá más en tus próximas visitas. ¿Confirmás?`}
+            message={`La visita programada para el ${dateLabel(pending.plannedFor!)} quedará cancelada y no aparecerá más en tus próximas visitas. ¿Confirmás?`}
             confirmLabel="Confirmar"
             cancelLabel="Volver"
             onCancel={() => setConfirmingCancel(false)}
             onConfirm={() => {
               setConfirmingCancel(false);
-              cancelScheduled.cancel(activeScheduled.id);
+              cancelHook.cancel(pending.id);
             }}
           />
         </>

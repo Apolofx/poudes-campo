@@ -22,8 +22,7 @@ describe('buildContainer', () => {
     const [first] = await container.searchFields.execute('');
     const result = await container.recordVisit.execute({
       fieldId: first.field.id,
-      visitDate: new Date(),
-      followUp: { kind: 'none' },
+      visitedAt: new Date(),
     });
     expect(result.visitId).toBeTruthy();
     db.close();
@@ -37,8 +36,8 @@ describe('buildContainer', () => {
     // Registrar una visita con próxima ya vencida hoy (lead grande sobre intervalo corto).
     await container.recordVisit.execute({
       fieldId: first.field.id,
-      visitDate: new Date(),
-      followUp: { kind: 'interval', days: 1, reminderLeadDays: 1 }, // remindAt = ahora
+      visitedAt: new Date(),
+      next: { kind: 'interval', days: 1, reminderLeadDays: 1 }, // remindAt = ahora
     });
     const batch = await container.dispatchDueReminders.execute();
     expect(batch.length).toBeGreaterThan(0);

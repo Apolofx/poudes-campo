@@ -5,14 +5,14 @@ import { CreateZone, ListZones } from '@/application/use-cases/zone-catalog';
 import { CreateClient, ListClients } from '@/application/use-cases/client-catalog';
 import { CreateField, ListCatalogFields } from '@/application/use-cases/field-catalog';
 import { InMemoryFieldRepository } from '@/infrastructure/persistence/in-memory/in-memory-field-repository';
-import { InMemoryScheduledVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-scheduled-visit-repository';
+import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-visit-repository';
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
 import { InMemoryZoneRepository } from '@/infrastructure/persistence/in-memory/in-memory-zone-repository';
 import { InMemoryClientRepository } from '@/infrastructure/persistence/in-memory/in-memory-client-repository';
 import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
-import { FieldNotFound, ScheduledDateNotFuture } from '@/domain/shared/errors';
+import { FieldNotFound, PlannedDateNotFuture } from '@/domain/shared/errors';
 import { FixedClock } from '../support/fixed-clock';
 import { IncrementingIdGenerator } from '../support/incrementing-id-generator';
 
@@ -25,20 +25,20 @@ function build() {
   const fields = new InMemoryFieldRepository(zoneMap, clientMap, []);
   const zones = new InMemoryZoneRepository(zoneMap);
   const clients = new InMemoryClientRepository(clientMap);
-  const scheduled = new InMemoryScheduledVisitRepository();
+  const visits = new InMemoryVisitRepository();
   const reminders = new InMemoryReminderRepository();
   const ids = new IncrementingIdGenerator();
   const createZone = new CreateZone(zones, ids);
   const createClient = new CreateClient(clients, ids);
   const createField = new CreateField(fields, ids);
-  const scheduleVisit = new ScheduleVisit(fields, scheduled, reminders, new FixedClock(now), ids);
+  const scheduleVisit = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), ids);
   const uc = new ScheduleVisitEnsuringField(createZone, createClient, createField, scheduleVisit);
   return {
     uc,
     zones,
     clients,
     fields,
-    scheduled,
+    visits,
     reminders,
     createZone,
     createClient,
@@ -48,10 +48,10 @@ function build() {
 
 describe('ScheduleVisitEnsuringField', () => {
   it('creates zone, client and field from names and schedules the visit', async () => {
-    const { uc, zones, clients, fields, scheduled, reminders } = build();
+    const { uc, zones, clients, fields, visits, reminders } = build();
 
     const result = await uc.execute({
-      scheduledDate: at('2026-08-10'),
+      plannedFor: at('2026-08-10'),
       reminderLeadDays: 3,
       field: { name: 'Paso 9', zone: { name: 'La Costa' }, client: { name: 'Herrera' } },
     });
@@ -65,17 +65,18 @@ describe('ScheduleVisitEnsuringField', () => {
     expect(field?.zoneId).toBe((await zones.listAll())[0].id);
     expect(field?.clientId).toBe((await clients.listAll())[0].id);
 
-    const active = await scheduled.findActiveByField(result.fieldId);
-    expect(active?.scheduledDate.toISOString()).toBe('2026-08-10T00:00:00.000Z');
+    const active = await visits.findPendingByField(result.fieldId);
+    expect(active?.plannedFor?.toISOString()).toBe('2026-08-10T00:00:00.000Z');
+    expect(active?.id).toBe(result.visitId);
     const [reminder] = await reminders.findPendingByField(result.fieldId);
-    expect(reminder.scheduledVisitId).toBe(result.scheduledVisitId);
+    expect(reminder.visitId).toBe(result.visitId);
   });
 
   it('creates a field without zone or client when refs are omitted', async () => {
     const { uc, zones, clients, fields } = build();
 
     const result = await uc.execute({
-      scheduledDate: at('2026-08-10'),
+      plannedFor: at('2026-08-10'),
       reminderLeadDays: 3,
       field: { name: 'Potrero 9' },
     });
@@ -89,13 +90,11 @@ describe('ScheduleVisitEnsuringField', () => {
   });
 
   it('uses an existing field by id without creating anything', async () => {
-    const { uc, zones, clients, fields, scheduled } = build();
-    const zoneMap = new Map([['z1', new Zone('z1', 'Norte')]]);
-    const clientMap = new Map([['c1', new Client('c1', 'Pérez')]]);
+    const { uc, zones, clients, fields, visits } = build();
     await fields.save(new Field({ id: 'f1', name: 'El Alto', clientId: 'c1', zoneId: 'z1' }));
 
     const result = await uc.execute({
-      scheduledDate: at('2026-08-10'),
+      plannedFor: at('2026-08-10'),
       reminderLeadDays: 3,
       field: { id: 'f1' },
     });
@@ -103,21 +102,21 @@ describe('ScheduleVisitEnsuringField', () => {
     expect(result.fieldId).toBe('f1');
     expect((await zones.listAll()).length).toBe(0);
     expect((await clients.listAll()).length).toBe(0);
-    const active = await scheduled.findActiveByField('f1');
+    const active = await visits.findPendingByField('f1');
     expect(active).not.toBeNull();
   });
 
   it('propagates FieldNotFound for an unknown field id', async () => {
     const { uc } = build();
     await expect(
-      uc.execute({ scheduledDate: at('2026-08-10'), reminderLeadDays: 3, field: { id: 'nope' } }),
+      uc.execute({ plannedFor: at('2026-08-10'), reminderLeadDays: 3, field: { id: 'nope' } }),
     ).rejects.toThrow(FieldNotFound);
   });
 
-  it('propagates ScheduledDateNotFuture', async () => {
+  it('propagates PlannedDateNotFuture', async () => {
     const { uc } = build();
     await expect(
-      uc.execute({ scheduledDate: now, reminderLeadDays: 3, field: { name: 'X' } }),
-    ).rejects.toThrow(ScheduledDateNotFuture);
+      uc.execute({ plannedFor: now, reminderLeadDays: 3, field: { name: 'X' } }),
+    ).rejects.toThrow(PlannedDateNotFuture);
   });
 });

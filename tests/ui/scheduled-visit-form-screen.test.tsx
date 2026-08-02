@@ -19,7 +19,7 @@ function renderForm(path = '/field/f1/programar', container = makeInMemoryContai
           <Route path="/" element={<div>Inicio</div>} />
           <Route path="/programar" element={<ScheduledVisitFormScreen />} />
           <Route path="/field/:fieldId/programar" element={<ScheduledVisitFormScreen />} />
-          <Route path="/field/:fieldId/programar/:scheduledVisitId" element={<ScheduledVisitFormScreen />} />
+          <Route path="/field/:fieldId/programar/:visitId" element={<ScheduledVisitFormScreen />} />
           <Route path="/field/:fieldId/visitas" element={<div>Historial</div>} />
         </Routes>
       </MemoryRouter>
@@ -46,12 +46,12 @@ describe('ScheduledVisitFormScreen', () => {
 
   it('edits an existing scheduled visit', async () => {
     const c = makeInMemoryContainer();
-    const { scheduledVisitId } = await c.scheduleVisit.execute({
+    const { visitId } = await c.scheduleVisit.execute({
       fieldId: 'f1',
-      scheduledDate: new Date(`${localFutureIso(10)}T00:00:00.000Z`),
+      plannedFor: new Date(`${localFutureIso(10)}T00:00:00.000Z`),
       reminderLeadDays: 3,
     });
-    renderForm(`/field/f1/programar/${scheduledVisitId}`, c);
+    renderForm(`/field/f1/programar/${visitId}`, c);
     await userEvent.clear(screen.getByLabelText('Notas'));
     await userEvent.type(screen.getByLabelText('Notas'), 'revisar siembra');
     await userEvent.click(screen.getByRole('button', { name: /Guardar/ }));

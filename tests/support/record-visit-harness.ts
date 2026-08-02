@@ -2,7 +2,6 @@ import { RecordVisit } from '@/application/use-cases/record-visit';
 import { InMemoryFieldRepository } from '@/infrastructure/persistence/in-memory/in-memory-field-repository';
 import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-visit-repository';
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
-import { InMemoryScheduledVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-scheduled-visit-repository';
 import { FixedClock } from './fixed-clock';
 import { IncrementingIdGenerator } from './incrementing-id-generator';
 import { Zone } from '@/domain/entities/zone';
@@ -17,9 +16,8 @@ export function makeRecordVisitHarness(now = new Date('2026-07-27T10:00:00Z')) {
   ]);
   const visits = new InMemoryVisitRepository();
   const reminders = new InMemoryReminderRepository();
-  const scheduled = new InMemoryScheduledVisitRepository();
   const clock = new FixedClock(now);
   const ids = new IncrementingIdGenerator('id');
-  const uc = new RecordVisit(fields, visits, reminders, scheduled, clock, ids);
-  return { uc, fields, visits, reminders, scheduled, clock, ids };
+  const uc = new RecordVisit(fields, visits, reminders, clock, ids);
+  return { uc, fields, visits, reminders, clock, ids };
 }
