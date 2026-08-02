@@ -34,7 +34,7 @@ export function CatalogFormScreen<E extends CatalogEntity>({ useSection }: { use
   };
 
   return (
-    <main className="screen">
+    <main className="screen record">
       <button type="button" className="back-link" onClick={() => navigate(basePath)}>{labels.backToList}</button>
       <h1 className="screen-title">{id ? labels.formTitleEdit : labels.formTitleNew}</h1>
       <form onSubmit={onSubmit} className="catalog-form">

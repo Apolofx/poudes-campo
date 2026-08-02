@@ -40,7 +40,7 @@ export function FieldFormScreen() {
   };
 
   return (
-    <main className="screen">
+    <main className="screen record">
       <button type="button" className="back-link" onClick={() => navigate('/catalogo/lotes')}>‹ Lotes</button>
       <h1 className="screen-title">{id ? 'Editar lote' : 'Nuevo lote'}</h1>
       <form onSubmit={onSubmit} className="catalog-form">
