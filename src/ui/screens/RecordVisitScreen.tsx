@@ -81,6 +81,7 @@ export function RecordVisitScreen() {
           <input
             className="control"
             type="date"
+            max={todayIso()}
             value={visitDate}
             onChange={(e) => setVisitDate(e.target.value)}
           />
