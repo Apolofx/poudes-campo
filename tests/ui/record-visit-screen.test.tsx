@@ -133,7 +133,7 @@ describe('RecordVisitScreen', () => {
       </CampoProvider>,
     );
 
-    await userEvent.click(await screen.findByRole('button', { name: /Cancelar visita programada/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Cancelar visita/ }));
     await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
     expect(await screen.findByText('Listado')).toBeInTheDocument();
     expect((await c.getVisit.execute(visitId))?.status).toBe('CANCELLED');
@@ -143,7 +143,59 @@ describe('RecordVisitScreen', () => {
     renderScreen();
     await screen.findByLabelText('Fecha');
     await waitFor(() =>
-      expect(screen.queryByRole('button', { name: /Cancelar visita programada/ })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('button', { name: /Cancelar visita/ })).not.toBeInTheDocument(),
     );
+  });
+});
+
+describe('RecordVisitScreen (camino global /registrar)', () => {
+  function renderGlobal(c = makeInMemoryContainer(new Date())) {
+    return render(
+      <CampoProvider container={c}>
+        <MemoryRouter initialEntries={['/registrar']}>
+          <Routes>
+            <Route path="/registrar" element={<RecordVisitScreen />} />
+            <Route path="/" element={<div>Listado</div>} />
+          </Routes>
+        </MemoryRouter>
+      </CampoProvider>,
+    );
+  }
+
+  it('crea lote, zona y cliente nuevos y registra la visita desde /registrar', async () => {
+    const c = makeInMemoryContainer(new Date());
+    await c.clearAllData.execute();
+    renderGlobal(c);
+    await userEvent.type(screen.getByLabelText('Lote'), 'Paso 9');
+    await userEvent.type(screen.getByLabelText('Zona'), 'La Costa');
+    await userEvent.type(screen.getByLabelText('Cliente'), 'Herrera');
+    await userEvent.click(screen.getByLabelText(/Sin próxima/));
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+
+    expect(await screen.findByText('Listado')).toBeInTheDocument();
+    expect((await c.listZones.execute()).map((z) => z.name)).toEqual(['La Costa']);
+    expect((await c.listClients.execute()).map((cl) => cl.name)).toEqual(['Herrera']);
+    expect((await c.listCatalogFields.execute()).map((f) => f.field.name)).toEqual(['Paso 9']);
+    expect((await c.listUpcomingVisits.execute()).map((u) => u.field.name)).not.toContain('Paso 9');
+  });
+
+  it('permite elegir un lote existente y registra para ese lote', async () => {
+    const c = makeInMemoryContainer(new Date());
+    renderGlobal(c);
+    await userEvent.type(screen.getByLabelText('Lote'), 'Alto');
+    await userEvent.click(screen.getByRole('button', { name: 'Lote El Alto' }));
+    await userEvent.click(screen.getByLabelText(/Sin próxima/));
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+
+    expect(await screen.findByText('Listado')).toBeInTheDocument();
+    expect(await c.listCatalogFields.execute()).toHaveLength(2);
+  });
+
+  it('exige el nombre del lote en /registrar', async () => {
+    renderGlobal();
+    await userEvent.click(screen.getByLabelText(/Sin próxima/));
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Ingresá el nombre del lote/);
+    expect(screen.queryByText('Listado')).not.toBeInTheDocument();
   });
 });

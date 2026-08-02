@@ -33,6 +33,7 @@ const at = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
 // La pantalla de Inicio no ejerce ScheduleVisitEnsuringField; stub para satisfacer el interface.
 const ensuringFieldStub = undefined as unknown as import('@/application/use-cases/schedule-visit-ensuring-field').ScheduleVisitEnsuringField;
+const recordEnsuringFieldStub = undefined as unknown as import('@/application/use-cases/record-visit-ensuring-field').RecordVisitEnsuringField;
 
 async function makeContainer(): Promise<Container> {
   const zoneMap = new Map([['z1', new Zone('z1', 'El Séptimo')], ['z2', new Zone('z2', 'La Costa')]]);
@@ -68,6 +69,7 @@ async function makeContainer(): Promise<Container> {
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     scheduleVisit,
     scheduleVisitEnsuringField: ensuringFieldStub,
+    recordVisitEnsuringField: recordEnsuringFieldStub,
     reminderAviso: notifier,
     ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
@@ -138,6 +140,7 @@ describe('AgendaScreen', () => {
       dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
       scheduleVisit,
       scheduleVisitEnsuringField: ensuringFieldStub,
+      recordVisitEnsuringField: recordEnsuringFieldStub,
       reminderAviso: notifier,
       ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
     };
@@ -147,11 +150,15 @@ describe('AgendaScreen', () => {
       </CampoProvider>,
     );
     expect(await screen.findByText('No hay visitas agendadas.')).toBeInTheDocument();
-    const programar = screen.getAllByRole('link', { name: /Programar visita/ });
-    expect(programar).toHaveLength(2);
-    for (const el of programar) expect(el).toHaveAttribute('href', '/programar');
-    const buscar = screen.getByRole('link', { name: /Buscar un lote/ });
-    expect(buscar).toHaveAttribute('href', '/buscar');
+    const register = screen.getByRole('link', { name: /Registrar visita/ });
+    expect(register).toHaveAttribute('href', '/registrar');
+    const scheduleLinks = screen.getAllByRole('link', { name: /Programar visita/ });
+    const scheduleButton = scheduleLinks.find((l) => l.className.includes('btn-secondary'))!;
+    expect(scheduleButton).toHaveAttribute('href', '/programar');
+    const fab = scheduleLinks.find((l) => l.className.includes('fab'))!;
+    expect(fab).toHaveAttribute('href', '/programar');
+    expect(scheduleLinks).toHaveLength(2);
+    expect(screen.queryByRole('link', { name: /Buscar un lote/ })).not.toBeInTheDocument();
   });
 
   it('muestra el FAB para programar cuando hay visitas', async () => {

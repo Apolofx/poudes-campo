@@ -8,6 +8,11 @@ export function useFieldHistory(fieldId: string) {
   const [loading, setLoading] = useState(true);
 
   const reload = useCallback(() => {
+    if (!fieldId) {
+      setView(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     getFieldHistory.execute(fieldId).then((v) => {
       setView(v);

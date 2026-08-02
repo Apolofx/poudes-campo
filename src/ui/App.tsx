@@ -37,6 +37,7 @@ export function App() {
         <Route path="/catalogo/lotes" element={<FieldsListScreen />} />
       </Route>
       <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
+      <Route path="/registrar" element={<RecordVisitScreen />} />
       <Route path="/field/:fieldId/visitas" element={<FieldHistoryScreen />} />
       <Route path="/field/:fieldId/visitas/:visitId" element={<VisitDetailScreen />} />
       <Route path="/field/:fieldId/programar" element={<ScheduledVisitFormScreen />} />

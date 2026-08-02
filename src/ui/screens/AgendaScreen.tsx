@@ -45,13 +45,13 @@ export function AgendaScreen() {
         <p className="alert" role="alert">No se pudieron cargar las visitas. Reintentá.</p>
       )}
       {!loading && !error && items.length === 0 && (
-        <>
+        <div className="empty-state">
           <p className="empty">No hay visitas agendadas.</p>
           <div className="empty-actions">
-            <Link className="btn-primary" to="/programar">Programar visita</Link>
-            <Link className="btn-secondary" to="/buscar">Buscar un lote</Link>
+            <Link className="btn-primary" to="/registrar">Registrar visita</Link>
+            <Link className="btn-secondary" to="/programar">Programar visita</Link>
           </div>
-        </>
+        </div>
       )}
 
       {sections.map((section) => {
