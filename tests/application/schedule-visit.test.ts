@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { ScheduleVisit } from '@/application/use-cases/schedule-visit';
 import { InMemoryFieldRepository } from '@/infrastructure/persistence/in-memory/in-memory-field-repository';
-import { InMemoryScheduledVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-scheduled-visit-repository';
+import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-visit-repository';
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
 import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
-import { ScheduledVisit } from '@/domain/entities/scheduled-visit';
+import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
-import { FieldNotFound, ScheduledDateNotFuture } from '@/domain/shared/errors';
+import { FieldNotFound, PlannedDateNotFuture } from '@/domain/shared/errors';
 import { FixedClock } from '../support/fixed-clock';
 import { IncrementingIdGenerator } from '../support/incrementing-id-generator';
 
@@ -21,78 +21,85 @@ function build() {
   const fields = new InMemoryFieldRepository(zones, clients, [
     new Field({ id: 'f1', name: 'El Alto', clientId: 'c1', zoneId: 'z1' }),
   ]);
-  const scheduled = new InMemoryScheduledVisitRepository();
+  const visits = new InMemoryVisitRepository();
   const reminders = new InMemoryReminderRepository();
-  return { fields, scheduled, reminders };
+  return { fields, visits, reminders };
+}
+
+function pending(id: string, plannedFor: Date): Visit {
+  return new Visit({
+    id, fieldId: 'f1', status: 'PENDING',
+    plannedFor, reminderLeadDays: 3, createdAt: now,
+  });
 }
 
 describe('ScheduleVisit', () => {
-  it('schedules a visit with a clamped reminder lead', async () => {
-    const { fields, scheduled, reminders } = build();
-    const uc = new ScheduleVisit(fields, scheduled, reminders, new FixedClock(now), new IncrementingIdGenerator());
+  it('schedules a pending visit with a clamped reminder lead', async () => {
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), new IncrementingIdGenerator());
 
-    const result = await uc.execute({ fieldId: 'f1', scheduledDate: at('2026-08-10'), reminderLeadDays: 3 });
+    const result = await uc.execute({ fieldId: 'f1', plannedFor: at('2026-08-10'), reminderLeadDays: 3 });
 
-    const item = await scheduled.findById(result.scheduledVisitId);
-    expect(item?.scheduledDate.toISOString()).toBe('2026-08-10T00:00:00.000Z');
+    const item = await visits.findById(result.visitId);
+    expect(item?.status).toBe('PENDING');
+    expect(item?.plannedFor?.toISOString()).toBe('2026-08-10T00:00:00.000Z');
     expect(item?.reminderLeadDays).toBe(3);
     const [reminder] = await reminders.findPendingByField('f1');
-    expect(reminder.scheduledVisitId).toBe(result.scheduledVisitId);
+    expect(reminder.visitId).toBe(result.visitId);
     expect(reminder.remindAt.toISOString()).toBe('2026-08-07T00:00:00.000Z');
   });
 
   it('clamps a lead longer than the gap to the gap itself', async () => {
-    const { fields, scheduled, reminders } = build();
-    const uc = new ScheduleVisit(fields, scheduled, reminders, new FixedClock(now), new IncrementingIdGenerator());
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), new IncrementingIdGenerator());
 
-    await uc.execute({ fieldId: 'f1', scheduledDate: at('2026-08-02'), reminderLeadDays: 5 });
+    await uc.execute({ fieldId: 'f1', plannedFor: at('2026-08-02'), reminderLeadDays: 5 });
 
-    const item = await scheduled.findActiveByField('f1');
+    const item = await visits.findPendingByField('f1');
     expect(item?.reminderLeadDays).toBe(2);
     const [reminder] = await reminders.findPendingByField('f1');
     expect(reminder.remindAt.toISOString()).toBe('2026-07-31T00:00:00.000Z');
   });
 
-  it('rejects a scheduled date that is not in the future', async () => {
-    const { fields, scheduled, reminders } = build();
-    const uc = new ScheduleVisit(fields, scheduled, reminders, new FixedClock(now), new IncrementingIdGenerator());
+  it('rejects a planned date that is not in the future', async () => {
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), new IncrementingIdGenerator());
 
-    await expect(uc.execute({ fieldId: 'f1', scheduledDate: now, reminderLeadDays: 3 })).rejects.toThrow(ScheduledDateNotFuture);
+    await expect(uc.execute({ fieldId: 'f1', plannedFor: now, reminderLeadDays: 3 })).rejects.toThrow(PlannedDateNotFuture);
   });
 
   it('rejects an unknown field', async () => {
-    const { fields, scheduled, reminders } = build();
-    const uc = new ScheduleVisit(fields, scheduled, reminders, new FixedClock(now), new IncrementingIdGenerator());
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), new IncrementingIdGenerator());
 
-    await expect(uc.execute({ fieldId: 'nope', scheduledDate: at('2026-08-10'), reminderLeadDays: 3 })).rejects.toThrow(FieldNotFound);
+    await expect(uc.execute({ fieldId: 'nope', plannedFor: at('2026-08-10'), reminderLeadDays: 3 })).rejects.toThrow(FieldNotFound);
   });
 
-  it('replaces an existing ACTIVE scheduled visit for the field', async () => {
-    const { fields, scheduled, reminders } = build();
-    const uc = new ScheduleVisit(fields, scheduled, reminders, new FixedClock(now), new IncrementingIdGenerator());
-    await uc.execute({ fieldId: 'f1', scheduledDate: at('2026-08-10'), reminderLeadDays: 3 });
+  it('replaces an existing pending visit for the field', async () => {
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), new IncrementingIdGenerator());
+    await visits.save(pending('p1', at('2026-08-10')));
 
-    await uc.execute({ fieldId: 'f1', scheduledDate: at('2026-08-20'), reminderLeadDays: 0 });
+    await uc.execute({ fieldId: 'f1', plannedFor: at('2026-08-20'), reminderLeadDays: 0 });
 
-    const active = await scheduled.findActiveByField('f1');
-    expect(active?.scheduledDate.toISOString()).toBe('2026-08-20T00:00:00.000Z');
-    const all = await scheduled.listByField('f1');
-    expect(all.filter((s) => s.status === 'CANCELLED')).toHaveLength(1);
+    const active = await visits.findPendingByField('f1');
+    expect(active?.plannedFor?.toISOString()).toBe('2026-08-20T00:00:00.000Z');
+    const old = await visits.findById('p1');
+    expect(old?.status).toBe('CANCELLED');
+    expect(old?.cancelledAt?.toISOString()).toBe('2026-07-31T12:00:00.000Z');
     expect(await reminders.findPendingByField('f1')).toHaveLength(1);
   });
 
-  it('cancels prior PENDING reminders for the field', async () => {
-    const { fields, scheduled, reminders } = build();
-    const uc = new ScheduleVisit(fields, scheduled, reminders, new FixedClock(now), new IncrementingIdGenerator());
-    await scheduled.save(new ScheduledVisit({
-      id: 's0', fieldId: 'f1', scheduledDate: at('2026-08-05'), reminderLeadDays: 1, createdAt: now,
-    }));
-    await reminders.save(new Reminder({ id: 'r0', visitId: 'v0', scheduledVisitId: 's0', fieldId: 'f1', remindAt: at('2026-08-04') }));
+  it('cancels prior pending reminders for the field', async () => {
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), new IncrementingIdGenerator());
+    await visits.save(pending('p0', at('2026-08-05')));
+    await reminders.save(new Reminder({ id: 'r0', visitId: 'p0', fieldId: 'f1', remindAt: at('2026-08-04') }));
 
-    await uc.execute({ fieldId: 'f1', scheduledDate: at('2026-08-10'), reminderLeadDays: 3 });
+    await uc.execute({ fieldId: 'f1', plannedFor: at('2026-08-10'), reminderLeadDays: 3 });
 
-    const pending = await reminders.findPendingByField('f1');
-    expect(pending).toHaveLength(1);
-    expect(pending[0].scheduledVisitId).not.toBe('s0');
+    const pendingReminders = await reminders.findPendingByField('f1');
+    expect(pendingReminders).toHaveLength(1);
+    expect(pendingReminders[0].visitId).not.toBe('p0');
   });
 });

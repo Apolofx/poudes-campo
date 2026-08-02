@@ -25,11 +25,12 @@ export class CancelVisit {
       new Visit({
         id: visit.id,
         fieldId: visit.fieldId,
-        visitDate: visit.visitDate,
-        createdAt: visit.createdAt,
-        notes: visit.notes,
-        followUp: visit.followUp,
         status: 'CANCELLED',
+        plannedFor: visit.plannedFor,
+        visitedAt: visit.visitedAt,
+        reminderLeadDays: visit.reminderLeadDays,
+        notes: visit.notes,
+        createdAt: visit.createdAt,
         cancelledAt: this.clock.now(),
       }),
     );

@@ -9,7 +9,7 @@ export type NewRef = { name: string };
 export type OptionalRef = ExistingRef | NewRef;
 
 export interface ScheduleVisitEnsuringFieldInput {
-  scheduledDate: Date;
+  plannedFor: Date;
   reminderLeadDays: number;
   notes?: string;
   field: { id: string } | { name: string; zone?: OptionalRef; client?: OptionalRef };
@@ -50,7 +50,7 @@ export class ScheduleVisitEnsuringField {
 
     const result = await this.scheduleVisit.execute({
       fieldId,
-      scheduledDate: input.scheduledDate,
+      plannedFor: input.plannedFor,
       reminderLeadDays: input.reminderLeadDays,
       notes: input.notes,
     });

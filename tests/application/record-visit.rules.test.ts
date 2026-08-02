@@ -1,83 +1,99 @@
 import { describe, it, expect } from 'vitest';
 import { makeRecordVisitHarness } from '../support/record-visit-harness';
-import { ScheduledVisit } from '@/domain/entities/scheduled-visit';
+import { Visit } from '@/domain/entities/visit';
+import { Reminder } from '@/domain/entities/reminder';
 import {
   FutureVisitDate,
   DuplicateVisitForDay,
   FieldNotFound,
-  InvalidVisitInterval,
+  InvalidVisit,
 } from '@/domain/shared/errors';
 
 describe('RecordVisit — rules and edges', () => {
   it('rejects a future visit date', async () => {
     const { uc } = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
     await expect(
-      uc.execute({ fieldId: 'f1', visitDate: new Date('2026-07-28T10:00:00Z'), followUp: { kind: 'none' } }),
+      uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-28T10:00:00Z'), next: { kind: 'none' } }),
     ).rejects.toThrow(FutureVisitDate);
   });
 
-  it('rejects a second active visit on the same day', async () => {
+  it('rejects a second done visit on the same day', async () => {
     const { uc } = makeRecordVisitHarness(new Date('2026-07-27T20:00:00Z'));
-    await uc.execute({ fieldId: 'f1', visitDate: new Date('2026-07-27T09:00:00Z'), followUp: { kind: 'none' } });
+    await uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-27T09:00:00Z'), next: { kind: 'none' } });
     await expect(
-      uc.execute({ fieldId: 'f1', visitDate: new Date('2026-07-27T15:00:00Z'), followUp: { kind: 'none' } }),
+      uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-27T15:00:00Z'), next: { kind: 'none' } }),
     ).rejects.toThrow(DuplicateVisitForDay);
+  });
+
+  it('allows recording on a day with a pending (not done) visit', async () => {
+    const h = makeRecordVisitHarness(new Date('2026-07-27T20:00:00Z'));
+    await h.visits.save(new Visit({
+      id: 'p1', fieldId: 'f1', status: 'PENDING',
+      plannedFor: new Date('2026-07-27T09:00:00Z'), reminderLeadDays: 3, createdAt: new Date('2026-07-10T10:00:00Z'),
+    }));
+    await expect(
+      h.uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-27T15:00:00Z'), next: { kind: 'none' } }),
+    ).resolves.toMatchObject({ visitId: 'p1' });
   });
 
   it('rejects recording against an unknown field', async () => {
     const { uc } = makeRecordVisitHarness();
     await expect(
-      uc.execute({ fieldId: 'ghost', visitDate: new Date('2026-07-27T10:00:00Z'), followUp: { kind: 'none' } }),
+      uc.execute({ fieldId: 'ghost', visitedAt: new Date('2026-07-27T10:00:00Z'), next: { kind: 'none' } }),
     ).rejects.toThrow(FieldNotFound);
   });
 
   it('cancels the previous pending reminder when a new visit is recorded', async () => {
     const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
-    await h.uc.execute({ fieldId: 'f1', visitDate: new Date('2026-07-27T10:00:00Z'), followUp: { kind: 'interval', days: 7 } });
+    await h.uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-27T10:00:00Z'), next: { kind: 'interval', days: 7 } });
     expect(await h.reminders.findPendingByField('f1')).toHaveLength(1);
 
     h.clock.set(new Date('2026-07-28T10:00:00Z'));
-    await h.uc.execute({ fieldId: 'f1', visitDate: new Date('2026-07-28T10:00:00Z'), followUp: { kind: 'interval', days: 10 } });
+    await h.uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-28T10:00:00Z'), next: { kind: 'interval', days: 10 } });
 
     const pending = await h.reminders.findPendingByField('f1');
     expect(pending).toHaveLength(1);
     expect(pending[0].remindAt.toISOString()).toBe('2026-08-07T10:00:00.000Z');
   });
 
-  it('records a manual next-visit date and derives the interval from today', async () => {
+  it('creates a pending on a manual date deriving the lead from now', async () => {
     const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
     const res = await h.uc.execute({
       fieldId: 'f1',
-      visitDate: new Date('2026-07-27T10:00:00Z'),
-      followUp: { kind: 'date', date: new Date('2026-08-05T10:00:00Z') },
+      visitedAt: new Date('2026-07-27T10:00:00Z'),
+      next: { kind: 'date', date: new Date('2026-08-05T10:00:00Z'), reminderLeadDays: 2 },
     });
-    const saved = await h.visits.findById(res.visitId);
-    expect(saved?.followUp?.nextVisitDate.toISOString()).toBe('2026-08-05T10:00:00.000Z');
-    expect(saved?.followUp?.interval.days).toBe(9);
+    const pending = await h.visits.findPendingByField('f1');
+    expect(pending?.id).toBe(res.pendingId);
+    expect(pending?.plannedFor?.toISOString()).toBe('2026-08-05T10:00:00.000Z');
+    expect(pending?.reminderLeadDays).toBe(2);
   });
 
-  it('rejects a manual next-visit date that is today or in the past', async () => {
+  it('rejects a manual next-visit date that is in the past', async () => {
     const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
     await expect(
       h.uc.execute({
         fieldId: 'f1',
-        visitDate: new Date('2026-07-27T10:00:00Z'),
-        followUp: { kind: 'date', date: new Date('2026-07-27T20:00:00Z') },
+        visitedAt: new Date('2026-07-27T10:00:00Z'),
+        next: { kind: 'date', date: new Date('2026-07-20T00:00:00Z') },
       }),
-    ).rejects.toThrow(InvalidVisitInterval);
+    ).rejects.toThrow(InvalidVisit);
   });
 
-  it('consumes the ACTIVE scheduled visit when a real visit is recorded', async () => {
+  it('cancels the fulfilled pending reminder when recording', async () => {
     const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
-    await h.scheduled.save(new ScheduledVisit({
-      id: 's1', fieldId: 'f1', scheduledDate: new Date('2026-08-10T00:00:00Z'), reminderLeadDays: 3, createdAt: h.clock.now(),
+    await h.visits.save(new Visit({
+      id: 'p1', fieldId: 'f1', status: 'PENDING',
+      plannedFor: new Date('2026-08-10T00:00:00Z'), reminderLeadDays: 3, createdAt: new Date('2026-07-20T10:00:00Z'),
+    }));
+    await h.reminders.save(new Reminder({
+      id: 'r1', visitId: 'p1', fieldId: 'f1', remindAt: new Date('2026-08-07T00:00:00Z'),
     }));
 
-    await h.uc.execute({ fieldId: 'f1', visitDate: new Date('2026-07-27T10:00:00Z'), followUp: { kind: 'none' } });
+    await h.uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-27T10:00:00Z'), next: { kind: 'none' } });
 
-    expect(await h.scheduled.findActiveByField('f1')).toBeNull();
-    const all = await h.scheduled.listByField('f1');
-    expect(all.find((s) => s.id === 's1')?.status).toBe('CANCELLED');
+    const pending = await h.reminders.findPendingByField('f1');
+    expect(pending).toHaveLength(0);
   });
 });
 
@@ -86,25 +102,23 @@ describe('RecordVisit reminderLeadDays clamp', () => {
     const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
     await h.uc.execute({
       fieldId: 'f1',
-      visitDate: new Date('2026-07-27T10:00:00Z'),
-      followUp: { kind: 'interval', days: 14, reminderLeadDays: 20 },
+      visitedAt: new Date('2026-07-27T10:00:00Z'),
+      next: { kind: 'interval', days: 14, reminderLeadDays: 20 },
     });
     const pending = await h.reminders.findPendingByField('f1');
     expect(pending).toHaveLength(1);
-    // nextVisitDate = now + 14; lead clamped to 14 => remindAt = now
     expect(pending[0].remindAt.getTime()).toBe(h.clock.now().getTime());
   });
 
-  it('clamps a negative lead up to 0 (remindAt = nextVisitDate)', async () => {
+  it('clamps a negative lead up to 0 (remindAt = plannedFor)', async () => {
     const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
     await h.uc.execute({
       fieldId: 'f1',
-      visitDate: new Date('2026-07-27T10:00:00Z'),
-      followUp: { kind: 'interval', days: 14, reminderLeadDays: -3 },
+      visitedAt: new Date('2026-07-27T10:00:00Z'),
+      next: { kind: 'interval', days: 14, reminderLeadDays: -3 },
     });
     const pending = await h.reminders.findPendingByField('f1');
     expect(pending).toHaveLength(1);
-    // nextVisitDate = now + 14; lead clamped to 0 => remindAt = nextVisitDate = now + 14
     const expected = new Date(h.clock.now().getTime() + 14 * 86_400_000);
     expect(pending[0].remindAt.getTime()).toBe(expected.getTime());
   });
