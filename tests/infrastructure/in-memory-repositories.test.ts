@@ -3,7 +3,7 @@ import { FixedClock } from '../support/fixed-clock';
 import { IncrementingIdGenerator } from '../support/incrementing-id-generator';
 import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/in-memory-visit-repository';
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
-import { Visit, type VisitStatus } from '@/domain/entities/visit';
+import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
 
 describe('FixedClock', () => {
@@ -24,19 +24,21 @@ describe('IncrementingIdGenerator', () => {
 
 describe('InMemoryVisitRepository', () => {
   const day = new Date('2026-07-27T10:00:00Z');
-  const visit = (id: string, status: VisitStatus = 'ACTIVE') =>
-    new Visit({ id, fieldId: 'f1', visitDate: day, createdAt: day, status });
+  const visit = (id: string) => new Visit({ id, fieldId: 'f1', status: 'DONE', visitedAt: day, createdAt: day });
 
-  it('finds an active visit on the same calendar day regardless of time', async () => {
+  it('finds a done visit on the same calendar day regardless of time', async () => {
     const repo = new InMemoryVisitRepository();
     await repo.save(visit('v1'));
-    const found = await repo.findActiveByFieldOnDay('f1', new Date('2026-07-27T23:00:00Z'));
+    const found = await repo.findDoneByFieldOnDay('f1', new Date('2026-07-27T23:00:00Z'));
     expect(found?.id).toBe('v1');
   });
-  it('ignores cancelled visits for the day check', async () => {
+  it('ignores pending visits for the day check', async () => {
     const repo = new InMemoryVisitRepository();
-    await repo.save(visit('v1', 'CANCELLED'));
-    expect(await repo.findActiveByFieldOnDay('f1', day)).toBeNull();
+    await repo.save(new Visit({
+      id: 'v1', fieldId: 'f1', status: 'PENDING',
+      plannedFor: day, reminderLeadDays: 3, createdAt: day,
+    }));
+    expect(await repo.findDoneByFieldOnDay('f1', day)).toBeNull();
   });
   it('lists visits by field', async () => {
     const repo = new InMemoryVisitRepository();
