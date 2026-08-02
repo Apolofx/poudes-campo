@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { FollowUpInput } from '@/application/use-cases/follow-up';
 import type { Visit } from '@/domain/entities/visit';
 import { useCampo } from '@/ui/CampoProvider';
 import { useEditVisit } from '@/ui/hooks/use-edit-visit';
 import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { domainErrorMessage } from '@/ui/error-messages';
-import { dateLabel, isoDay, localFutureIso, utcDate } from '@/ui/date-utils';
-
-type FollowUpKind = 'interval' | 'date' | 'none';
+import { visitStatusLabel } from '@/ui/labels';
+import { dateLabel, isoDay, utcDate } from '@/ui/date-utils';
 
 export function VisitDetailScreen() {
   const { fieldId = '', visitId = '' } = useParams();
@@ -22,22 +20,14 @@ export function VisitDetailScreen() {
   const [confirming, setConfirming] = useState(false);
 
   const [notes, setNotes] = useState('');
-  const [visitDate, setVisitDate] = useState('');
-  const [kind, setKind] = useState<FollowUpKind>('none');
-  const [intervalDays, setIntervalDays] = useState(14);
-  const [nextDate, setNextDate] = useState(localFutureIso(14));
-  const [leadDays, setLeadDays] = useState(3);
+  const [visitedAt, setVisitedAt] = useState('');
 
   useEffect(() => {
     getVisit.execute(visitId).then((v) => {
       setVisit(v);
-      if (v) {
+      if (v && v.status === 'DONE') {
         setNotes(v.notes ?? '');
-        setVisitDate(isoDay(v.visitDate));
-        if (v.followUp) {
-          setKind('date');
-          setNextDate(isoDay(v.followUp.nextVisitDate));
-        }
+        setVisitedAt(isoDay(v.visitedAt!));
       }
     });
   }, [getVisit, visitId]);
@@ -52,22 +42,57 @@ export function VisitDetailScreen() {
     return (
       <main className="screen record">
         <Link className="back-link" to={back}>‹ Historial</Link>
-        <h1 className="screen-title">Visita del {dateLabel(visit.visitDate)}</h1>
-        <p className="visit-badge is-cancelled">Cancelada</p>
+        <h1 className="screen-title">Visita del {dateLabel(visit.visitedAt ?? visit.plannedFor!)}</h1>
+        <p className={`visit-badge is-cancelled`}>{visitStatusLabel(visit.status)}</p>
         {visit.notes && <p className="field-sub">{visit.notes}</p>}
+      </main>
+    );
+  }
+
+  if (visit.status === 'PENDING') {
+    return (
+      <main className="screen record">
+        <Link className="back-link" to={back}>‹ Historial</Link>
+        <h1 className="screen-title">Visita programada del {dateLabel(visit.plannedFor!)}</h1>
+        <p className={`visit-badge is-active`}>{visitStatusLabel(visit.status)}</p>
+        {visit.reminderLeadDays != null && visit.reminderLeadDays > 0 && (
+          <p className="field-sub">Avisar {visit.reminderLeadDays} día{visit.reminderLeadDays > 1 ? 's' : ''} antes</p>
+        )}
+        {visit.notes && <p className="field-sub">{visit.notes}</p>}
+        {cancelHook.error && <p className="alert" role="alert">{domainErrorMessage(cancelHook.error)}</p>}
+        <div className="list-actions">
+          <Link
+            className="btn-secondary"
+            to={`/field/${fieldId}/programar/${visitId}`}
+            state={{ back: { label: 'Historial', to: back } }}
+          >
+            Editar
+          </Link>
+          <button type="button" className="btn-danger" onClick={() => setConfirming(true)} disabled={cancelHook.cancelling}>
+            Cancelar visita
+          </button>
+        </div>
+        <ConfirmDialog
+          open={confirming}
+          title="Cancelar visita programada"
+          message={`La visita del ${dateLabel(visit.plannedFor!)} quedará cancelada y no aparecerá más en tus próximas visitas. ¿Confirmás?`}
+          confirmLabel="Confirmar"
+          cancelLabel="Volver"
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => { setConfirming(false); cancelHook.cancel(visitId); }}
+        />
       </main>
     );
   }
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const safeInterval = Number.isFinite(intervalDays) && intervalDays > 0 ? intervalDays : 14;
-    const safeLead = Number.isFinite(leadDays) && leadDays >= 0 ? leadDays : 0;
-    let followUp: FollowUpInput;
-    if (kind === 'interval') followUp = { kind: 'interval', days: safeInterval, reminderLeadDays: safeLead };
-    else if (kind === 'date') followUp = { kind: 'date', date: utcDate(nextDate), reminderLeadDays: safeLead };
-    else followUp = { kind: 'none' };
-    edit.submit({ visitId, visitDate: utcDate(visitDate), notes: notes.trim() === '' ? undefined : notes, followUp });
+    edit.submit({
+      kind: 'done',
+      visitId,
+      visitedAt: utcDate(visitedAt),
+      notes: notes.trim() === '' ? undefined : notes,
+    });
   };
 
   return (
@@ -77,34 +102,12 @@ export function VisitDetailScreen() {
       <form className="form" onSubmit={onSubmit}>
         <label className="field">
           <span className="field-label">Fecha</span>
-          <input className="control" type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
+          <input className="control" type="date" value={visitedAt} onChange={(e) => setVisitedAt(e.target.value)} />
         </label>
         <label className="field">
           <span className="field-label">Notas</span>
           <textarea className="control textarea" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
-        <fieldset className="field fieldset">
-          <legend className="field-label">Próxima visita</legend>
-          <div className="segmented">
-            <label className="segment"><input type="radio" name="kind" checked={kind === 'interval'} onChange={() => setKind('interval')} /><span>En N días</span></label>
-            <label className="segment"><input type="radio" name="kind" checked={kind === 'date'} onChange={() => setKind('date')} /><span>En una fecha</span></label>
-            <label className="segment"><input type="radio" name="kind" checked={kind === 'none'} onChange={() => setKind('none')} /><span>Sin próxima</span></label>
-          </div>
-          <div className="conditional-row">
-            {kind === 'interval' && (
-              <label className="field"><span className="field-label">Días</span>
-                <input className="control" type="number" min="1" value={intervalDays} onChange={(e) => setIntervalDays(Number(e.target.value))} /></label>
-            )}
-            {kind === 'date' && (
-              <label className="field"><span className="field-label">Fecha próxima</span>
-                <input className="control" type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} /></label>
-            )}
-            {kind !== 'none' && (
-              <label className="field"><span className="field-label">Avisar días antes</span>
-                <input className="control" type="number" min="0" value={leadDays} onChange={(e) => setLeadDays(Number(e.target.value))} /></label>
-            )}
-          </div>
-        </fieldset>
         {(edit.error || cancelHook.error) && (
           <p className="alert" role="alert">{domainErrorMessage((edit.error ?? cancelHook.error)!)}</p>
         )}

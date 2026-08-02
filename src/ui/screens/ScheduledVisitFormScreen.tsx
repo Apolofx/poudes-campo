@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCampo } from '@/ui/CampoProvider';
 import { useScheduleVisitEnsuringField } from '@/ui/hooks/use-schedule-visit-ensuring-field';
-import { useEditScheduledVisit } from '@/ui/hooks/use-edit-scheduled-visit';
+import { useEditVisit } from '@/ui/hooks/use-edit-visit';
 import { useSearchFields } from '@/ui/hooks/use-search-fields';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
 import { PickOrCreate, type PickOrCreateValue } from '@/ui/components/PickOrCreate';
@@ -15,16 +15,16 @@ interface BackNav {
 }
 
 export function ScheduledVisitFormScreen() {
-  const { fieldId = '', scheduledVisitId } = useParams();
+  const { fieldId = '', visitId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { getScheduledVisit, listZones, listClients } = useCampo();
+  const { getVisit, listZones, listClients } = useCampo();
   const create = useScheduleVisitEnsuringField();
-  const edit = useEditScheduledVisit();
+  const edit = useEditVisit();
   const { results: lots, search } = useSearchFields();
   const fieldHistory = useFieldHistory(fieldId);
 
-  const isEditing = Boolean(scheduledVisitId);
+  const isEditing = Boolean(visitId);
   const pickingLot = !isEditing && !fieldId;
   const defaultBack: BackNav = pickingLot
     ? { label: 'Inicio', to: '/' }
@@ -36,7 +36,7 @@ export function ScheduledVisitFormScreen() {
   const [clientValue, setClientValue] = useState<PickOrCreateValue>({ type: 'none' });
   const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [scheduledDate, setScheduledDate] = useState(localFutureIso(14));
+  const [plannedDate, setPlannedDate] = useState(localFutureIso(14));
   const [leadDays, setLeadDays] = useState(3);
   const [notes, setNotes] = useState('');
   const [localError, setLocalError] = useState<string | undefined>();
@@ -50,17 +50,17 @@ export function ScheduledVisitFormScreen() {
   }, [pickingLot, search, listZones, listClients]);
 
   useEffect(() => {
-    if (!scheduledVisitId) return;
-    getScheduledVisit.execute(scheduledVisitId).then((scheduled) => {
-      if (!scheduled) {
-        setLoadError(Object.assign(new Error('ScheduledVisitNotFound'), { name: 'ScheduledVisitNotFound' }));
+    if (!visitId) return;
+    getVisit.execute(visitId).then((v) => {
+      if (!v || v.status !== 'PENDING') {
+        setLoadError(Object.assign(new Error('VisitNotFound'), { name: 'VisitNotFound' }));
         return;
       }
-      setScheduledDate(isoDay(scheduled.scheduledDate));
-      setLeadDays(scheduled.reminderLeadDays);
-      setNotes(scheduled.notes ?? '');
+      setPlannedDate(isoDay(v.plannedFor!));
+      setLeadDays(v.reminderLeadDays ?? 0);
+      setNotes(v.notes ?? '');
     });
-  }, [scheduledVisitId, getScheduledVisit]);
+  }, [visitId, getVisit]);
 
   useEffect(() => {
     if (edit.done) navigate(back.to);
@@ -70,10 +70,10 @@ export function ScheduledVisitFormScreen() {
     e.preventDefault();
     setLocalError(undefined);
     const safeLead = Number.isFinite(leadDays) && leadDays >= 0 ? leadDays : 0;
-    const base = { reminderLeadDays: safeLead, notes: notes.trim() === '' ? undefined : notes };
+    const base = { plannedFor: utcDate(plannedDate), reminderLeadDays: safeLead, notes: notes.trim() === '' ? undefined : notes };
 
-    if (isEditing && scheduledVisitId) {
-      edit.submit({ scheduledVisitId, scheduledDate: utcDate(scheduledDate), ...base });
+    if (isEditing && visitId) {
+      edit.submit({ kind: 'pending', visitId, ...base });
       return;
     }
 
@@ -91,12 +91,12 @@ export function ScheduledVisitFormScreen() {
             client: clientValue.type === 'none' ? undefined
               : clientValue.type === 'existing' ? { id: clientValue.id } : { name: clientValue.name },
           };
-      const result = await create.submit({ scheduledDate: utcDate(scheduledDate), ...base, field });
+      const result = await create.submit({ ...base, field });
       if (result) navigate('/');
       return;
     }
 
-    const result = await create.submit({ scheduledDate: utcDate(scheduledDate), ...base, field: { id: fieldId } });
+    const result = await create.submit({ ...base, field: { id: fieldId } });
     if (result) navigate(`/field/${fieldId}/visitas`);
   };
 
@@ -105,7 +105,7 @@ export function ScheduledVisitFormScreen() {
   const submitting = isEditing ? edit.submitting : create.submitting;
   const gapMax = Math.max(
     1,
-    Math.round((utcDate(scheduledDate).getTime() - utcDate(localTodayIso()).getTime()) / 86_400_000),
+    Math.round((utcDate(plannedDate).getTime() - utcDate(localTodayIso()).getTime()) / 86_400_000),
   );
 
   return (
@@ -157,8 +157,8 @@ export function ScheduledVisitFormScreen() {
             className="control"
             type="date"
             min={localFutureIso(1)}
-            value={scheduledDate}
-            onChange={(e) => setScheduledDate(e.target.value)}
+            value={plannedDate}
+            onChange={(e) => setPlannedDate(e.target.value)}
           />
         </label>
         <label className="field">

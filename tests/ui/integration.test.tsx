@@ -81,7 +81,7 @@ describe('search → record visit (real IndexedDB adapter)', () => {
     await waitFor(async () => expect(await db.count('zones')).toBe(1));
     expect(await db.count('clients')).toBe(1);
     expect(await db.count('fields')).toBe(1);
-    expect(await db.count('scheduled-visits')).toBe(1);
+    expect(await db.count('visits')).toBe(1);
     expect(await db.count('reminders')).toBe(1);
     db.close();
   });

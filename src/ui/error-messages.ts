@@ -6,18 +6,14 @@ export function domainErrorMessage(error: Error): string {
       return 'Ya registraste una visita para este lote ese día.';
     case 'FieldNotFound':
       return 'No se encontró el lote.';
-    case 'InvalidVisitInterval':
-      return 'La próxima visita debe ser posterior a la fecha de la visita.';
+    case 'InvalidVisit':
+      return 'La visita no admite esa edición.';
+    case 'PlannedDateNotFuture':
+      return 'La fecha de la visita debe ser futura.';
     case 'VisitNotFound':
       return 'No se encontró la visita.';
     case 'VisitAlreadyCancelled':
       return 'La visita ya fue cancelada.';
-    case 'ScheduledDateNotFuture':
-      return 'La fecha de la visita debe ser futura.';
-    case 'ScheduledVisitNotFound':
-      return 'No se encontró la visita programada.';
-    case 'ScheduledVisitAlreadyCancelled':
-      return 'La visita programada ya fue cancelada.';
     default:
       return 'Ocurrió un error con la visita.';
   }

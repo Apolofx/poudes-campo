@@ -7,8 +7,8 @@ import { makeInMemoryContainer } from '../support/in-memory-container';
 import type { Container } from '@/composition/container';
 
 async function seed(c: Container) {
-  await c.recordVisit.execute({ fieldId: 'f1', visitDate: new Date('2026-07-20T10:00:00Z'), notes: 'primera', followUp: { kind: 'none' } });
-  const r = await c.recordVisit.execute({ fieldId: 'f1', visitDate: new Date('2026-07-25T10:00:00Z'), notes: 'segunda', followUp: { kind: 'none' } });
+  await c.recordVisit.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-20T10:00:00Z'), notes: 'primera', next: { kind: 'none' } });
+  const r = await c.recordVisit.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-25T10:00:00Z'), notes: 'segunda', next: { kind: 'none' } });
   await c.cancelVisit.execute({ visitId: r.visitId });
 }
 
@@ -35,7 +35,7 @@ describe('FieldHistoryScreen', () => {
     // la segunda (25 jul, cancelada) va primero
     expect(rows[0]).toHaveTextContent(/segunda/);
     expect(rows[0]).toHaveTextContent(/Cancelada/);
-    expect(rows[1]).toHaveTextContent(/Activa/);
+    expect(rows[1]).toHaveTextContent(/Realizada/);
   });
 
   it('shows an empty state with a CTA to register when the field has no visits', async () => {
@@ -55,7 +55,7 @@ describe('FieldHistoryScreen', () => {
 
   it('shows scheduled visits with a badge and a Programar button', async () => {
     const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
-    await c.scheduleVisit.execute({ fieldId: 'f1', scheduledDate: new Date('2026-08-10T00:00:00Z'), reminderLeadDays: 3 });
+    await c.scheduleVisit.execute({ fieldId: 'f1', plannedFor: new Date('2026-08-10T00:00:00Z'), reminderLeadDays: 3 });
     renderScreen(c);
 
     const link = await screen.findByRole('link', { name: /Programar visita/i });
@@ -66,7 +66,7 @@ describe('FieldHistoryScreen', () => {
 
   it('muestra el día UTC de una visita guardada a medianoche (igual que el form de edición)', async () => {
     const c = makeInMemoryContainer(new Date('2026-08-01T00:30:00.000Z'));
-    await c.recordVisit.execute({ fieldId: 'f1', visitDate: new Date('2026-08-01T00:00:00.000Z'), notes: 'borde', followUp: { kind: 'none' } });
+    await c.recordVisit.execute({ fieldId: 'f1', visitedAt: new Date('2026-08-01T00:00:00.000Z'), notes: 'borde', next: { kind: 'none' } });
     renderScreen(c);
 
     const row = await screen.findByRole('link', { name: /borde/ });

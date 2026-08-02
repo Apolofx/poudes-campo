@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
-import { clientLabel, zoneLabel } from '@/ui/labels';
+import { clientLabel, zoneLabel, visitStatusLabel } from '@/ui/labels';
 import { dateLabel } from '@/ui/date-utils';
 
 export function FieldHistoryScreen() {
@@ -10,7 +10,7 @@ export function FieldHistoryScreen() {
   if (loading) return <main className="screen"><p className="hint">Cargando…</p></main>;
   if (!view) return <main className="screen"><p className="empty">No se encontró el lote.</p></main>;
 
-  const hasContent = view.visits.length > 0 || view.scheduledVisits.length > 0;
+  const hasContent = view.visits.length > 0;
 
   return (
     <main className="screen">
@@ -37,29 +37,15 @@ export function FieldHistoryScreen() {
         </>
       ) : (
         <ul className="field-list">
-          {[...view.visits.map((v) => ({
-            key: `v-${v.id}`,
-            date: v.visitDate,
-            href: `/field/${fieldId}/visitas/${v.id}`,
-            status: v.status,
-            statusLabel: v.status === 'CANCELLED' ? 'Cancelada' : 'Activa',
-            notes: v.notes,
-          })), ...view.scheduledVisits.map((s) => ({
-            key: `s-${s.id}`,
-            date: s.scheduledDate,
-            href: `/field/${fieldId}/programadas/${s.id}`,
-            status: s.status,
-            statusLabel: s.status === 'CANCELLED' ? 'Cancelada' : 'Programada',
-            notes: s.notes,
-          }))].sort((a, b) => b.date.getTime() - a.date.getTime()).map((row) => (
-            <li key={row.key}>
-              <Link className="field-row" to={row.href}>
+          {view.visits.map((v) => (
+            <li key={v.id}>
+              <Link className="field-row" to={`/field/${fieldId}/visitas/${v.id}`}>
                 <span className="field-text">
-                  <span className="field-name">{dateLabel(row.date)}</span>
-                  <span className="field-sub">{row.notes ?? 'Sin notas'}</span>
+                  <span className="field-name">{dateLabel(v.plannedFor ?? v.visitedAt!)}</span>
+                  <span className="field-sub">{v.notes ?? 'Sin notas'}</span>
                 </span>
-                <span className={`visit-badge ${row.status === 'CANCELLED' ? 'is-cancelled' : 'is-active'}`}>
-                  {row.statusLabel}
+                <span className={`visit-badge ${v.status === 'CANCELLED' ? 'is-cancelled' : 'is-active'}`}>
+                  {visitStatusLabel(v.status)}
                 </span>
               </Link>
             </li>

@@ -17,8 +17,8 @@ describe('useRecordVisit', () => {
     await act(async () => {
       result.current.submit({
         fieldId: 'f1',
-        visitDate: new Date('2026-07-27T09:00:00Z'),
-        followUp: { kind: 'none' },
+        visitedAt: new Date('2026-07-27T09:00:00Z'),
+        next: { kind: 'none' },
       });
     });
     await waitFor(() => expect(result.current.result?.visitId).toBeTruthy());
@@ -30,8 +30,8 @@ describe('useRecordVisit', () => {
     await act(async () => {
       result.current.submit({
         fieldId: 'f1',
-        visitDate: new Date('2026-08-01T09:00:00Z'),
-        followUp: { kind: 'none' },
+        visitedAt: new Date('2026-08-01T09:00:00Z'),
+        next: { kind: 'none' },
       });
     });
     await waitFor(() => expect(result.current.error?.name).toBe('FutureVisitDate'));
