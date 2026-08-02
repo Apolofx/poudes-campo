@@ -7,24 +7,11 @@ import { useSearchFields } from '@/ui/hooks/use-search-fields';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
 import { PickOrCreate, type PickOrCreateValue } from '@/ui/components/PickOrCreate';
 import { domainErrorMessage } from '@/ui/error-messages';
+import { isoDay, localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
 interface BackNav {
   label: string;
   to: string;
-}
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function futureIso(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function utcDate(iso: string): Date {
-  return new Date(`${iso}T00:00:00.000Z`);
 }
 
 export function ScheduledVisitFormScreen() {
@@ -49,7 +36,7 @@ export function ScheduledVisitFormScreen() {
   const [clientValue, setClientValue] = useState<PickOrCreateValue>({ type: 'none' });
   const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [scheduledDate, setScheduledDate] = useState(futureIso(14));
+  const [scheduledDate, setScheduledDate] = useState(localFutureIso(14));
   const [leadDays, setLeadDays] = useState(3);
   const [notes, setNotes] = useState('');
   const [localError, setLocalError] = useState<string | undefined>();
@@ -69,7 +56,7 @@ export function ScheduledVisitFormScreen() {
         setLoadError(Object.assign(new Error('ScheduledVisitNotFound'), { name: 'ScheduledVisitNotFound' }));
         return;
       }
-      setScheduledDate(scheduled.scheduledDate.toISOString().slice(0, 10));
+      setScheduledDate(isoDay(scheduled.scheduledDate));
       setLeadDays(scheduled.reminderLeadDays);
       setNotes(scheduled.notes ?? '');
     });
@@ -118,7 +105,7 @@ export function ScheduledVisitFormScreen() {
   const submitting = isEditing ? edit.submitting : create.submitting;
   const gapMax = Math.max(
     1,
-    Math.round((utcDate(scheduledDate).getTime() - utcDate(todayIso()).getTime()) / 86_400_000),
+    Math.round((utcDate(scheduledDate).getTime() - utcDate(localTodayIso()).getTime()) / 86_400_000),
   );
 
   return (
@@ -169,7 +156,7 @@ export function ScheduledVisitFormScreen() {
           <input
             className="control"
             type="date"
-            min={futureIso(1)}
+            min={localFutureIso(1)}
             value={scheduledDate}
             onChange={(e) => setScheduledDate(e.target.value)}
           />

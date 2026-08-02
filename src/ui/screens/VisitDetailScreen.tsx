@@ -7,23 +7,9 @@ import { useEditVisit } from '@/ui/hooks/use-edit-visit';
 import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { domainErrorMessage } from '@/ui/error-messages';
+import { dateLabel, isoDay, localFutureIso, utcDate } from '@/ui/date-utils';
 
 type FollowUpKind = 'interval' | 'date' | 'none';
-
-function isoDay(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-function dateLabel(d: Date): string {
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-function utcDate(iso: string): Date {
-  return new Date(`${iso}T00:00:00.000Z`);
-}
-function futureIso(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 export function VisitDetailScreen() {
   const { fieldId = '', visitId = '' } = useParams();
@@ -39,7 +25,7 @@ export function VisitDetailScreen() {
   const [visitDate, setVisitDate] = useState('');
   const [kind, setKind] = useState<FollowUpKind>('none');
   const [intervalDays, setIntervalDays] = useState(14);
-  const [nextDate, setNextDate] = useState(futureIso(14));
+  const [nextDate, setNextDate] = useState(localFutureIso(14));
   const [leadDays, setLeadDays] = useState(3);
 
   useEffect(() => {

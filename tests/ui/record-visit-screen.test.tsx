@@ -5,17 +5,13 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { CampoProvider } from '@/ui/CampoProvider';
 import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
 import { makeInMemoryContainer } from '../support/in-memory-container';
+import { localFutureIso, localTodayIso } from '@/ui/date-utils';
 
 // `RecordVisitScreen` builds its default visit date from the real system clock
-// (`todayIso()`), which tests can't inject into the component. So the use-case clock
+// (`localTodayIso()`), which tests can't inject into the component. So the use-case clock
 // must track the real "today" — a hardcoded past date makes the default date look
 // "future" and breaks these tests once the calendar rolls past it. Derive both the
 // clock and any "future" date from the real now to keep this suite deterministic.
-function isoInDays(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 function renderScreen(now = new Date()) {
   return render(
@@ -44,7 +40,7 @@ describe('RecordVisitScreen', () => {
     const { container } = renderScreen();
     const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
     await userEvent.clear(dateInput);
-    await userEvent.type(dateInput, isoInDays(30));
+    await userEvent.type(dateInput, localFutureIso(30));
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     fireEvent.submit(container.querySelector('form')!);
     await waitFor(() =>
@@ -114,6 +110,6 @@ describe('RecordVisitScreen', () => {
   it('marca la fecha con max = hoy para que el navegador bloquee una fecha futura', () => {
     renderScreen();
     const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
-    expect(dateInput).toHaveAttribute('max', isoInDays(0));
+    expect(dateInput).toHaveAttribute('max', localTodayIso());
   });
 });

@@ -63,4 +63,13 @@ describe('FieldHistoryScreen', () => {
     const row = await screen.findByRole('link', { name: /ago/i });
     expect(row).toHaveTextContent(/Programada/);
   });
+
+  it('muestra el día UTC de una visita guardada a medianoche (igual que el form de edición)', async () => {
+    const c = makeInMemoryContainer(new Date('2026-08-01T00:30:00.000Z'));
+    await c.recordVisit.execute({ fieldId: 'f1', visitDate: new Date('2026-08-01T00:00:00.000Z'), notes: 'borde', followUp: { kind: 'none' } });
+    renderScreen(c);
+
+    const row = await screen.findByRole('link', { name: /borde/ });
+    expect(row).toHaveTextContent(/01 de ago de 2026/);
+  });
 });

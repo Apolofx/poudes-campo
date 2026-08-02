@@ -1,10 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
 import { clientLabel, zoneLabel } from '@/ui/labels';
-
-function dateLabel(d: Date): string {
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+import { dateLabel } from '@/ui/date-utils';
 
 export function FieldHistoryScreen() {
   const { fieldId = '' } = useParams();

@@ -46,6 +46,14 @@ describe('VisitDetailScreen', () => {
     expect((await c.getVisit.execute(id))?.notes).toBe('corregido');
   });
 
+  it('prefills the date input with the stored day', async () => {
+    const c = makeInMemoryContainer(new Date('2026-08-01T00:30:00.000Z'));
+    const r = await c.recordVisit.execute({ fieldId: 'f1', visitDate: new Date('2026-08-01T00:00:00.000Z'), notes: '', followUp: { kind: 'none' } });
+    renderAt(c, r.visitId);
+    const date = (await screen.findByLabelText('Fecha')) as HTMLInputElement;
+    expect(date.value).toBe('2026-08-01');
+  });
+
   it('editing only the date keeps the prefilled notes intact', async () => {
     const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
     const id = await seedActive(c);

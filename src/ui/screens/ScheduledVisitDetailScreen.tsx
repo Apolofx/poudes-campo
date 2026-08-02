@@ -4,10 +4,7 @@ import { useScheduledVisit } from '@/ui/hooks/use-scheduled-visit';
 import { useCancelScheduledVisit } from '@/ui/hooks/use-cancel-scheduled-visit';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { domainErrorMessage } from '@/ui/error-messages';
-
-function dateLabel(d: Date): string {
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+import { dateLabel } from '@/ui/date-utils';
 
 export function ScheduledVisitDetailScreen() {
   const { fieldId = '', scheduledVisitId = '' } = useParams();

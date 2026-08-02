@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { FollowUpInput } from '@/application/use-cases/record-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
 import { domainErrorMessage } from '@/ui/error-messages';
+import { localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
 type FollowUpKind = 'interval' | 'date' | 'none';
 
@@ -13,20 +14,6 @@ interface BackNav {
 
 const DEFAULT_BACK: BackNav = { label: 'Buscar lote', to: '/buscar' };
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function futureIso(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function utcDate(iso: string): Date {
-  return new Date(`${iso}T00:00:00.000Z`);
-}
-
 export function RecordVisitScreen() {
   const { fieldId = '' } = useParams();
   const navigate = useNavigate();
@@ -35,11 +22,11 @@ export function RecordVisitScreen() {
 
   const back = (location.state as { back?: BackNav } | null)?.back ?? DEFAULT_BACK;
 
-  const [visitDate, setVisitDate] = useState(todayIso());
+  const [visitDate, setVisitDate] = useState(localTodayIso());
   const [notes, setNotes] = useState('');
   const [kind, setKind] = useState<FollowUpKind>('interval');
   const [intervalDays, setIntervalDays] = useState(14);
-  const [nextDate, setNextDate] = useState(futureIso(14));
+  const [nextDate, setNextDate] = useState(localFutureIso(14));
   const [leadDays, setLeadDays] = useState(3);
 
   useEffect(() => {
@@ -69,7 +56,7 @@ export function RecordVisitScreen() {
   const leadMax =
     kind === 'interval'
       ? Math.max(1, intervalDays)
-      : Math.max(1, Math.round((utcDate(nextDate).getTime() - utcDate(todayIso()).getTime()) / 86_400_000));
+      : Math.max(1, Math.round((utcDate(nextDate).getTime() - utcDate(localTodayIso()).getTime()) / 86_400_000));
 
   return (
     <main className="screen record">
@@ -81,7 +68,7 @@ export function RecordVisitScreen() {
           <input
             className="control"
             type="date"
-            max={todayIso()}
+            max={localTodayIso()}
             value={visitDate}
             onChange={(e) => setVisitDate(e.target.value)}
           />
