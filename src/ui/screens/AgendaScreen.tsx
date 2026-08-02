@@ -1,6 +1,7 @@
 // src/ui/screens/AgendaScreen.tsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { CalendarPlus } from 'lucide-react';
 import { useAgenda } from '@/ui/hooks/use-agenda';
 import { groupUpcoming, formatRelativeDays, type GroupBy } from '@/ui/agenda-presentation';
 import { ReminderAvisoBanner } from '@/ui/components/ReminderAvisoBanner';
@@ -47,6 +48,7 @@ export function AgendaScreen() {
         <>
           <p className="empty">No hay visitas agendadas.</p>
           <div className="empty-actions">
+            <Link className="btn-primary" to="/programar">Programar visita</Link>
             <Link className="btn-secondary" to="/buscar">Buscar un lote</Link>
           </div>
         </>
@@ -85,6 +87,9 @@ export function AgendaScreen() {
           </section>
         );
       })}
+      <Link className="fab" to="/programar" aria-label="Programar visita">
+        <CalendarPlus size={26} aria-hidden="true" />
+      </Link>
     </main>
   );
 }

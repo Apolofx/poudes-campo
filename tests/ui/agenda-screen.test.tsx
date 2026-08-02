@@ -122,7 +122,7 @@ describe('AgendaScreen', () => {
     expect(screen.getByRole('link', { name: /Potrero 4/ })).toBeInTheDocument();
   });
 
-  it('muestra estado vacío cuando no hay visitas agendadas', async () => {
+  it('muestra estado vacío que promete a programar visita', async () => {
     const zoneMap = new Map([['z1', new Zone('z1', 'El Séptimo')]]);
     const clientMap = new Map([['c1', new Client('c1', 'La Querencia')]]);
     const fields = new InMemoryFieldRepository(zoneMap, clientMap, [
@@ -159,8 +159,19 @@ describe('AgendaScreen', () => {
       </CampoProvider>,
     );
     expect(await screen.findByText('No hay visitas agendadas.')).toBeInTheDocument();
-    const cta = screen.getByRole('link', { name: /Buscar un lote/ });
-    expect(cta).toHaveAttribute('href', '/buscar');
+    const programar = screen.getByRole('link', { name: /Programar visita/ });
+    expect(programar).toHaveAttribute('href', '/programar');
+    const buscar = screen.getByRole('link', { name: /Buscar un lote/ });
+    expect(buscar).toHaveAttribute('href', '/buscar');
+    expect(screen.getAllByRole('link', { name: /Programar visita/ })).toHaveLength(2);
+  });
+
+  it('muestra el FAB para programar cuando hay visitas', async () => {
+    await renderAgenda();
+    await screen.findByRole('heading', { name: /Vencidas/ });
+    const fab = screen.getByRole('link', { name: /Programar visita/ });
+    expect(fab).toHaveAttribute('href', '/programar');
+    expect(screen.getAllByRole('link', { name: /Programar visita/ })).toHaveLength(1);
   });
 
   it('muestra un error en vez del estado vacío cuando falla la carga', async () => {
