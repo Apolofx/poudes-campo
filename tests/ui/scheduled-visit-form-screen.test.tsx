@@ -20,6 +20,8 @@ function renderForm(path = '/field/f1/programar', container = makeInMemoryContai
     <CampoProvider container={container}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
+          <Route path="/" element={<div>Inicio</div>} />
+          <Route path="/programar" element={<ScheduledVisitFormScreen />} />
           <Route path="/field/:fieldId/programar" element={<ScheduledVisitFormScreen />} />
           <Route path="/field/:fieldId/programar/:scheduledVisitId" element={<ScheduledVisitFormScreen />} />
           <Route path="/field/:fieldId/visitas" element={<div>Historial</div>} />
@@ -58,5 +60,44 @@ describe('ScheduledVisitFormScreen', () => {
     await userEvent.type(screen.getByLabelText('Notas'), 'revisar siembra');
     await userEvent.click(screen.getByRole('button', { name: /Guardar/ }));
     expect(await screen.findByText('Historial')).toBeInTheDocument();
+  });
+
+  it('crea lote, zona y cliente nuevos y agenda desde /programar', async () => {
+    const c = makeInMemoryContainer();
+    await c.clearAllData.execute();
+    renderForm('/programar', c);
+    await userEvent.type(screen.getByLabelText('Lote'), 'Paso 9');
+    await userEvent.type(screen.getByLabelText('Zona'), 'La Costa');
+    await userEvent.type(screen.getByLabelText('Cliente'), 'Herrera');
+    const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
+    await userEvent.clear(dateInput);
+    await userEvent.type(dateInput, isoInDays(10));
+    await userEvent.click(screen.getByRole('button', { name: /Programar/ }));
+
+    expect(await screen.findByText('Inicio')).toBeInTheDocument();
+    expect((await c.listZones.execute()).map((z) => z.name)).toEqual(['La Costa']);
+    expect((await c.listClients.execute()).map((cl) => cl.name)).toEqual(['Herrera']);
+    expect((await c.listCatalogFields.execute()).map((f) => f.field.name)).toEqual(['Paso 9']);
+    expect((await c.listUpcomingVisits.execute()).map((u) => u.field.name)).toContain('Paso 9');
+  });
+
+  it('permite elegir un lote existente y agenda para ese lote', async () => {
+    const c = makeInMemoryContainer();
+    renderForm('/programar', c);
+    await userEvent.type(screen.getByLabelText('Lote'), 'Alto');
+    await userEvent.click(screen.getByRole('button', { name: 'Lote El Alto' }));
+    const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
+    await userEvent.clear(dateInput);
+    await userEvent.type(dateInput, isoInDays(10));
+    await userEvent.click(screen.getByRole('button', { name: /Programar/ }));
+
+    expect(await screen.findByText('Inicio')).toBeInTheDocument();
+    expect(await c.listCatalogFields.execute()).toHaveLength(2);
+    expect((await c.listUpcomingVisits.execute()).map((u) => u.field.name)).toContain('Lote El Alto');
+  });
+
+  it('muestra el lote como chip fijo al entrar con lote conocido', async () => {
+    renderForm('/field/f1/programar');
+    expect(await screen.findByText(/Lote: Lote El Alto/)).toBeInTheDocument();
   });
 });

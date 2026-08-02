@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCampo } from '@/ui/CampoProvider';
-import { useScheduleVisit } from '@/ui/hooks/use-schedule-visit';
+import { useScheduleVisitEnsuringField } from '@/ui/hooks/use-schedule-visit-ensuring-field';
 import { useEditScheduledVisit } from '@/ui/hooks/use-edit-scheduled-visit';
+import { useSearchFields } from '@/ui/hooks/use-search-fields';
+import { useFieldHistory } from '@/ui/hooks/use-field-history';
+import { PickOrCreate, type PickOrCreateValue } from '@/ui/components/PickOrCreate';
 import { domainErrorMessage } from '@/ui/error-messages';
 
 interface BackNav {
@@ -28,19 +31,36 @@ export function ScheduledVisitFormScreen() {
   const { fieldId = '', scheduledVisitId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { getScheduledVisit } = useCampo();
-  const create = useScheduleVisit();
+  const { getScheduledVisit, listZones, listClients } = useCampo();
+  const create = useScheduleVisitEnsuringField();
   const edit = useEditScheduledVisit();
+  const { results: lots, search } = useSearchFields();
+  const fieldHistory = useFieldHistory(fieldId);
 
   const isEditing = Boolean(scheduledVisitId);
-  const back =
-    (location.state as { back?: BackNav } | null)?.back ??
-    ({ label: 'Historial', to: `/field/${fieldId}/visitas` } satisfies BackNav);
+  const pickingLot = !isEditing && !fieldId;
+  const defaultBack: BackNav = pickingLot
+    ? { label: 'Inicio', to: '/' }
+    : { label: 'Historial', to: `/field/${fieldId}/visitas` };
+  const back = (location.state as { back?: BackNav } | null)?.back ?? defaultBack;
 
+  const [lotValue, setLotValue] = useState<PickOrCreateValue>({ type: 'none' });
+  const [zoneValue, setZoneValue] = useState<PickOrCreateValue>({ type: 'none' });
+  const [clientValue, setClientValue] = useState<PickOrCreateValue>({ type: 'none' });
+  const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [scheduledDate, setScheduledDate] = useState(futureIso(14));
   const [leadDays, setLeadDays] = useState(3);
   const [notes, setNotes] = useState('');
+  const [localError, setLocalError] = useState<string | undefined>();
   const [loadError, setLoadError] = useState<Error | undefined>();
+
+  useEffect(() => {
+    if (!pickingLot) return;
+    search('');
+    listZones.execute().then((zs) => setZones(zs.filter((z) => !z.archived).map((z) => ({ id: z.id, name: z.name }))));
+    listClients.execute().then((cs) => setClients(cs.filter((c) => !c.archived).map((c) => ({ id: c.id, name: c.name }))));
+  }, [pickingLot, search, listZones, listClients]);
 
   useEffect(() => {
     if (!scheduledVisitId) return;
@@ -56,22 +76,45 @@ export function ScheduledVisitFormScreen() {
   }, [scheduledVisitId, getScheduledVisit]);
 
   useEffect(() => {
-    if (create.result || edit.done) navigate(`/field/${fieldId}/visitas`);
-  }, [create.result, edit.done, navigate, fieldId]);
+    if (edit.done) navigate(back.to);
+  }, [edit.done, navigate, back]);
 
-  const error = loadError ?? create.error ?? edit.error;
-
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(undefined);
     const safeLead = Number.isFinite(leadDays) && leadDays >= 0 ? leadDays : 0;
     const base = { reminderLeadDays: safeLead, notes: notes.trim() === '' ? undefined : notes };
+
     if (isEditing && scheduledVisitId) {
       edit.submit({ scheduledVisitId, scheduledDate: utcDate(scheduledDate), ...base });
-    } else {
-      create.submit({ fieldId, scheduledDate: utcDate(scheduledDate), ...base });
+      return;
     }
+
+    if (pickingLot) {
+      if (lotValue.type === 'none') {
+        setLocalError('Ingresá el nombre del lote.');
+        return;
+      }
+      const field = lotValue.type === 'existing'
+        ? { id: lotValue.id }
+        : {
+            name: lotValue.name,
+            zone: zoneValue.type === 'none' ? undefined
+              : zoneValue.type === 'existing' ? { id: zoneValue.id } : { name: zoneValue.name },
+            client: clientValue.type === 'none' ? undefined
+              : clientValue.type === 'existing' ? { id: clientValue.id } : { name: clientValue.name },
+          };
+      const result = await create.submit({ scheduledDate: utcDate(scheduledDate), ...base, field });
+      if (result) navigate('/');
+      return;
+    }
+
+    const result = await create.submit({ scheduledDate: utcDate(scheduledDate), ...base, field: { id: fieldId } });
+    if (result) navigate(`/field/${fieldId}/visitas`);
   };
 
+  const fieldName = !isEditing && fieldId ? fieldHistory.view?.field.name : undefined;
+  const error = loadError ?? edit.error ?? create.error ?? localError;
   const submitting = isEditing ? edit.submitting : create.submitting;
   const gapMax = Math.max(
     1,
@@ -82,7 +125,45 @@ export function ScheduledVisitFormScreen() {
     <main className="screen record">
       <Link className="back-link" to={back.to}>‹ {back.label}</Link>
       <h1 className="screen-title">{isEditing ? 'Editar visita programada' : 'Programar visita'}</h1>
+      {fieldName && <p className="field-sub">Lote: {fieldName}</p>}
       <form className="form" onSubmit={onSubmit}>
+        {pickingLot && (
+          <label className="field">
+            <span className="field-label">Lote</span>
+            <PickOrCreate
+              label="Lote"
+              items={lots.map((r) => ({ id: r.field.id, name: r.field.name }))}
+              placeholder="Nombre del lote"
+              onChange={setLotValue}
+            />
+          </label>
+        )}
+        {pickingLot && lotValue.type !== 'existing' && (
+          <>
+            <label className="field">
+              <span className="field-label">Zona</span>
+              <PickOrCreate
+                label="Zona"
+                items={zones}
+                placeholder="Zona (opcional)"
+                allowNone
+                noneLabel="Sin zona"
+                onChange={setZoneValue}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Cliente</span>
+              <PickOrCreate
+                label="Cliente"
+                items={clients}
+                placeholder="Cliente (opcional)"
+                allowNone
+                noneLabel="Sin cliente"
+                onChange={setClientValue}
+              />
+            </label>
+          </>
+        )}
         <label className="field">
           <span className="field-label">Fecha</span>
           <input
