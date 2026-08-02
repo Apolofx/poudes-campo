@@ -159,11 +159,11 @@ describe('AgendaScreen', () => {
       </CampoProvider>,
     );
     expect(await screen.findByText('No hay visitas agendadas.')).toBeInTheDocument();
-    const programar = screen.getByRole('link', { name: /Programar visita/ });
-    expect(programar).toHaveAttribute('href', '/programar');
+    const programar = screen.getAllByRole('link', { name: /Programar visita/ });
+    expect(programar).toHaveLength(2);
+    for (const el of programar) expect(el).toHaveAttribute('href', '/programar');
     const buscar = screen.getByRole('link', { name: /Buscar un lote/ });
     expect(buscar).toHaveAttribute('href', '/buscar');
-    expect(screen.getAllByRole('link', { name: /Programar visita/ })).toHaveLength(2);
   });
 
   it('muestra el FAB para programar cuando hay visitas', async () => {
