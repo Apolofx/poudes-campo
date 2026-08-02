@@ -8,43 +8,43 @@
 
 ### Tarea 1 — Use case `ScheduleVisitEnsuringField` + wiring de containers
 
-- [ ] Test rojo `tests/application/schedule-visit-ensuring-field.test.ts`
-- [ ] Implementación `src/application/use-cases/schedule-visit-ensuring-field.ts`
-- [ ] Wiring: `src/composition/container.ts` (interface + build) y `tests/support/in-memory-container.ts`
-- [ ] Verde + typecheck → commit `feat(application): ScheduleVisitEnsuringField orquesta crear lote/zona/cliente y agendar`
+- [x] Test rojo `tests/application/schedule-visit-ensuring-field.test.ts`
+- [x] Implementación `src/application/use-cases/schedule-visit-ensuring-field.ts`
+- [x] Wiring: `src/composition/container.ts` (interface + build) y `tests/support/in-memory-container.ts`
+- [x] Verde + typecheck → commit `feat(application): ScheduleVisitEnsuringField orquesta crear lote/zona/cliente y agendar`
 
 ### Tarea 2 — Componente `PickOrCreate`
 
-- [ ] Test rojo `tests/ui/pick-or-create.test.tsx`
-- [ ] Implementación `src/ui/components/PickOrCreate.tsx`
-- [ ] CSS `.pickorcreate-*` en `src/ui/styles.css`
-- [ ] Verde + typecheck → commit `feat(ui): componente PickOrCreate (elegir o crear entidad)`
+- [x] Test rojo `tests/ui/pick-or-create.test.tsx`
+- [x] Implementación `src/ui/components/PickOrCreate.tsx`
+- [x] CSS `.pickorcreate-*` en `src/ui/styles.css`
+- [x] Verde + typecheck → commit `feat(ui): componente PickOrCreate (elegir o crear entidad)`
 
 ### Tarea 3 — `ScheduledVisitFormScreen` unificada (tres modos)
 
-- [ ] Test rojo: ampliar `tests/ui/scheduled-visit-form-screen.test.tsx`
-- [ ] Hook `useScheduleVisitEnsuringField` (`src/ui/hooks/`)
-- [ ] Refactor de `src/ui/screens/ScheduledVisitFormScreen.tsx`
-- [ ] Ruta `/programar` en `src/ui/App.tsx`
-- [ ] Verde + typecheck → commit `feat(ui): programar visita con lote a elegir o crear (camino único)`
+- [x] Test rojo: ampliar `tests/ui/scheduled-visit-form-screen.test.tsx`
+- [x] Hook `useScheduleVisitEnsuringField` (`src/ui/hooks/`)
+- [x] Refactor de `src/ui/screens/ScheduledVisitFormScreen.tsx`
+- [x] Ruta `/programar` en `src/ui/App.tsx`
+- [x] Verde + typecheck → commit `feat(ui): programar visita con lote a elegir o crear (camino único)`
 
 ### Tarea 4 — FAB + empty state de Inicio
 
-- [ ] Test rojo: `tests/ui/agenda-screen.test.tsx` (FAB + CTA "Programar visita")
-- [ ] `AgendaScreen.tsx`: FAB + empty-actions
-- [ ] CSS `.fab`
-- [ ] Verde + typecheck → commit `feat(ui): FAB "Programar visita" y empty state que promete a programar`
+- [x] Test rojo: `tests/ui/agenda-screen.test.tsx` (FAB + CTA "Programar visita")
+- [x] `AgendaScreen.tsx`: FAB + empty-actions
+- [x] CSS `.fab`
+- [x] Verde + typecheck → commit `feat(ui): FAB "Programar visita" y empty state que promete a programar`
 
 ### Tarea 5 — Integration test del happy path real (idb)
 
-- [ ] Test verde `tests/ui/integration.test.tsx`: primer uso crea lote/zona/cliente y agenda
-- [ ] Suite completa + typecheck → commit `test(ui): integration happy path de primer uso`
+- [x] Test verde `tests/ui/integration.test.tsx`: primer uso crea lote/zona/cliente y agenda
+- [x] Suite completa + typecheck → commit `test(ui): integration happy path de primer uso`
 
 ### Tarea 6 — Cierre
 
-- [ ] Actualizar `docs/ROADMAP.md` (fila de etapa + diferidos)
-- [ ] Suite completa verde + typecheck
-- [ ] Merge --no-ff a `main`, borrar rama
+- [x] Actualizar `docs/ROADMAP.md` (fila de etapa + diferidos)
+- [x] Suite completa verde + typecheck
+- [x] Merge --no-ff a `main`, borrar rama
 
 ---
 
