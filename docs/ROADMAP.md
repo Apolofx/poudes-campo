@@ -46,6 +46,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **4a — cancelar/editar visitas** | Cancelar/editar visitas registradas (baja lógica auditable sobre eventos), historial por lote | ✅ Completa (244 tests) |
 | **4c — programar visitas** | Programar/editar/cancelar visitas futuras por lote (aviso propio, baja lógica, consumo al registrar la visita real) | ✅ Completa (283 tests) |
 | **4c-pulido-ux** | Pulido UX/UI (evaluación): `max` fecha futura en Registrar, CTA en agenda/historial vacíos, sugerencia + `aria-live` en búsqueda, íconos SVG en aviso, label "Cancelar visita" unificado, `ConfirmDialog` con ESC + foco inicial | ✅ Completa (289 tests) |
+| **onboarding — camino único** | Primera visita programada en un solo camino: FAB "Programar visita" en Inicio, empty state que promete a programar, `ScheduleVisitEnsuringField` (orquesta crear zona/cliente/lote + agendar), combobox `PickOrCreate` (elegir o crear, match por nombre sin duplicar), `ScheduledVisitFormScreen` unificada con `/programar` | ✅ Completa (306 tests) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
@@ -83,6 +84,7 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
   - **Editar fecha de una programada re-clampa el lead** — si el usuario pidió más días de aviso que el gap hasta la nueva fecha, se recorta (clamp, no rechazo), mismo criterio que el follow-up.
   - **Programada cancelada sin borrado definitivo** — queda en el historial como "Cancelada" (trazabilidad decidida); el consumo al registrar la visita real es la única vía de cerrarla "con éxito".
   - **Índice idb `by-field` de `scheduled-visits`** — se usa para agenda/historial; getAll+filtro habría servido a escala ~40, se sumó el índice de entrada.
+- **Diferidos de onboarding (camino único):** reusar `PickOrCreate` en el form de Lote de Catálogo (decisión explícita: solo el camino único en la etapa); búsqueda diferida para muchos lotes (>40 no es un caso real); FAB solo en Inicio.
 
 ---
 
