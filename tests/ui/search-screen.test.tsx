@@ -50,4 +50,10 @@ describe('SearchScreen', () => {
     await screen.findByText(/Lote El Alto/);
     expect(screen.queryByText('No se encontró ningún lote.')).not.toBeInTheDocument();
   });
+
+  it('announces result changes to screen readers via aria-live', async () => {
+    renderScreen();
+    const list = await screen.findByRole('list');
+    expect(list).toHaveAttribute('aria-live', 'polite');
+  });
 });

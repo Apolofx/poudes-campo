@@ -42,7 +42,7 @@ export function SearchScreen() {
           <p className="hint">Probá con otro término o revisá el catálogo.</p>
         </div>
       ) : (
-        <ul className="field-list">
+        <ul className="field-list" aria-live="polite">
           {results.map((r) => (
             <li key={r.field.id}>
               <Link className="field-row" to={`/field/${r.field.id}/visitas`}>
