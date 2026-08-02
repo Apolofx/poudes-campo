@@ -7,6 +7,7 @@ import { EditVisit } from '@/application/use-cases/edit-visit';
 import { GetFieldHistory } from '@/application/use-cases/get-field-history';
 import { GetVisit } from '@/application/use-cases/get-visit';
 import { ScheduleVisit } from '@/application/use-cases/schedule-visit';
+import { ScheduleVisitEnsuringField } from '@/application/use-cases/schedule-visit-ensuring-field';
 import { CancelScheduledVisit } from '@/application/use-cases/cancel-scheduled-visit';
 import { EditScheduledVisit } from '@/application/use-cases/edit-scheduled-visit';
 import { GetScheduledVisit } from '@/application/use-cases/get-scheduled-visit';
@@ -55,6 +56,7 @@ export interface Container {
   listUpcomingVisits: ListUpcomingVisits;
   dispatchDueReminders: DispatchDueReminders;
   scheduleVisit: ScheduleVisit;
+  scheduleVisitEnsuringField: ScheduleVisitEnsuringField;
   cancelScheduledVisit: CancelScheduledVisit;
   editScheduledVisit: EditScheduledVisit;
   getScheduledVisit: GetScheduledVisit;
@@ -88,6 +90,10 @@ export function buildContainer(db: CampoDb): Container {
   const clock = new SystemClock();
   const ids = new Uuidv7IdGenerator();
   const notifier = new InAppReminderNotifier();
+  const createZone = new CreateZone(zones, ids);
+  const createClient = new CreateClient(clients, ids);
+  const createField = new CreateField(fields, ids);
+  const scheduleVisit = new ScheduleVisit(fields, scheduled, reminders, clock, ids);
   return {
     searchFields: new SearchFields(fields),
     recordVisit: new RecordVisit(fields, visits, reminders, scheduled, clock, ids),
@@ -97,22 +103,23 @@ export function buildContainer(db: CampoDb): Container {
     getVisit: new GetVisit(visits),
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, scheduled, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
-    scheduleVisit: new ScheduleVisit(fields, scheduled, reminders, clock, ids),
+    scheduleVisit,
+    scheduleVisitEnsuringField: new ScheduleVisitEnsuringField(createZone, createClient, createField, scheduleVisit),
     cancelScheduledVisit: new CancelScheduledVisit(scheduled, reminders, clock),
     editScheduledVisit: new EditScheduledVisit(scheduled, reminders, clock, ids),
     getScheduledVisit: new GetScheduledVisit(scheduled),
     reminderAviso: notifier,
-    createZone: new CreateZone(zones, ids),
+    createZone,
     editZone: new EditZone(zones),
     archiveZone: new ArchiveZone(zones, fields),
     restoreZone: new RestoreZone(zones),
     listZones: new ListZones(zones),
-    createClient: new CreateClient(clients, ids),
+    createClient,
     editClient: new EditClient(clients),
     archiveClient: new ArchiveClient(clients, fields),
     restoreClient: new RestoreClient(clients),
     listClients: new ListClients(clients),
-    createField: new CreateField(fields, ids),
+    createField,
     editField: new EditField(fields),
     archiveField: new ArchiveField(fields),
     restoreField: new RestoreField(fields),

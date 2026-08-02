@@ -118,6 +118,23 @@ body {
 }
 .empty-actions .btn-primary, .empty-actions .btn-secondary { flex: 1; }
 
+.fab {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--touch) + 24px);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  z-index: 20;
+}
+.fab:active { transform: scale(0.96); }
+
 .field-list { list-style: none; margin: 0; padding: 0; }
 
 .field-row {
@@ -185,6 +202,41 @@ body {
 .control:focus-visible { border-color: var(--accent); }
 
 .textarea { min-height: 88px; padding: var(--space-3); resize: vertical; }
+
+/* combobox elegir-o-crear */
+.pickorcreate { position: relative; }
+.pickorcreate-input { width: 100%; }
+.pickorcreate-options {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.pickorcreate-option {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.pickorcreate-option:active { background: var(--segment-bg); }
+.pickorcreate-option.is-create { color: var(--accent); font-weight: 700; }
+.pickorcreate-option.is-none { color: var(--muted); }
 
 .fieldset { gap: var(--space-2); }
 

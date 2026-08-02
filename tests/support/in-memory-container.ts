@@ -14,6 +14,7 @@ import { EditVisit } from '@/application/use-cases/edit-visit';
 import { GetFieldHistory } from '@/application/use-cases/get-field-history';
 import { GetVisit } from '@/application/use-cases/get-visit';
 import { ScheduleVisit } from '@/application/use-cases/schedule-visit';
+import { ScheduleVisitEnsuringField } from '@/application/use-cases/schedule-visit-ensuring-field';
 import { CancelScheduledVisit } from '@/application/use-cases/cancel-scheduled-visit';
 import { EditScheduledVisit } from '@/application/use-cases/edit-scheduled-visit';
 import { GetScheduledVisit } from '@/application/use-cases/get-scheduled-visit';
@@ -123,6 +124,10 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
   const clock = new FixedClock(now);
   const ids = new IncrementingIdGenerator();
   const notifier = new InAppReminderNotifier();
+  const createZone = new CreateZone(zones, ids);
+  const createClient = new CreateClient(clients, ids);
+  const createField = new CreateField(fields, ids);
+  const scheduleVisit = new ScheduleVisit(fields, scheduledVisits, reminders, clock, ids);
   return {
     searchFields: new SearchFields(fields),
     recordVisit: new RecordVisit(fields, visits, reminders, scheduledVisits, clock, ids),
@@ -132,7 +137,8 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
     getVisit: new GetVisit(visits),
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, scheduledVisits, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
-    scheduleVisit: new ScheduleVisit(fields, scheduledVisits, reminders, clock, ids),
+    scheduleVisit,
+    scheduleVisitEnsuringField: new ScheduleVisitEnsuringField(createZone, createClient, createField, scheduleVisit),
     cancelScheduledVisit: new CancelScheduledVisit(scheduledVisits, reminders, clock),
     editScheduledVisit: new EditScheduledVisit(scheduledVisits, reminders, clock, ids),
     getScheduledVisit: new GetScheduledVisit(scheduledVisits),

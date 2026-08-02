@@ -41,6 +41,7 @@ export function App() {
       <Route path="/field/:fieldId/visitas" element={<FieldHistoryScreen />} />
       <Route path="/field/:fieldId/visitas/:visitId" element={<VisitDetailScreen />} />
       <Route path="/field/:fieldId/programar" element={<ScheduledVisitFormScreen />} />
+      <Route path="/programar" element={<ScheduledVisitFormScreen />} />
       <Route path="/field/:fieldId/programar/:scheduledVisitId" element={<ScheduledVisitFormScreen />} />
       <Route path="/field/:fieldId/programadas/:scheduledVisitId" element={<ScheduledVisitDetailScreen />} />
       <Route path="/catalogo/zonas/nueva" element={<ZoneFormScreen />} />
