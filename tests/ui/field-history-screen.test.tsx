@@ -48,4 +48,15 @@ describe('FieldHistoryScreen', () => {
     const link = await screen.findByRole('link', { name: /Registrar visita/i });
     expect(link).toHaveAttribute('href', '/field/f1/record');
   });
+
+  it('shows scheduled visits with a badge and a Programar button', async () => {
+    const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
+    await c.scheduleVisit.execute({ fieldId: 'f1', scheduledDate: new Date('2026-08-10T00:00:00Z'), reminderLeadDays: 3 });
+    renderScreen(c);
+
+    const link = await screen.findByRole('link', { name: /Programar visita/i });
+    expect(link).toHaveAttribute('href', '/field/f1/programar');
+    const row = await screen.findByRole('link', { name: /ago/i });
+    expect(row).toHaveTextContent(/Programada/);
+  });
 });

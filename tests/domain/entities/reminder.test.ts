@@ -39,4 +39,9 @@ describe('Reminder', () => {
     r.markSent();
     expect(r.status).toBe('CANCELLED');
   });
+  it('stores an optional scheduledVisitId', () => {
+    const r = new Reminder({ id: 'r1', visitId: 'v1', scheduledVisitId: 's1', fieldId: 'f1', remindAt: new Date('2026-08-01T00:00:00Z') });
+    expect(r.scheduledVisitId).toBe('s1');
+    expect(r.visitId).toBe('v1');
+  });
 });

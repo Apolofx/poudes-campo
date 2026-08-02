@@ -447,6 +447,9 @@ body {
 
 .list-header .btn-primary { align-self: flex-start; }
 
+.list-actions { display: flex; gap: var(--space-2); }
+.list-actions > .btn-primary, .list-actions > .btn-secondary { flex: 1; }
+
 .toggle-archived {
   display: block;
   margin: var(--space-3) var(--space-4) 0;

@@ -6,6 +6,10 @@ import { CancelVisit } from '@/application/use-cases/cancel-visit';
 import { EditVisit } from '@/application/use-cases/edit-visit';
 import { GetFieldHistory } from '@/application/use-cases/get-field-history';
 import { GetVisit } from '@/application/use-cases/get-visit';
+import { ScheduleVisit } from '@/application/use-cases/schedule-visit';
+import { CancelScheduledVisit } from '@/application/use-cases/cancel-scheduled-visit';
+import { EditScheduledVisit } from '@/application/use-cases/edit-scheduled-visit';
+import { GetScheduledVisit } from '@/application/use-cases/get-scheduled-visit';
 import {
   CreateZone,
   EditZone,
@@ -31,6 +35,7 @@ import { ClearAllData } from '@/application/use-cases/clear-all-data';
 import { IdbFieldRepository } from '@/infrastructure/persistence/idb/idb-field-repository';
 import { IdbVisitRepository } from '@/infrastructure/persistence/idb/idb-visit-repository';
 import { IdbReminderRepository } from '@/infrastructure/persistence/idb/idb-reminder-repository';
+import { IdbScheduledVisitRepository } from '@/infrastructure/persistence/idb/idb-scheduled-visit-repository';
 import { IdbZoneRepository } from '@/infrastructure/persistence/idb/idb-zone-repository';
 import { IdbClientRepository } from '@/infrastructure/persistence/idb/idb-client-repository';
 import { IdbDataReset } from '@/infrastructure/persistence/idb/idb-data-reset';
@@ -49,6 +54,10 @@ export interface Container {
   getVisit: GetVisit;
   listUpcomingVisits: ListUpcomingVisits;
   dispatchDueReminders: DispatchDueReminders;
+  scheduleVisit: ScheduleVisit;
+  cancelScheduledVisit: CancelScheduledVisit;
+  editScheduledVisit: EditScheduledVisit;
+  getScheduledVisit: GetScheduledVisit;
   reminderAviso: ReminderAvisoStore;
   createZone: CreateZone;
   editZone: EditZone;
@@ -72,6 +81,7 @@ export function buildContainer(db: CampoDb): Container {
   const fields = new IdbFieldRepository(db);
   const visits = new IdbVisitRepository(db);
   const reminders = new IdbReminderRepository(db);
+  const scheduled = new IdbScheduledVisitRepository(db);
   const zones = new IdbZoneRepository(db);
   const clients = new IdbClientRepository(db);
   const dataReset = new IdbDataReset(db);
@@ -80,13 +90,17 @@ export function buildContainer(db: CampoDb): Container {
   const notifier = new InAppReminderNotifier();
   return {
     searchFields: new SearchFields(fields),
-    recordVisit: new RecordVisit(fields, visits, reminders, clock, ids),
+    recordVisit: new RecordVisit(fields, visits, reminders, scheduled, clock, ids),
     cancelVisit: new CancelVisit(visits, reminders, clock),
     editVisit: new EditVisit(visits, reminders, clock, ids),
-    getFieldHistory: new GetFieldHistory(fields, visits),
+    getFieldHistory: new GetFieldHistory(fields, visits, scheduled),
     getVisit: new GetVisit(visits),
-    listUpcomingVisits: new ListUpcomingVisits(fields, visits, clock),
+    listUpcomingVisits: new ListUpcomingVisits(fields, visits, scheduled, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
+    scheduleVisit: new ScheduleVisit(fields, scheduled, reminders, clock, ids),
+    cancelScheduledVisit: new CancelScheduledVisit(scheduled, reminders, clock),
+    editScheduledVisit: new EditScheduledVisit(scheduled, reminders, clock, ids),
+    getScheduledVisit: new GetScheduledVisit(scheduled),
     reminderAviso: notifier,
     createZone: new CreateZone(zones, ids),
     editZone: new EditZone(zones),

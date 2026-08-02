@@ -1,7 +1,7 @@
 import type { DataReset } from '@/domain/ports/outbound/data-reset';
 import type { CampoDb } from './open-campo-db';
 
-const STORES = ['zones', 'clients', 'fields', 'visits', 'reminders'] as const;
+const STORES = ['zones', 'clients', 'fields', 'visits', 'reminders', 'scheduled-visits'] as const;
 
 export class IdbDataReset implements DataReset {
   constructor(private readonly db: CampoDb) {}

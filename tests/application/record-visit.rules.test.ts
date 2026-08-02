@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeRecordVisitHarness } from '../support/record-visit-harness';
+import { ScheduledVisit } from '@/domain/entities/scheduled-visit';
 import {
   FutureVisitDate,
   DuplicateVisitForDay,
@@ -64,6 +65,19 @@ describe('RecordVisit — rules and edges', () => {
         followUp: { kind: 'date', date: new Date('2026-07-27T20:00:00Z') },
       }),
     ).rejects.toThrow(InvalidVisitInterval);
+  });
+
+  it('consumes the ACTIVE scheduled visit when a real visit is recorded', async () => {
+    const h = makeRecordVisitHarness(new Date('2026-07-27T10:00:00Z'));
+    await h.scheduled.save(new ScheduledVisit({
+      id: 's1', fieldId: 'f1', scheduledDate: new Date('2026-08-10T00:00:00Z'), reminderLeadDays: 3, createdAt: h.clock.now(),
+    }));
+
+    await h.uc.execute({ fieldId: 'f1', visitDate: new Date('2026-07-27T10:00:00Z'), followUp: { kind: 'none' } });
+
+    expect(await h.scheduled.findActiveByField('f1')).toBeNull();
+    const all = await h.scheduled.listByField('f1');
+    expect(all.find((s) => s.id === 's1')?.status).toBe('CANCELLED');
   });
 });
 
