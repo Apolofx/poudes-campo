@@ -4,7 +4,7 @@
 
 **Qué es Campo:** PWA offline-first para un asesor agronómico que recorre ~40 lotes: registrar visitas y saber cuándo volver. Arquitectura hexagonal (TypeScript + Vitest, dominio puro sin infra). Regla dura: **ningún dato de dosis/agroquímicos/prescripciones entra jamás al sistema**.
 
-Última actualización: 2026-07-29.
+Última actualización: 2026-08-02.
 
 ---
 
@@ -19,6 +19,7 @@
 - **Catálogo (ABM):** tercer tab "Catálogo" con alta/edición/archivado (baja lógica reversible) de Zonas, Clientes y Lotes. Archivar un padre con lotes activos pregunta si cascadear (archivar los lotes) o mantenerlos (quedan huérfanos "Sin cliente"/"Sin zona", reasignables al editar el lote). "Ver archivados" + restaurar. Acción "Borrar todos los datos". Buscar/agenda/avisos ocultan lo archivado y muestran "Sin cliente/Sin zona" para huérfanos.
 - **Historial de visitas por lote:** desde Buscar, tocar un lote lleva a su historial (la fila de Agenda sigue yendo directo a Registrar). Cada visita del historial abre su detalle.
 - **Editar y cancelar una visita:** desde el detalle de una visita, **Editar** permite corregir notas, fecha y follow-up (reusa la resolución de follow-up de Registrar, con "ahora" como ancla); **Cancelar** es una baja lógica auditable (`cancelledAt`), no un borrado. Se preserva el invariante de que solo la última visita activa de un lote puede tener un reminder pendiente.
+- **Programar visitas futuras:** desde el historial de un lote, "Programar visita" agenda una visita futura (fecha mín. mañana, aviso X días antes y notas). La programada aparece en el historial (badge "Programada", incluidas las canceladas) y en la agenda (triage por urgencia junto a las próximas por follow-up). Al registrar la visita real, la programada se consume (baja lógica con `cancelledAt`). Detalle de una programada: **Editar** (fecha/aviso/notas) y **Cancelar** (baja lógica, idempotente). El aviso propio convive con los de las visitas (Reminder referenciado por `scheduledVisitId`).
 - Todo offline y persistente en el dispositivo (IndexedDB). Instalable como PWA.
 
 ### ❌ Todavía no se puede
@@ -43,6 +44,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **4 — cancelar/editar + catálogo** | Partida en 4a + 4b (dos subsistemas independientes) | — |
 | **4b — catálogo (ABM)** | ABM de Zone/Client/Field: `archived` (baja lógica reversible) + refs opcionales (huérfanos), cascada/nulificado al archivar padre, reset, tab "Catálogo" (ABM genérico Zonas/Clientes + Lotes con pickers), seed gateado a dev | ✅ Completa (209 tests) |
 | **4a — cancelar/editar visitas** | Cancelar/editar visitas registradas (baja lógica auditable sobre eventos), historial por lote | ✅ Completa (244 tests) |
+| **4c — programar visitas** | Programar/editar/cancelar visitas futuras por lote (aviso propio, baja lógica, consumo al registrar la visita real) | ✅ Completa (283 tests) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
@@ -74,6 +76,12 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
   - **Revivir el aviso de la visita anterior al cancelar**: diferido; se aceptó el desfase (la agenda cae al follow-up anterior pero sin aviso PENDING).
   - **Editar una visita que no es la última** con cambio de follow-up: actualiza datos pero no toca reminders (mantiene el invariante). Documentado como comportamiento, no bug.
   - **Índices idb** por `visitId` en reminders / por `status` en visitas: hoy getAll+filtro a escala ~40; cuando el volumen lo pida.
+  - **Diferidos nuevos de 4c:**
+  - **Exclusividad visitId∨scheduledVisitId no type-enforced** — un `Reminder` puede tener ambos refs; `ScheduleVisit`/`EditScheduledVisit` los setean al mismo id por convención (trazable). Reforzar con types cuando se toque el modelo de Reminder.
+  - **Reminder de programada re-anclado por `visitId`** — el aviso de una programada usa `visitId = scheduledVisit.id` además de `scheduledVisitId`, así que la cancelación de reminders por `visitId` no lo distingue de uno de visita real salvo por `scheduledVisitId` (filtro usado en cancel/edición de programadas). Documentado como comportamiento, no bug.
+  - **Editar fecha de una programada re-clampa el lead** — si el usuario pidió más días de aviso que el gap hasta la nueva fecha, se recorta (clamp, no rechazo), mismo criterio que el follow-up.
+  - **Programada cancelada sin borrado definitivo** — queda en el historial como "Cancelada" (trazabilidad decidida); el consumo al registrar la visita real es la única vía de cerrarla "con éxito".
+  - **Índice idb `by-field` de `scheduled-visits`** — se usa para agenda/historial; getAll+filtro habría servido a escala ~40, se sumó el índice de entrada.
 
 ---
 
