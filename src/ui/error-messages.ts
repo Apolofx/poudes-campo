@@ -12,6 +12,12 @@ export function domainErrorMessage(error: Error): string {
       return 'No se encontró la visita.';
     case 'VisitAlreadyCancelled':
       return 'La visita ya fue cancelada.';
+    case 'ScheduledDateNotFuture':
+      return 'La fecha de la visita debe ser futura.';
+    case 'ScheduledVisitNotFound':
+      return 'No se encontró la visita programada.';
+    case 'ScheduledVisitAlreadyCancelled':
+      return 'La visita programada ya fue cancelada.';
     default:
       return 'Ocurrió un error con la visita.';
   }
