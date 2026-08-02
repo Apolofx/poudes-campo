@@ -109,6 +109,8 @@ body {
   margin: 0;
 }
 
+.search-empty .empty { padding-bottom: 0; }
+
 .empty-actions {
   display: flex;
   gap: var(--space-2);
