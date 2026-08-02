@@ -186,6 +186,41 @@ body {
 
 .textarea { min-height: 88px; padding: var(--space-3); resize: vertical; }
 
+/* combobox elegir-o-crear */
+.pickorcreate { position: relative; }
+.pickorcreate-input { width: 100%; }
+.pickorcreate-options {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.pickorcreate-option {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.pickorcreate-option:active { background: var(--segment-bg); }
+.pickorcreate-option.is-create { color: var(--accent); font-weight: 700; }
+.pickorcreate-option.is-none { color: var(--muted); }
+
 .fieldset { gap: var(--space-2); }
 
 /* control segmentado: radios ocultos accesiblemente + label como píldora */
