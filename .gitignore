@@ -3,3 +3,8 @@ dist/
 coverage/
 dev-dist/
 .superpowers/
+
+# skills locales de agentes (no versionados)
+.agents/
+.claude/
+skills-lock.json

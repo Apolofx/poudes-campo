@@ -36,6 +36,9 @@ import { wireCatalogUseCases } from '../support/in-memory-container';
 
 const at = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
+// La pantalla de Inicio no ejerce ScheduleVisitEnsuringField; stub para satisfacer el interface.
+const ensuringFieldStub = undefined as unknown as import('@/application/use-cases/schedule-visit-ensuring-field').ScheduleVisitEnsuringField;
+
 async function makeContainer(): Promise<Container> {
   const zoneMap = new Map([['z1', new Zone('z1', 'El Séptimo')], ['z2', new Zone('z2', 'La Costa')]]);
   const clientMap = new Map([['c1', new Client('c1', 'La Querencia')], ['c2', new Client('c2', 'Pérez')]]);
@@ -70,6 +73,7 @@ async function makeContainer(): Promise<Container> {
     listUpcomingVisits: new ListUpcomingVisits(fields, visits, scheduledVisits, clock),
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     scheduleVisit: new ScheduleVisit(fields, scheduledVisits, reminders, clock, ids),
+    scheduleVisitEnsuringField: ensuringFieldStub,
     cancelScheduledVisit: new CancelScheduledVisit(scheduledVisits, reminders, clock),
     editScheduledVisit: new EditScheduledVisit(scheduledVisits, reminders, clock, ids),
     getScheduledVisit: new GetScheduledVisit(scheduledVisits),
@@ -142,6 +146,7 @@ describe('AgendaScreen', () => {
       listUpcomingVisits: new ListUpcomingVisits(fields, visits, scheduledVisits, clock),
       dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
       scheduleVisit: new ScheduleVisit(fields, scheduledVisits, reminders, clock, ids),
+      scheduleVisitEnsuringField: ensuringFieldStub,
       cancelScheduledVisit: new CancelScheduledVisit(scheduledVisits, reminders, clock),
       editScheduledVisit: new EditScheduledVisit(scheduledVisits, reminders, clock, ids),
       getScheduledVisit: new GetScheduledVisit(scheduledVisits),
