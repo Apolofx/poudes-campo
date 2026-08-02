@@ -154,6 +154,8 @@ describe('AgendaScreen', () => {
       </CampoProvider>,
     );
     expect(await screen.findByText('No hay visitas agendadas.')).toBeInTheDocument();
+    const cta = screen.getByRole('link', { name: /Buscar un lote/ });
+    expect(cta).toHaveAttribute('href', '/buscar');
   });
 
   it('muestra un error en vez del estado vacío cuando falla la carga', async () => {
