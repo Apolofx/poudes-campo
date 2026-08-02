@@ -1,4 +1,4 @@
-import type { ReminderId, VisitId, FieldId, ScheduledVisitId } from '@/domain/shared/ids';
+import type { ReminderId, VisitId, FieldId } from '@/domain/shared/ids';
 
 export type ReminderStatus = 'PENDING' | 'SENT' | 'CANCELLED';
 
@@ -8,7 +8,6 @@ export interface ReminderProps {
   fieldId: FieldId;
   remindAt: Date;
   status?: ReminderStatus;
-  scheduledVisitId?: ScheduledVisitId;
 }
 
 export class Reminder {
@@ -16,7 +15,6 @@ export class Reminder {
   readonly visitId: VisitId;
   readonly fieldId: FieldId;
   readonly remindAt: Date;
-  readonly scheduledVisitId?: ScheduledVisitId;
   private _status: ReminderStatus;
 
   constructor(props: ReminderProps) {
@@ -24,7 +22,6 @@ export class Reminder {
     this.visitId = props.visitId;
     this.fieldId = props.fieldId;
     this.remindAt = props.remindAt;
-    this.scheduledVisitId = props.scheduledVisitId;
     this._status = props.status ?? 'PENDING';
   }
 
