@@ -13,6 +13,8 @@ export function FieldHistoryScreen() {
   if (loading) return <main className="screen"><p className="hint">Cargando…</p></main>;
   if (!view) return <main className="screen"><p className="empty">No se encontró el lote.</p></main>;
 
+  const hasContent = view.visits.length > 0 || view.scheduledVisits.length > 0;
+
   return (
     <main className="screen">
       <header className="list-header">
@@ -20,14 +22,22 @@ export function FieldHistoryScreen() {
         <h1 className="screen-title">{view.field.name}</h1>
         <p className="field-sub">{clientLabel(view.clientName)} · {zoneLabel(view.zoneName)}</p>
 
-        <div className="list-actions">
-          <Link className="btn-primary" to={`/field/${fieldId}/record`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Registrar visita</Link>
-          <Link className="btn-secondary" to={`/field/${fieldId}/programar`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Programar visita</Link>
-        </div>
+        {hasContent && (
+          <div className="list-actions">
+            <Link className="btn-primary" to={`/field/${fieldId}/record`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Registrar visita</Link>
+            <Link className="btn-secondary" to={`/field/${fieldId}/programar`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Programar visita</Link>
+          </div>
+        )}
       </header>
 
-      {view.visits.length === 0 && view.scheduledVisits.length === 0 ? (
-        <p className="empty">Este lote no tiene visitas registradas.</p>
+      {!hasContent ? (
+        <>
+          <p className="empty">Este lote no tiene visitas registradas.</p>
+          <div className="empty-actions">
+            <Link className="btn-primary" to={`/field/${fieldId}/record`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Registrar tu primera visita</Link>
+            <Link className="btn-secondary" to={`/field/${fieldId}/programar`} state={{ back: { label: view.field.name, to: `/field/${fieldId}/visitas` } }}>Programar visita</Link>
+          </div>
+        </>
       ) : (
         <ul className="field-list">
           {[...view.visits.map((v) => ({
