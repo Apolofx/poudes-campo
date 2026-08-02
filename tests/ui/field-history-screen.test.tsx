@@ -38,13 +38,17 @@ describe('FieldHistoryScreen', () => {
     expect(rows[1]).toHaveTextContent(/Activa/);
   });
 
-  it('shows an empty state when the field has no visits', async () => {
+  it('shows an empty state with a CTA to register when the field has no visits', async () => {
     renderScreen();
     expect(await screen.findByText(/no tiene visitas/i)).toBeInTheDocument();
+    const cta = screen.getByRole('link', { name: /Registrar tu primera visita/i });
+    expect(cta).toHaveAttribute('href', '/field/f1/record');
   });
 
-  it('links to the record screen', async () => {
-    renderScreen();
+  it('shows Registrar/Programar actions in the header when the field has history', async () => {
+    const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
+    await seed(c);
+    renderScreen(c);
     const link = await screen.findByRole('link', { name: /Registrar visita/i });
     expect(link).toHaveAttribute('href', '/field/f1/record');
   });

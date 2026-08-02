@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Bell, X } from 'lucide-react';
 import { useCampo } from '@/ui/CampoProvider';
 import type { DueReminder } from '@/domain/ports/outbound/reminder-notifier';
 import { zoneLabel } from '@/ui/labels';
@@ -34,14 +35,17 @@ export function ReminderAvisoBanner() {
   return (
     <aside className="reminder-aviso" role="status">
       <div className="reminder-aviso-head">
-        <span className="reminder-aviso-title">🔔 {batch.length} {plural} para visitar pronto</span>
+        <span className="reminder-aviso-title">
+          <Bell className="reminder-aviso-bell" size={16} aria-hidden="true" />
+          {batch.length} {plural} para visitar pronto
+        </span>
         <button
           className="reminder-aviso-close"
           type="button"
           aria-label="Cerrar aviso"
           onClick={() => setDismissed(true)}
         >
-          ✕
+          <X size={16} aria-hidden="true" />
         </button>
       </div>
       <ul className="reminder-aviso-list">

@@ -43,7 +43,14 @@ export function AgendaScreen() {
       {!loading && error && (
         <p className="alert" role="alert">No se pudieron cargar las visitas. Reintentá.</p>
       )}
-      {!loading && !error && items.length === 0 && <p className="empty">No hay visitas agendadas.</p>}
+      {!loading && !error && items.length === 0 && (
+        <>
+          <p className="empty">No hay visitas agendadas.</p>
+          <div className="empty-actions">
+            <Link className="btn-secondary" to="/buscar">Buscar un lote</Link>
+          </div>
+        </>
+      )}
 
       {sections.map((section) => {
         const collapsed = section.bucket === 'LATER' && !showLater;

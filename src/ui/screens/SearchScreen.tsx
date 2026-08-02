@@ -37,9 +37,12 @@ export function SearchScreen() {
       {loading && <p className="hint">Buscando…</p>}
 
       {query !== '' && !loading && results.length === 0 ? (
-        <p className="empty">No se encontró ningún lote.</p>
+        <div className="search-empty">
+          <p className="empty">No se encontró ningún lote.</p>
+          <p className="hint">Probá con otro término o revisá el catálogo.</p>
+        </div>
       ) : (
-        <ul className="field-list">
+        <ul className="field-list" aria-live="polite">
           {results.map((r) => (
             <li key={r.field.id}>
               <Link className="field-row" to={`/field/${r.field.id}/visitas`}>

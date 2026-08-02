@@ -38,12 +38,15 @@ describe('RecordVisitScreen', () => {
   });
 
   it('shows a Spanish message on a domain error (future date)', async () => {
-    renderScreen();
+    // The `max` attribute now stops a real browser from submitting a future date; this
+    // test bypasses native constraint validation (dispatching `submit` directly) to
+    // exercise the domain error path itself.
+    const { container } = renderScreen();
     const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
     await userEvent.clear(dateInput);
     await userEvent.type(dateInput, isoInDays(30));
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
-    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    fireEvent.submit(container.querySelector('form')!);
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(/no puede ser futura/i),
     );
@@ -106,5 +109,11 @@ describe('RecordVisitScreen', () => {
     renderScreen();
     const lead = screen.getByLabelText('Avisar días antes') as HTMLInputElement;
     expect(lead).toHaveAttribute('max', '14');
+  });
+
+  it('marca la fecha con max = hoy para que el navegador bloquee una fecha futura', () => {
+    renderScreen();
+    const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
+    expect(dateInput).toHaveAttribute('max', isoInDays(0));
   });
 });

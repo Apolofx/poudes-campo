@@ -37,16 +37,23 @@ describe('SearchScreen', () => {
     expect(link).toHaveAttribute('href', '/field/f1/visitas');
   });
 
-  it('shows an empty message when a non-empty query matches nothing', async () => {
+  it('shows an empty message with a suggestion when a non-empty query matches nothing', async () => {
     renderScreen();
     await screen.findByText(/Lote El Alto/);
     await userEvent.type(screen.getByLabelText('Buscar'), 'zzzznomatch');
     expect(await screen.findByText('No se encontró ningún lote.')).toBeInTheDocument();
+    expect(screen.getByText(/Probá con otro término/)).toBeInTheDocument();
   });
 
   it('does not show the empty message on initial empty query', async () => {
     renderScreen();
     await screen.findByText(/Lote El Alto/);
     expect(screen.queryByText('No se encontró ningún lote.')).not.toBeInTheDocument();
+  });
+
+  it('announces result changes to screen readers via aria-live', async () => {
+    renderScreen();
+    const list = await screen.findByRole('list');
+    expect(list).toHaveAttribute('aria-live', 'polite');
   });
 });

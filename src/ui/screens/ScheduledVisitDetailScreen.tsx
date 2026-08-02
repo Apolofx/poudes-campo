@@ -52,7 +52,7 @@ export function ScheduledVisitDetailScreen() {
             Editar
           </Link>
           <button type="button" className="btn-danger" onClick={() => setConfirming(true)} disabled={cancelHook.cancelling}>
-            Cancelar
+            Cancelar visita
           </button>
         </div>
       )}

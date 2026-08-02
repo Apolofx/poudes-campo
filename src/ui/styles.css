@@ -109,6 +109,15 @@ body {
   margin: 0;
 }
 
+.search-empty .empty { padding-bottom: 0; }
+
+.empty-actions {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+}
+.empty-actions .btn-primary, .empty-actions .btn-secondary { flex: 1; }
+
 .field-list { list-style: none; margin: 0; padding: 0; }
 
 .field-row {
@@ -370,7 +379,13 @@ body {
   gap: var(--space-2);
 }
 
-.reminder-aviso-title { font-weight: 700; font-size: 14px; }
+.reminder-aviso-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 700;
+  font-size: 14px;
+}
 
 .reminder-aviso-close {
   border: 0;
