@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { FollowUpInput } from '@/application/use-cases/record-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
+import { useFieldHistory } from '@/ui/hooks/use-field-history';
+import { useCancelScheduledVisit } from '@/ui/hooks/use-cancel-scheduled-visit';
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { domainErrorMessage } from '@/ui/error-messages';
-import { localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
+import { dateLabel, localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
 type FollowUpKind = 'interval' | 'date' | 'none';
 
@@ -19,6 +22,11 @@ export function RecordVisitScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { submit, submitting, error, result } = useRecordVisit();
+  const fieldHistory = useFieldHistory(fieldId);
+  const cancelScheduled = useCancelScheduledVisit();
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+
+  const activeScheduled = fieldHistory.view?.scheduledVisits.find((s) => s.status === 'ACTIVE') ?? null;
 
   const back = (location.state as { back?: BackNav } | null)?.back ?? DEFAULT_BACK;
 
@@ -32,6 +40,10 @@ export function RecordVisitScreen() {
   useEffect(() => {
     if (result) navigate('/');
   }, [result, navigate]);
+
+  useEffect(() => {
+    if (cancelScheduled.done) navigate(back.to);
+  }, [cancelScheduled.done, navigate, back]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,11 +148,37 @@ export function RecordVisitScreen() {
             )}
           </div>
         </fieldset>
-        {error && <p className="alert" role="alert">{domainErrorMessage(error)}</p>}
+        {(error || cancelScheduled.error) && (
+          <p className="alert" role="alert">{domainErrorMessage((error ?? cancelScheduled.error)!)}</p>
+        )}
         <button className="btn-primary" type="submit" disabled={submitting}>
           Registrar
         </button>
       </form>
+      {activeScheduled && (
+        <>
+          <button
+            type="button"
+            className="btn-danger"
+            onClick={() => setConfirmingCancel(true)}
+            disabled={cancelScheduled.cancelling}
+          >
+            Cancelar visita programada
+          </button>
+          <ConfirmDialog
+            open={confirmingCancel}
+            title="Cancelar visita programada"
+            message={`La visita programada para el ${dateLabel(activeScheduled.scheduledDate)} quedará cancelada y no aparecerá más en tus próximas visitas. ¿Confirmás?`}
+            confirmLabel="Confirmar"
+            cancelLabel="Volver"
+            onCancel={() => setConfirmingCancel(false)}
+            onConfirm={() => {
+              setConfirmingCancel(false);
+              cancelScheduled.cancel(activeScheduled.id);
+            }}
+          />
+        </>
+      )}
     </main>
   );
 }

@@ -112,4 +112,38 @@ describe('RecordVisitScreen', () => {
     const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
     expect(dateInput).toHaveAttribute('max', localTodayIso());
   });
+
+  it('cancela la visita programada activa desde Registrar y vuelve al origen', async () => {
+    const c = makeInMemoryContainer();
+    const { scheduledVisitId } = await c.scheduleVisit.execute({
+      fieldId: 'f1',
+      scheduledDate: new Date('2026-08-10T00:00:00Z'),
+      reminderLeadDays: 3,
+    });
+    render(
+      <CampoProvider container={c}>
+        <MemoryRouter
+          initialEntries={[{ pathname: '/field/f1/record', state: { back: { label: 'Próximas visitas', to: '/' } } }]}
+        >
+          <Routes>
+            <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
+            <Route path="/" element={<div>Listado</div>} />
+          </Routes>
+        </MemoryRouter>
+      </CampoProvider>,
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: /Cancelar visita programada/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
+    expect(await screen.findByText('Listado')).toBeInTheDocument();
+    expect((await c.getScheduledVisit.execute(scheduledVisitId))?.status).toBe('CANCELLED');
+  });
+
+  it('no muestra el botón de cancelar cuando el lote no tiene programada activa', async () => {
+    renderScreen();
+    await screen.findByLabelText('Fecha');
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Cancelar visita programada/ })).not.toBeInTheDocument(),
+    );
+  });
 });
