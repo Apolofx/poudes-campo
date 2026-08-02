@@ -9,7 +9,6 @@ import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
 import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
-import { VisitInterval } from '@/domain/value-objects/visit-interval';
 import { FixedClock } from '../support/fixed-clock';
 
 const at = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -28,20 +27,20 @@ function makeDispatch(now: Date) {
   return { visits, reminders, notifier, dispatch };
 }
 
-const withFollowUp = (id: string, fieldId: string, next: string) =>
+const withPending = (id: string, fieldId: string, plannedFor: string) =>
   new Visit({
-    id, fieldId, visitDate: at('2026-07-01'), createdAt: at('2026-07-01'),
-    followUp: { nextVisitDate: at(next), interval: VisitInterval.ofDays(14) },
+    id, fieldId, status: 'PENDING',
+    plannedFor: at(plannedFor), reminderLeadDays: 3, createdAt: at('2026-07-01'),
   });
 
 const rem = (id: string, fieldId: string, remindAt: string) =>
   new Reminder({ id, visitId: `v-${id}`, fieldId, remindAt: at(remindAt) });
 
 describe('DispatchDueReminders', () => {
-  it('marks due reminders SENT, enriches them, and notifies', async () => {
+  it('marks due reminders SENT, derives nextVisitDate from the pending, and notifies', async () => {
     const now = at('2026-07-29');
     const { visits, reminders, notifier, dispatch } = makeDispatch(now);
-    await visits.save(withFollowUp('v1', 'f1', '2026-08-01'));
+    await visits.save(withPending('p1', 'f1', '2026-08-01'));
     await reminders.save(rem('r1', 'f1', '2026-07-28')); // due
     await reminders.save(rem('r2', 'f2', '2026-08-15')); // future
 
@@ -59,7 +58,7 @@ describe('DispatchDueReminders', () => {
   it('is idempotent: a second run finds nothing and notifies an empty batch', async () => {
     const now = at('2026-07-29');
     const { visits, reminders, notifier, dispatch } = makeDispatch(now);
-    await visits.save(withFollowUp('v1', 'f1', '2026-08-01'));
+    await visits.save(withPending('p1', 'f1', '2026-08-01'));
     await reminders.save(rem('r1', 'f1', '2026-07-28'));
 
     await dispatch.execute();

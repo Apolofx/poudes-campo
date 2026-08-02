@@ -15,13 +15,13 @@ export class DispatchDueReminders {
 
   async execute(): Promise<DueReminder[]> {
     const now = this.clock.now();
-    const [due, followUps, hierarchy] = await Promise.all([
+    const [due, pendings, hierarchy] = await Promise.all([
       this.reminders.findDue(now),
-      this.visits.findCurrentFollowUps(),
+      this.visits.findPendings(),
       this.fields.listAllWithHierarchy(),
     ]);
 
-    const nextByField = new Map(followUps.map((fu) => [fu.fieldId, fu.nextVisitDate]));
+    const nextByField = new Map(pendings.map((p) => [p.fieldId, p.plannedFor as Date]));
     const hierByField = new Map(hierarchy.map((h) => [h.field.id, h]));
 
     const batch: DueReminder[] = [];
