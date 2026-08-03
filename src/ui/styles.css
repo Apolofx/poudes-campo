@@ -63,7 +63,7 @@ body {
 .search-header {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   background: var(--bg);
   padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--header-border);
@@ -382,6 +382,7 @@ body {
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--header-border);
+  z-index: 5;
 }
 
 .tab {
@@ -408,7 +409,7 @@ body {
 .agenda-header {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   background: var(--bg);
   padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--header-border);
@@ -585,7 +586,7 @@ body {
 .list-header {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   background: var(--bg);
   padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--header-border);
@@ -715,6 +716,7 @@ body {
   padding: 0 var(--space-3);
   min-height: var(--touch);
   font: inherit;
+  font-size: 16px;
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
