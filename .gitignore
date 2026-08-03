@@ -4,6 +4,11 @@ coverage/
 dev-dist/
 .superpowers/
 
+# secretos locales (recordatorios remotos: API key del backend)
+.env
+.env.local
+.env.*.local
+
 # skills locales de agentes (no versionados)
 .agents/
 .claude/
