@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { BackLink } from '@/ui/components/BackLink';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
 import { clientLabel, zoneLabel, visitStatusLabel } from '@/ui/labels';
 import { dateLabel } from '@/ui/date-utils';
@@ -15,7 +16,7 @@ export function FieldHistoryScreen() {
   return (
     <main className="screen with-bottom-bar">
       <header className="list-header">
-        <Link className="back-link" to="/buscar">‹ Buscar lote</Link>
+        <BackLink to="/buscar">Buscar lote</BackLink>
         <h1 className="screen-title">{view.field.name}</h1>
         <p className="field-sub">{clientLabel(view.clientName)} · {zoneLabel(view.zoneName)}</p>
       </header>

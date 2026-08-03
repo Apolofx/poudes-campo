@@ -132,6 +132,7 @@ body {
   color: var(--accent-ink);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
   z-index: 20;
+  transition: transform 150ms ease, box-shadow 150ms ease;
 }
 .fab:active { transform: scale(0.96); }
 
@@ -147,6 +148,7 @@ body {
   border-bottom: 1px solid var(--divider);
   text-decoration: none;
   color: inherit;
+  transition: background-color 150ms ease;
 }
 
 .field-row:active { background: var(--divider); }
@@ -167,14 +169,21 @@ body {
 .record { padding: var(--space-4); }
 
 .back-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   color: var(--accent);
+  font: inherit;
   font-size: 13.5px;
   font-weight: 600;
   text-decoration: none;
   margin-bottom: var(--space-2);
   min-height: var(--touch);
-  line-height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transition: color 150ms ease;
+  cursor: pointer;
 }
 
 .form { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-2); }
@@ -271,6 +280,7 @@ body {
   font-size: 13px;
   color: var(--muted);
   cursor: pointer;
+  transition: background-color 150ms ease;
 }
 
 /* píldora activa: patrón input:checked + span (sin :has) */
@@ -312,6 +322,7 @@ body {
   font-size: 15px;
   text-decoration: none;
   cursor: pointer;
+  transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .btn-primary:disabled { opacity: 0.6; cursor: default; }
@@ -342,6 +353,7 @@ body {
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
+  transition: color 150ms ease;
 }
 
 .tab.active,
@@ -388,6 +400,7 @@ body {
   border-bottom: 1px solid var(--divider);
   text-decoration: none;
   color: inherit;
+  transition: background-color 150ms ease;
 }
 
 .agenda-row:active { background: var(--divider); }
@@ -485,6 +498,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .btn-danger-solid {
@@ -501,6 +515,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
+  transition: background-color 150ms ease;
 }
 
 .screen.record > .btn-danger { margin-top: var(--space-4); }
@@ -520,6 +535,7 @@ body {
   font-size: 14px;
   text-decoration: none;
   cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 /* ---- Catálogo (ABM genérico: lista/form) ---- */
@@ -577,6 +593,7 @@ body {
   padding: 0;
   cursor: pointer;
   min-height: var(--touch);
+  transition: color 150ms ease;
 }
 
 .catalog-row {
@@ -587,7 +604,53 @@ body {
   min-height: 56px;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--divider);
+  position: relative;
+  transition: background-color 150ms ease;
 }
+
+.catalog-row > .row-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.catalog-row > .row-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.catalog-row > .row-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.icon-btn.is-accent { color: var(--accent); }
+.icon-btn.is-danger { color: var(--danger); }
 
 .catalog-form { display: flex; flex-direction: column; gap: var(--space-4); padding: 0; margin-top: var(--space-2); }
 
@@ -654,4 +717,50 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-3);
+}
+
+/* ---- Micro-interacciones de escritorio (solo dispositivos con cursor) ---- */
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 88%, black);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  }
+
+  .btn-secondary:hover {
+    background: color-mix(in srgb, var(--border) 22%, var(--surface));
+    border-color: color-mix(in srgb, var(--border) 60%, var(--muted));
+  }
+
+  .btn-danger:hover { background: color-mix(in srgb, var(--danger) 14%, var(--danger-bg)); }
+  .btn-danger-solid:hover { background: color-mix(in srgb, var(--danger) 88%, black); }
+
+  .icon-btn:hover { background: rgb(0 0 0 / 0.05); }
+  .icon-btn.is-accent:hover { color: color-mix(in srgb, var(--accent) 80%, black); }
+  .icon-btn.is-danger:hover { color: color-mix(in srgb, var(--danger) 80%, black); }
+
+  .field-row:hover,
+  .catalog-row:hover { background: var(--divider); }
+
+  .agenda-row:hover { background: var(--divider); }
+  .agenda-row.is-overdue:hover { background: color-mix(in srgb, var(--danger-bg) 70%, var(--divider)); }
+
+  .tab:hover { color: var(--accent); }
+
+  .fab:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.3);
+  }
+
+  .back-link:hover { color: color-mix(in srgb, var(--accent) 80%, black); }
+  .toggle-archived:hover { color: color-mix(in srgb, var(--accent) 80%, black); }
+  .segment:hover span { background: color-mix(in srgb, var(--segment-bg) 60%, var(--surface)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

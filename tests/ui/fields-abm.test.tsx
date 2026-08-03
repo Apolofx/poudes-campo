@@ -29,6 +29,12 @@ describe('FieldsListScreen', () => {
     expect(screen.getAllByText(/Pérez · Norte/).length).toBeGreaterThan(0);
   });
 
+  it('navigates to edit when clicking anywhere on the row', async () => {
+    renderAt('/catalogo/lotes');
+    await userEvent.click(await screen.findByText('Lote El Alto'));
+    expect(await screen.findByDisplayValue('Lote El Alto')).toBeInTheDocument();
+  });
+
   it('archives a field', async () => {
     const c = renderAt('/catalogo/lotes');
     await screen.findByText('Lote El Alto');

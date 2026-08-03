@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { CatalogEntity, CatalogSection } from './catalog-section';
 import { useCatalogEntity } from './use-catalog-entity';
+import { BackLink } from '@/ui/components/BackLink';
 import { catalogErrorMessage } from '@/ui/error-messages';
 
 export function CatalogFormScreen<E extends CatalogEntity>({ useSection }: { useSection: () => CatalogSection<E> }) {
@@ -35,7 +36,7 @@ export function CatalogFormScreen<E extends CatalogEntity>({ useSection }: { use
 
   return (
     <main className="screen record">
-      <button type="button" className="back-link" onClick={() => navigate(basePath)}>{labels.backToList}</button>
+      <BackLink onClick={() => navigate(basePath)}>{labels.backToList}</BackLink>
       <h1 className="screen-title">{id ? labels.formTitleEdit : labels.formTitleNew}</h1>
       <form onSubmit={onSubmit} className="catalog-form">
         <label className="form-label">

@@ -5,6 +5,7 @@ import { useCampo } from '@/ui/CampoProvider';
 import { useEditVisit } from '@/ui/hooks/use-edit-visit';
 import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
+import { BackLink } from '@/ui/components/BackLink';
 import { domainErrorMessage } from '@/ui/error-messages';
 import { visitStatusLabel } from '@/ui/labels';
 import { dateLabel, isoDay, utcDate } from '@/ui/date-utils';
@@ -41,7 +42,7 @@ export function VisitDetailScreen() {
   if (visit.status === 'CANCELLED') {
     return (
       <main className="screen record">
-        <Link className="back-link" to={back}>‹ Historial</Link>
+        <BackLink to={back}>Historial</BackLink>
         <h1 className="screen-title">Visita del {dateLabel(visit.visitedAt ?? visit.plannedFor!)}</h1>
         <p className={`visit-badge is-cancelled`}>{visitStatusLabel(visit.status)}</p>
         {visit.notes && <p className="field-sub">{visit.notes}</p>}
@@ -52,7 +53,7 @@ export function VisitDetailScreen() {
   if (visit.status === 'PENDING') {
     return (
       <main className="screen record">
-        <Link className="back-link" to={back}>‹ Historial</Link>
+        <BackLink to={back}>Historial</BackLink>
         <h1 className="screen-title">Visita programada del {dateLabel(visit.plannedFor!)}</h1>
         <p className={`visit-badge is-active`}>{visitStatusLabel(visit.status)}</p>
         {visit.reminderLeadDays != null && visit.reminderLeadDays > 0 && (
@@ -97,7 +98,7 @@ export function VisitDetailScreen() {
 
   return (
     <main className="screen record">
-      <Link className="back-link" to={back}>‹ Historial</Link>
+      <BackLink to={back}>Historial</BackLink>
       <h1 className="screen-title">Editar visita</h1>
       <form className="form" onSubmit={onSubmit}>
         <label className="field">

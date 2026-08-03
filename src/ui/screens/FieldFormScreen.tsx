@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { BackLink } from '@/ui/components/BackLink';
 import { useCatalogFields } from '@/ui/hooks/use-catalog-fields';
 import { useCampo } from '@/ui/CampoProvider';
 import { catalogErrorMessage } from '@/ui/error-messages';
@@ -41,7 +42,7 @@ export function FieldFormScreen() {
 
   return (
     <main className="screen record">
-      <button type="button" className="back-link" onClick={() => navigate('/catalogo/lotes')}>‹ Lotes</button>
+      <BackLink onClick={() => navigate('/catalogo/lotes')}>Lotes</BackLink>
       <h1 className="screen-title">{id ? 'Editar lote' : 'Nuevo lote'}</h1>
       <form onSubmit={onSubmit} className="catalog-form">
         <label className="form-label">

@@ -9,7 +9,7 @@ export interface CatalogSectionLabels {
   newAction: string; // "Nueva zona"
   formTitleNew: string; // "Nueva zona"
   formTitleEdit: string; // "Editar zona"
-  backToList: string; // "‹ Zonas"
+  backToList: string; // "Zonas"
   emptyMessage: string; // "No hay zonas."
   cascadeTitle: (name: string) => string; // `Archivar ${name}`
   cascadeMessage: (count: number) => string; // `Esta zona tiene ${count} lotes activos. ¿Archivar también los lotes?`

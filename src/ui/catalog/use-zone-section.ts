@@ -13,7 +13,7 @@ export function useZoneSection(): CatalogSection<Zone> {
       newAction: 'Nueva zona',
       formTitleNew: 'Nueva zona',
       formTitleEdit: 'Editar zona',
-      backToList: '‹ Zonas',
+      backToList: 'Zonas',
       emptyMessage: 'No hay zonas.',
       cascadeTitle: (name) => `Archivar ${name}`,
       cascadeMessage: (count) => `Esta zona tiene ${count} lotes activos. ¿Archivar también los lotes?`,

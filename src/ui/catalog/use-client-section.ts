@@ -13,7 +13,7 @@ export function useClientSection(): CatalogSection<Client> {
       newAction: 'Nuevo cliente',
       formTitleNew: 'Nuevo cliente',
       formTitleEdit: 'Editar cliente',
-      backToList: '‹ Clientes',
+      backToList: 'Clientes',
       emptyMessage: 'No hay clientes.',
       cascadeTitle: (name) => `Archivar ${name}`,
       cascadeMessage: (count) => `Este cliente tiene ${count} lotes activos. ¿Archivar también los lotes?`,

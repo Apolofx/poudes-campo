@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCampo } from '@/ui/CampoProvider';
 import { useScheduleVisitEnsuringField } from '@/ui/hooks/use-schedule-visit-ensuring-field';
 import { useEditVisit } from '@/ui/hooks/use-edit-visit';
 import { useSearchFields } from '@/ui/hooks/use-search-fields';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
 import { PickOrCreate, type PickOrCreateValue } from '@/ui/components/PickOrCreate';
+import { BackLink } from '@/ui/components/BackLink';
 import { domainErrorMessage } from '@/ui/error-messages';
 import { isoDay, localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
@@ -110,7 +111,7 @@ export function ScheduledVisitFormScreen() {
 
   return (
     <main className="screen record">
-      <Link className="back-link" to={back.to}>‹ {back.label}</Link>
+      <BackLink to={back.to}>{back.label}</BackLink>
       <h1 className="screen-title">{isEditing ? 'Editar visita programada' : 'Programar visita'}</h1>
       {fieldName && <p className="field-sub">Lote: {fieldName}</p>}
       <form className="form" onSubmit={onSubmit}>

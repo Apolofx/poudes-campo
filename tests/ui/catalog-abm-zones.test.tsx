@@ -32,6 +32,14 @@ describe('ZonesListScreen (ABM genérico)', () => {
     expect(screen.queryByText('Norte')).not.toBeInTheDocument();
   });
 
+  it('navigates to edit when clicking anywhere on the row', async () => {
+    const c = makeInMemoryContainer();
+    await c.createZone.execute('Sur');
+    renderAt('/catalogo/zonas', c);
+    await userEvent.click(await screen.findByText('Sur'));
+    expect(await screen.findByDisplayValue('Sur')).toBeInTheDocument();
+  });
+
   it('reveals archived zones and restores one', async () => {
     const c = makeInMemoryContainer();
     await c.archiveZone.execute('z1', false);

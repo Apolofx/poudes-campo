@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Pencil, Trash2, RotateCcw } from 'lucide-react';
 import type { CatalogEntity, CatalogSection } from './catalog-section';
 import { useCatalogEntity } from './use-catalog-entity';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
+import { BackLink } from '@/ui/components/BackLink';
 
 export function CatalogListScreen<E extends CatalogEntity>({ useSection }: { useSection: () => CatalogSection<E> }) {
   const section = useSection();
@@ -22,7 +24,7 @@ export function CatalogListScreen<E extends CatalogEntity>({ useSection }: { use
   return (
     <main className="screen">
       <header className="list-header">
-        <Link className="back-link" to="/catalogo">‹ Catálogo</Link>
+        <BackLink to="/catalogo">Catálogo</BackLink>
         <h1 className="screen-title">{labels.listTitle}</h1>
         <Link className="btn-primary" to={newPath}>{labels.newAction}</Link>
       </header>
@@ -40,12 +42,25 @@ export function CatalogListScreen<E extends CatalogEntity>({ useSection }: { use
             {showArchived ? (
               <>
                 <span className="field-name">{e.name}</span>
-                <button type="button" className="btn-secondary" aria-label={`Restaurar ${e.name}`} onClick={() => restore(e.id)}>Restaurar</button>
+                <span className="row-actions">
+                  <button type="button" className="icon-btn is-accent" aria-label={`Restaurar ${e.name}`} onClick={() => restore(e.id)}>
+                    <RotateCcw size={18} aria-hidden="true" />
+                  </button>
+                </span>
               </>
             ) : (
               <>
-                <Link className="field-name" to={`${basePath}/${e.id}`}>{e.name}</Link>
-                <button type="button" className="btn-secondary" aria-label={`Archivar ${e.name}`} onClick={() => onArchive(e.id, e.name)}>Archivar</button>
+                <Link className="row-link" to={`${basePath}/${e.id}`}>
+                  <span className="field-name">{e.name}</span>
+                </Link>
+                <span className="row-actions">
+                  <Link className="icon-btn is-accent" to={`${basePath}/${e.id}`} aria-label={`Editar ${e.name}`}>
+                    <Pencil size={18} aria-hidden="true" />
+                  </Link>
+                  <button type="button" className="icon-btn is-danger" aria-label={`Archivar ${e.name}`} onClick={() => onArchive(e.id, e.name)}>
+                    <Trash2 size={18} aria-hidden="true" />
+                  </button>
+                </span>
               </>
             )}
           </li>

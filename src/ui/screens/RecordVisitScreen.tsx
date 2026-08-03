@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { NextVisitInput } from '@/application/use-cases/next-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
 import { useRecordVisitEnsuringField } from '@/ui/hooks/use-record-visit-ensuring-field';
@@ -9,6 +9,7 @@ import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
 import { useCampo } from '@/ui/CampoProvider';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { PickOrCreate, type PickOrCreateValue } from '@/ui/components/PickOrCreate';
+import { BackLink } from '@/ui/components/BackLink';
 import { domainErrorMessage } from '@/ui/error-messages';
 import { dateLabel, localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
@@ -120,7 +121,7 @@ export function RecordVisitScreen() {
 
   return (
     <main className="screen record">
-      <Link className="back-link" to={back.to}>‹ {back.label}</Link>
+      <BackLink to={back.to}>{back.label}</BackLink>
       <h1 className="screen-title">Registrar visita</h1>
       {pending && (
         <p className="field-sub">Estaba programada para el {dateLabel(pending.plannedFor!)}.</p>
