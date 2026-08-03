@@ -1,0 +1,859 @@
+openapi: 3.0.3
+info:
+  title: Campo API
+  version: 0.1.0
+  license:
+    name: Uso privado
+    url: https://poudes.com.ar/license
+  description: |
+    Contrato REST para el respaldo remoto de Campo (PWA offline-first de un asesor agronómico).
+
+    **Filosofía**: la API es un **espejo de almacenamiento**, no lógica de negocio. El dominio
+    (invariantes, urgencia, búsqueda, joins) sigue viviendo en el cliente; esta API persiste los
+    agregados tal como los produce la app.
+
+    **Consecuencias**:
+    - Los IDs (UUIDv7) los genera el **cliente** y el servidor los acepta (offline-first).
+    - Cada escritura es un `PUT` full-replace (upsert) de un agregado completo; el id va en la URL.
+    - `updatedAt` lo estampa el servidor en cada escritura (last-write-wins, sin versionado).
+    - El servidor valida **tipos y formato** (400/422); las **invariantes de dominio** las aplica el
+      cliente (ver notas de cada schema).
+    - No hay `DELETE` por recurso: el dominio archiva (`archived`) o cancela (`CANCELLED`).
+    - El único borrado es `POST /v1/clear` (destructivo).
+
+    Diseño y decisiones: `docs/superpowers/specs/2026-08-02-api-rest-contract-design.md`.
+servers:
+  - url: /
+    description: Base URL de despliegue por definir (el contrato usa el prefijo /v1)
+tags:
+  - name: Zones
+    description: Catálogo de zonas. CRUD puro; archivar/restaurar = campo `archived`.
+  - name: Clients
+    description: Catálogo de clientes. CRUD puro; archivar/restaurar = campo `archived`.
+  - name: Fields
+    description: Catálogo de lotes. CRUD puro; archivar/restaurar = campo `archived`.
+  - name: Visits
+    description: |
+      Visitas con ciclo de vida PENDING → DONE / CANCELLED. Toda transición de estado se expresa
+      como un `PUT` del agregado completo (cumplir, programar, editar, cancelar).
+  - name: Reminders
+    description: Avisos ligados a una visita. El estado SENT evita re-notificar.
+  - name: Maintenance
+    description: Operaciones de datos destructivas.
+security:
+  - bearerAuth: []
+paths:
+  /v1/zones:
+    get:
+      tags: [Zones]
+      summary: Lista todas las zonas
+      operationId: listZones
+      description: Incluye archivadas; la UI filtra. Orden por nombre ascendente.
+      responses:
+        '200':
+          description: Zonas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Zone'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/zones/{zoneId}:
+    parameters:
+      - $ref: '#/components/parameters/ZoneId'
+    get:
+      tags: [Zones]
+      summary: Obtiene una zona por id
+      operationId: getZone
+      responses:
+        '200':
+          description: Zona
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Zones]
+      summary: Crea o reemplaza una zona (upsert)
+      operationId: upsertZone
+      description: |
+        El id va en la URL; el cuerpo no lo incluye (`id` y `updatedAt` son readOnly).
+        El servidor responde 201 si la crea y 200 si reemplaza una existente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Zone'
+            examples:
+              crear:
+                value:
+                  name: Norte
+                  archived: false
+              restaurar:
+                value:
+                  name: Norte
+                  archived: true
+      responses:
+        '200':
+          description: Zona reemplazada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        '201':
+          description: Zona creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/clients:
+    get:
+      tags: [Clients]
+      summary: Lista todos los clientes
+      operationId: listClients
+      description: Incluye archivados; la UI filtra. Orden por nombre ascendente.
+      responses:
+        '200':
+          description: Clientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/clients/{clientId}:
+    parameters:
+      - $ref: '#/components/parameters/ClientId'
+    get:
+      tags: [Clients]
+      summary: Obtiene un cliente por id
+      operationId: getClient
+      responses:
+        '200':
+          description: Cliente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Clients]
+      summary: Crea o reemplaza un cliente (upsert)
+      operationId: upsertClient
+      description: El id va en la URL; `id` y `updatedAt` son readOnly.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+      responses:
+        '200':
+          description: Cliente reemplazado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '201':
+          description: Cliente creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/fields:
+    get:
+      tags: [Fields]
+      summary: Lista lotes
+      operationId: listFields
+      description: |
+        Los lotes se listan **sin** los nombres de cliente/zona (el cliente hace el join, ya que
+        mantiene zonas y clientes en su store). Filtros:
+        - `clientId` / `zoneId`: lotes activos de un padre (métodos `findActiveByClientId/ZoneId`).
+        - `includeArchived=true`: incluye archivados (catálogo); por defecto solo activos.
+        Orden por nombre ascendente.
+      parameters:
+        - $ref: '#/components/parameters/ClientIdQuery'
+        - $ref: '#/components/parameters/ZoneIdQuery'
+        - $ref: '#/components/parameters/IncludeArchivedQuery'
+      responses:
+        '200':
+          description: Lotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Field'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/fields/{fieldId}:
+    parameters:
+      - $ref: '#/components/parameters/FieldId'
+    get:
+      tags: [Fields]
+      summary: Obtiene un lote por id
+      operationId: getField
+      description: Devuelve el lote aunque esté archivado.
+      responses:
+        '200':
+          description: Lote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Field'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Fields]
+      summary: Crea o reemplaza un lote (upsert)
+      operationId: upsertField
+      description: |
+        Renombrar, reasignar cliente/zona, cambiar cultivo y archivar/restaurar son todas un `PUT`
+        del lote completo. `id` y `updatedAt` son readOnly.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Field'
+            examples:
+              lote-con-padres:
+                value:
+                  name: Lote 4
+                  clientId: 0197f3c4-6c10-7f00-8000-000000000001
+                  zoneId: 0197f3c4-6c10-7f00-8000-000000000002
+                  coordinates:
+                    latitude: -33.45
+                    longitude: -66.27
+                  hectares: 120.5
+                  crop: Soja
+                  archived: false
+      responses:
+        '200':
+          description: Lote reemplazado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Field'
+        '201':
+          description: Lote creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Field'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/visits:
+    get:
+      tags: [Visits]
+      summary: Lista visitas
+      operationId: listVisits
+      description: |
+        Refleja las lecturas filtradas del repositorio:
+        - `?status=PENDING` → agenda (`findPendings`).
+        - `?fieldId={id}` → historial de un lote (`listByField`).
+        - `?fieldId={id}&status=PENDING` → la pendiente del lote (`findPendingByField`).
+        - `?fieldId={id}&status=DONE&on={YYYY-MM-DD}` → chequeo de duplicado del día
+          (`findDoneByFieldOnDay`).
+        Orden por `createdAt` descendente.
+      parameters:
+        - $ref: '#/components/parameters/FieldIdQuery'
+        - $ref: '#/components/parameters/VisitStatusQuery'
+        - $ref: '#/components/parameters/OnQuery'
+      responses:
+        '200':
+          description: Visitas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Visit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/visits/{visitId}:
+    parameters:
+      - $ref: '#/components/parameters/VisitId'
+    get:
+      tags: [Visits]
+      summary: Obtiene una visita por id
+      operationId: getVisit
+      description: Devuelve cualquier estado (PENDING, DONE, CANCELLED).
+      responses:
+        '200':
+          description: Visita
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Visits]
+      summary: Crea o reemplaza una visita (upsert)
+      operationId: upsertVisit
+      description: |
+        **Todas las transiciones son un `PUT` del agregado completo**: cumplir (PENDING→DONE,
+        conservando `plannedFor`), programar (crear PENDING; el cliente cancela la pendiente previa
+        con otro `PUT`), editar (cambios a `plannedFor`/`visitedAt`/`notes`), cancelar (status
+        CANCELLED + `cancelledAt`).
+
+        El servidor valida tipos y formato. Las invariantes de negocio las aplica el **cliente**:
+        - PENDING exige `plannedFor` y `reminderLeadDays >= 0`; prohíbe `visitedAt`.
+        - DONE exige `visitedAt`.
+        - CANCELLED exige `cancelledAt`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+            examples:
+              cumplir-pendiente:
+                value:
+                  fieldId: 0197f3c4-6c10-7f00-8000-000000000002
+                  status: DONE
+                  plannedFor: '2026-08-01T13:00:00.000Z'
+                  visitedAt: '2026-08-02T14:30:00.000Z'
+                  notes: Lote con buena humedad
+                  createdAt: '2026-07-25T10:00:00.000Z'
+              programar:
+                value:
+                  fieldId: 0197f3c4-6c10-7f00-8000-000000000002
+                  status: PENDING
+                  plannedFor: '2026-08-12T13:00:00.000Z'
+                  reminderLeadDays: 2
+                  notes: Revisar el este
+                  createdAt: '2026-08-02T15:00:00.000Z'
+              cancelar:
+                value:
+                  fieldId: 0197f3c4-6c10-7f00-8000-000000000002
+                  status: CANCELLED
+                  plannedFor: '2026-08-12T13:00:00.000Z'
+                  reminderLeadDays: 2
+                  notes: Revisar el este
+                  createdAt: '2026-08-02T15:00:00.000Z'
+                  cancelledAt: '2026-08-02T16:00:00.000Z'
+      responses:
+        '200':
+          description: Visita reemplazada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+        '201':
+          description: Visita creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/reminders:
+    get:
+      tags: [Reminders]
+      summary: Lista reminders
+      operationId: listReminders
+      description: |
+        - `?status=PENDING&dueBefore={now}` → vencidos para notificar (`findDue`).
+        - `?fieldId={id}&status=PENDING` → avisos pendientes de un lote
+          (`findPendingByField`).
+        Orden por `remindAt` ascendente.
+      parameters:
+        - $ref: '#/components/parameters/FieldIdQuery'
+        - $ref: '#/components/parameters/ReminderStatusQuery'
+        - $ref: '#/components/parameters/DueBeforeQuery'
+      responses:
+        '200':
+          description: Reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reminder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/reminders/{reminderId}:
+    parameters:
+      - $ref: '#/components/parameters/ReminderId'
+    get:
+      tags: [Reminders]
+      summary: Obtiene un reminder por id
+      operationId: getReminder
+      responses:
+        '200':
+          description: Reminder
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Reminders]
+      summary: Crea o reemplaza un reminder (upsert)
+      operationId: upsertReminder
+      description: |
+        Crear (al programar), marcar SENT (tras notificar) y cancelar (si la visita se cancela) son
+        un `PUT` del reminder completo. El cliente mantiene la consistencia visita↔reminder con
+        escrituras separadas (no-atómico; costo aceptado del espejo CRUD).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reminder'
+            examples:
+              crear:
+                value:
+                  visitId: 0197f3c4-6c10-7f00-8000-000000000010
+                  fieldId: 0197f3c4-6c10-7f00-8000-000000000002
+                  remindAt: '2026-08-10T13:00:00.000Z'
+                  status: PENDING
+              marcado-enviado:
+                value:
+                  visitId: 0197f3c4-6c10-7f00-8000-000000000010
+                  fieldId: 0197f3c4-6c10-7f00-8000-000000000002
+                  remindAt: '2026-08-10T13:00:00.000Z'
+                  status: SENT
+      responses:
+        '200':
+          description: Reminder reemplazado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+        '201':
+          description: Reminder creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/clear:
+    post:
+      tags: [Maintenance]
+      summary: Elimina todos los datos (destructivo)
+      operationId: clearAllData
+      description: |
+        Espejo de `DataReset.clearAll()`. Vacía zonas, clientes, lotes, visitas y reminders.
+        No requiere cuerpo. No es reversible.
+      responses:
+        '204':
+          description: Datos eliminados
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key única de la instalación. Se envía como `Authorization: Bearer <key>`.'
+  parameters:
+    ZoneId:
+      name: zoneId
+      in: path
+      required: true
+      description: Id de la zona
+      schema:
+        type: string
+        format: uuid
+    ClientId:
+      name: clientId
+      in: path
+      required: true
+      description: Id del cliente
+      schema:
+        type: string
+        format: uuid
+    FieldId:
+      name: fieldId
+      in: path
+      required: true
+      description: Id del lote
+      schema:
+        type: string
+        format: uuid
+    VisitId:
+      name: visitId
+      in: path
+      required: true
+      description: Id de la visita
+      schema:
+        type: string
+        format: uuid
+    ReminderId:
+      name: reminderId
+      in: path
+      required: true
+      description: Id del reminder
+      schema:
+        type: string
+        format: uuid
+    FieldIdQuery:
+      name: fieldId
+      in: query
+      description: Filtra por lote
+      schema:
+        type: string
+        format: uuid
+    ClientIdQuery:
+      name: clientId
+      in: query
+      description: Filtra lotes activos de un cliente
+      schema:
+        type: string
+        format: uuid
+    ZoneIdQuery:
+      name: zoneId
+      in: query
+      description: Filtra lotes activos de una zona
+      schema:
+        type: string
+        format: uuid
+    IncludeArchivedQuery:
+      name: includeArchived
+      in: query
+      description: Incluye lotes archivados (catálogo completo). Por defecto false (solo activos).
+      schema:
+        type: boolean
+        default: false
+    VisitStatusQuery:
+      name: status
+      in: query
+      description: Filtra por estado de la visita
+      schema:
+        $ref: '#/components/schemas/VisitStatus'
+    ReminderStatusQuery:
+      name: status
+      in: query
+      description: Filtra por estado del reminder
+      schema:
+        $ref: '#/components/schemas/ReminderStatus'
+    OnQuery:
+      name: on
+      in: query
+      description: |
+        Día calendario (UTC) en que cayó la visita realizada. Se usa con `status=DONE` para el
+        chequeo de duplicado (`visitedAt` dentro de ese día).
+      schema:
+        type: string
+        format: date
+    DueBeforeQuery:
+      name: dueBefore
+      in: query
+      description: Reminders PENDING cuyo `remindAt` es menor o igual a esta fecha-hora (UTC).
+      schema:
+        type: string
+        format: date-time
+  responses:
+    BadRequest:
+      description: Cuerpo o parámetros malformados (tipo incorrecto, id mal formado, query inválida)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Unauthorized:
+      description: API key ausente o inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    NotFound:
+      description: Recurso inexistente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationError:
+      description: |
+        El cuerpo no cumple el esquema estructural (campo requerido ausente, valor fuera de rango,
+        enum inválido, uuid mal formado, nombre vacío, hectáreas ≤ 0). **No** valida invariantes de
+        negocio (responsabilidad del cliente).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    InternalError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      description: UUIDv7 generado en el cliente (offline-first).
+    IsoDateTime:
+      type: string
+      format: date-time
+      description: Fecha-hora ISO-8601 en UTC.
+    Coordinates:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+    Hectares:
+      type: number
+      minimum: 0
+      exclusiveMinimum: true
+      description: Superficie en hectáreas (> 0).
+    Zone:
+      type: object
+      required: [id, name, archived, updatedAt]
+      properties:
+        id:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          readOnly: true
+        name:
+          type: string
+          minLength: 1
+          description: No vacío (validado por el servidor).
+        archived:
+          type: boolean
+          default: false
+          description: true = archivada (soft-delete del dominio).
+        updatedAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          readOnly: true
+          description: Estampado por el servidor en cada escritura (LWW).
+    Client:
+      type: object
+      required: [id, name, archived, updatedAt]
+      properties:
+        id:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          readOnly: true
+        name:
+          type: string
+          minLength: 1
+          description: No vacío (validado por el servidor).
+        archived:
+          type: boolean
+          default: false
+          description: true = archivado (soft-delete del dominio).
+        updatedAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          readOnly: true
+          description: Estampado por el servidor en cada escritura (LWW).
+    Field:
+      type: object
+      required: [id, name, archived, updatedAt]
+      properties:
+        id:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          readOnly: true
+        name:
+          type: string
+          minLength: 1
+          description: No vacío (validado por el servidor).
+        clientId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Cliente asignado (opcional).
+        zoneId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Zona asignada (opcional).
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+          description: Ubicación GPS del lote (opcional).
+        hectares:
+          $ref: '#/components/schemas/Hectares'
+          description: Superficie (opcional).
+        crop:
+          type: string
+          description: Cultivo (opcional).
+        archived:
+          type: boolean
+          default: false
+          description: true = archivado (soft-delete del dominio).
+        updatedAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          readOnly: true
+          description: Estampado por el servidor en cada escritura (LWW).
+    VisitStatus:
+      type: string
+      enum: [PENDING, DONE, CANCELLED]
+      description: Programada / Realizada / Cancelada.
+    Visit:
+      type: object
+      required: [id, fieldId, status, createdAt, updatedAt]
+      description: |
+        Una fila por visita que cambia de estado. **Invariantes de negocio (aplicadas por el
+        cliente)**: PENDING exige `plannedFor` y `reminderLeadDays >= 0` y prohíbe `visitedAt`;
+        DONE exige `visitedAt`; CANCELLED exige `cancelledAt`. Cumplir una PENDING conserva su
+        `plannedFor`.
+      properties:
+        id:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          readOnly: true
+        fieldId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Lote al que pertenece.
+        status:
+          $ref: '#/components/schemas/VisitStatus'
+        plannedFor:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          description: Cuándo está programada (PENDING; se conserva al cumplir).
+        visitedAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          description: Cuándo se realizó (DONE).
+        reminderLeadDays:
+          type: integer
+          minimum: 0
+          description: Anticipación del aviso en días (PENDING).
+        notes:
+          type: string
+          description: Notas del asesor (opcional).
+        createdAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          description: Momento de creación (lo fija el cliente).
+        cancelledAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          description: Momento de cancelación (CANCELLED).
+        updatedAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          readOnly: true
+          description: Estampado por el servidor en cada escritura (LWW).
+    ReminderStatus:
+      type: string
+      enum: [PENDING, SENT, CANCELLED]
+    Reminder:
+      type: object
+      required: [id, visitId, fieldId, remindAt, status, updatedAt]
+      description: |
+        Aviso ligado a una visita. `SENT` = ya notificado (evita re-notificar). Al cumplir, cancelar
+        o reemplazar la visita, el cliente lo cancela con `status: CANCELLED`.
+      properties:
+        id:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          readOnly: true
+        visitId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Visita a la que avisa (PENDING creada al programar).
+        fieldId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Lote de la visita (denormalizado para listar avisos por lote).
+        remindAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          description: Fecha-hora en que corresponde avisar.
+        status:
+          $ref: '#/components/schemas/ReminderStatus'
+        updatedAt:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          readOnly: true
+          description: Estampado por el servidor en cada escritura (LWW).
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Identificador estable del error (ej. `not_found`, `validation_error`,
+                `unauthorized`, `bad_request`, `internal_error`).
+            message:
+              type: string
+              description: Mensaje legible en español.
+            details:
+              type: array
+              description: Detalle por campo cuando hay errores de validación.
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    description: Ruta del campo en el cuerpo (ej. `name`, `hectares`).
+                  reason:
+                    type: string
+                    description: Motivo del rechazo.
