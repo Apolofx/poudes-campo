@@ -21,7 +21,13 @@ info:
     - No hay `DELETE` por recurso: el dominio archiva (`archived`) o cancela (`CANCELLED`).
     - El único borrado es `POST /v1/clear` (destructivo).
 
-    Diseño y decisiones: `docs/superpowers/specs/2026-08-02-api-rest-contract-design.md`.
+    **Proyección para notificaciones**: además del espejo CRUD, existe un feed de **programadas
+    vigentes** (`PUT /v1/pending-visits`) que el cliente sube para alimentar un notificador remoto
+    (Lambda diaria por email). El servidor no deriva el dominio: solo conserva la proyección
+    denormalizada y un log de envíos.
+
+    Diseño y decisiones: `docs/superpowers/specs/2026-08-02-api-rest-contract-design.md` y
+    `docs/superpowers/specs/2026-08-02-recordatorios-remotos-design.md`.
 servers:
   - url: /
     description: Base URL de despliegue por definir (el contrato usa el prefijo /v1)
@@ -38,8 +44,12 @@ tags:
       como un `PUT` del agregado completo (cumplir, programar, editar, cancelar).
   - name: Reminders
     description: Avisos ligados a una visita. El estado SENT evita re-notificar.
+  - name: ReminderFeed
+    description: |
+      Proyección de programadas vigentes que el cliente sube para el notificador remoto. No es un
+      CRUD del dominio: es un snapshot reemplazable (toda la lista, sin DELETE por ítem).
   - name: Maintenance
-    description: Operaciones de datos destructivas.
+    description: Operaciones de datos destructivas y disparo manual del notificador.
 security:
   - bearerAuth: []
 paths:
@@ -523,6 +533,100 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/pending-visits:
+    put:
+      tags: [ReminderFeed]
+      summary: Reemplaza el snapshot de programadas vigentes
+      operationId: replacePendingVisits
+      description: |
+        El cliente sube la **lista completa** de programadas vigentes (PENDING), denormalizada con
+        los nombres para la notificación. El servidor **reemplaza** todo el snapshot: lo que no está
+        en la lista deja de existir (no hay DELETE por ítem). Se sube al abrir la app y tras cada
+        cambio de programadas (cumplir, programar, editar, cancelar).
+
+        El servidor no deriva el dominio: conserva la proyección tal cual y un log de envíos. La
+        lambda diaria calcula `remindAt = plannedFor − reminderLeadDays` y notifica por email a las
+        que disparan y aún no fueron enviadas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PendingVisit'
+            example:
+              - visitId: 0197f3c4-6c10-7f00-8000-000000000010
+                fieldId: 0197f3c4-6c10-7f00-8000-000000000002
+                fieldName: Lote 4
+                clientName: Est. Pérez
+                zoneName: Norte
+                plannedFor: '2026-08-12T13:00:00.000Z'
+                reminderLeadDays: 2
+                notes: Revisar el este
+      responses:
+        '204':
+          description: Snapshot reemplazado
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/notify:
+    post:
+      tags: [Maintenance]
+      summary: Dispara manualmente el notificador de recordatorios
+      operationId: triggerNotify
+      description: |
+        Ejecuta el mismo recorrido de la lambda diaria (útil para probar el pipeline y el email).
+        Con `dryRun: true` calcula qué enviaría **sin** enviar nada ni escribir en el log.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dryRun:
+                  type: boolean
+                  default: false
+                  description: true = calcula sin enviar ni registrar.
+            example:
+              dryRun: true
+      responses:
+        '200':
+          description: Resumen de la corrida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent:
+                    type: integer
+                    description: Emails enviados (0 si dryRun).
+                  items:
+                    type: array
+                    description: Items que dispararon (o dispararían).
+                    items:
+                      type: object
+                      required: [visitId, remindAt, plannedFor]
+                      properties:
+                        visitId:
+                          type: string
+                          format: uuid
+                        remindAt:
+                          type: string
+                          format: date-time
+                        plannedFor:
+                          type: string
+                          format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   securitySchemes:
     bearerAuth:
@@ -830,6 +934,40 @@ components:
           allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
           readOnly: true
           description: Estampado por el servidor en cada escritura (LWW).
+    PendingVisit:
+      type: object
+      required: [visitId, fieldId, fieldName, plannedFor, reminderLeadDays]
+      description: |
+        Item del snapshot de programadas vigentes (`PUT /v1/pending-visits`), denormalizado para la
+        notificación. Lo arma el cliente (que conoce los nombres de lote/cliente/zona); el servidor
+        no hace joins. `visitId` + `remindAt` (calculado) son la clave de dedupe del log de envíos.
+      properties:
+        visitId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Id de la visita PENDING.
+        fieldId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Lote de la visita.
+        fieldName:
+          type: string
+          minLength: 1
+          description: Nombre del lote (para el texto de la notificación).
+        clientName:
+          type: string
+          description: Nombre del cliente, si tiene (denormalizado).
+        zoneName:
+          type: string
+          description: Nombre de la zona, si tiene (denormalizado).
+        plannedFor:
+          allOf: [{ $ref: '#/components/schemas/IsoDateTime' }]
+          description: Cuándo está programada la visita.
+        reminderLeadDays:
+          type: integer
+          minimum: 0
+          description: Anticipación del aviso en días (`remindAt = plannedFor − reminderLeadDays`).
+        notes:
+          type: string
+          description: Notas del asesor (opcional).
     ErrorEnvelope:
       type: object
       required: [error]

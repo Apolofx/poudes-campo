@@ -24,6 +24,7 @@
 
 ### ❌ Todavía no se puede
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
+- **Recibir recordatorios por email fuera de la app** (el aviso hoy solo aparece al abrir la app) → diseño listo (feed `PUT /v1/pending-visits` + lambda SES en el spec `2026-08-02-recordatorios-remotos-design.md`), implementación pendiente.
 
 ### Datos
 El seed de ~40 lotes de ejemplo quedó **gateado a modo dev** (`import.meta.env.DEV`); **producción arranca vacía**. Se cargan los lotes reales a mano por el ABM. Para limpiar un install que ya tiene el fixture: acción "Borrar todos los datos" en Catálogo.
@@ -49,6 +50,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **onboarding — camino único** | Primera visita programada en un solo camino: FAB "Programar visita" en Inicio, empty state que promete a programar, `ScheduleVisitEnsuringField` (orquesta crear zona/cliente/lote + agendar), combobox `PickOrCreate` (elegir o crear, match por nombre sin duplicar), `ScheduledVisitFormScreen` unificada con `/programar` | ✅ Completa (306 tests) |
 | **unificar-visitas** | Una sola entidad `Visit` con ciclo de vida (`PENDING|DONE|CANCELLED`, `plannedFor`/`visitedAt`/`cancelledAt`); mueren `ScheduledVisit` y `followUp`. Registrar cumple la programada; una sola PENDIENTE activa por lote; el aviso vive en la PENDIENTE (`reminderLeadDays`, sin `scheduledVisitId`); historial unificado con badges Realizada/Programada/Cancelada; migración idb v2→v3 unifica `scheduled-visits` en `visits` | ✅ Completa (302 tests) |
 | **api-contract — contrato REST** | Swagger (`docs/api/openapi.yaml`, OpenAPI 3.0.3, válido con redocly): espejo CRUD para respaldo remoto — `zones`/`clients`/`fields`/`visits`/`reminders` con `PUT` upsert (ids UUIDv7 de cliente), filtros de listado que reflejan los puertos, bearer API key, LWW con `updatedAt` de servidor, `POST /v1/clear`. Sin código: base para el adapter remoto futuro. Spec en `docs/superpowers/specs/2026-08-02-api-rest-contract-design.md` | ✅ Completa (0 tests de código; contrato lint-eado) |
+| **recordatorios-remotos** | Contrato para notificar por email sin replicar el dominio: el cliente sube un **snapshot reemplazable** de programadas vigentes (`PUT /v1/pending-visits`, denormalizado) y una lambda diaria (EventBridge + SES) notifica con log idempotente keyed `(visitId, remindAt)`; `POST /v1/notify` con `dryRun` para probar. Sin código de producto: base para la implementación futura. Spec en `docs/superpowers/specs/2026-08-02-recordatorios-remotos-design.md` | ✅ Completa (0 tests de código; contrato lint-eado) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
