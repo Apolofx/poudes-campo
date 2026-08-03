@@ -24,7 +24,7 @@
 
 ### ❌ Todavía no se puede
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
-- **Recibir recordatorios por email fuera de la app** (el aviso hoy solo aparece al abrir la app) → diseño listo (feed `PUT /v1/pending-visits` + lambda SES en el spec `2026-08-02-recordatorios-remotos-design.md`), implementación pendiente.
+- **Recibir recordatorios por email fuera de la app** (el aviso hoy solo aparece al abrir la app) → **implementación completa** (backend `campo-poudes-backend` + push del feed desde la app), **falta solo el deploy manual a AWS** (identidad SES + `API_KEY` + `npm run deploy:dev`).
 
 ### Datos
 El seed de ~40 lotes de ejemplo quedó **gateado a modo dev** (`import.meta.env.DEV`); **producción arranca vacía**. Se cargan los lotes reales a mano por el ABM. Para limpiar un install que ya tiene el fixture: acción "Borrar todos los datos" en Catálogo.
@@ -51,7 +51,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **unificar-visitas** | Una sola entidad `Visit` con ciclo de vida (`PENDING|DONE|CANCELLED`, `plannedFor`/`visitedAt`/`cancelledAt`); mueren `ScheduledVisit` y `followUp`. Registrar cumple la programada; una sola PENDIENTE activa por lote; el aviso vive en la PENDIENTE (`reminderLeadDays`, sin `scheduledVisitId`); historial unificado con badges Realizada/Programada/Cancelada; migración idb v2→v3 unifica `scheduled-visits` en `visits` | ✅ Completa (302 tests) |
 | **api-contract — contrato REST** | Swagger (`docs/api/openapi.yaml`, OpenAPI 3.0.3, válido con redocly): espejo CRUD para respaldo remoto — `zones`/`clients`/`fields`/`visits`/`reminders` con `PUT` upsert (ids UUIDv7 de cliente), filtros de listado que reflejan los puertos, bearer API key, LWW con `updatedAt` de servidor, `POST /v1/clear`. Sin código: base para el adapter remoto futuro. Spec en `docs/superpowers/specs/2026-08-02-api-rest-contract-design.md` | ✅ Completa (0 tests de código; contrato lint-eado) |
 | **recordatorios-remotos** | Contrato para notificar por email sin replicar el dominio: el cliente sube un **snapshot reemplazable** de programadas vigentes (`PUT /v1/pending-visits`, denormalizado) y una lambda diaria (EventBridge + SES) notifica con log idempotente keyed `(visitId, remindAt)`; `POST /v1/notify` con `dryRun` para probar. Sin código de producto: base para la implementación futura. Spec en `docs/superpowers/specs/2026-08-02-recordatorios-remotos-design.md` | ✅ Completa (0 tests de código; contrato lint-eado) |
-| **recordatorios-remotos-mvp** | Plan de implementación lean (sin código aún): backend `campo-poudes-backend` (proyecto hermano moldeado en `hexagonal-serverless-ts`: DynamoDB 2 items + watermark `lastRunAt` CAS — reemplaza al log `(visitId, remindAt)` del spec —, SES digest, cron UTC, bearer in-handler) + push del feed desde la app (puerto + `SyncPendingVisitsFeed` + adapter HTTP + triggers en boot/mutaciones). TDD por tarea en `docs/superpowers/plans/2026-08-02-recordatorios-remotos-mvp.md` | ✅ Plan listo (pendiente de ejecución) |
+| **recordatorios-remotos-mvp** | Implementación del MVP (plan `docs/superpowers/plans/2026-08-02-recordatorios-remotos-mvp.md`): **backend `campo-poudes-backend`** (proyecto hermano, molde `hexagonal-serverless-ts`: DynamoDB 2 items `FEED#SNAPSHOT`/`FEED#LAST_RUN` con watermark CAS — reemplaza al log `(visitId, remindAt)` del spec —, SES digest, cron UTC, bearer in-handler; endpoints `PUT /v1/pending-visits` + `POST /v1/notify`; **42 tests jest**) + **push del feed desde la app** (puerto `ReminderFeedRepository` + `SyncPendingVisitsFeed` + adapter HTTP + triggers boot/mutaciones; **321 tests**) | ✅ Código completo (backend 42 tests, app 321); **deploy AWS manual pendiente** (SES identity + `API_KEY` + `deploy:dev`) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
@@ -86,6 +86,11 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
   - **Doble PENDIENTE imposible por regla de negocio, no por schema** — el invariante de una sola PENDIENTE activa por lote se mantiene en los casos de uso y en la migración; el schema idb v3 no lo hace cumplir a nivel de índice (implica índice único parcial o agregado a escala ~40; cuando el volumen lo pida).
   - **`next-visit.ts` expuesto en la API de aplicación** — `resolveNextPending` (intervalo/fecha/ninguna + clamp) vive como helper exportado en `src/application/use-cases/next-visit.ts` (no es un caso de uso con puerto propio); documentado como diseño, no como deuda.
 - **Diferidos de onboarding (camino único):** reusar `PickOrCreate` en el form de Lote de Catálogo (decisión explícita: solo el camino único en la etapa); búsqueda diferida para muchos lotes (>40 no es un caso real); FAB solo en Inicio.
+- **Diferidos de recordatorios-remotos-mvp (en el plan, sección Diferidos):**
+  - **SES at-most-once** — `claimRun` avanza el watermark **antes** de enviar; si el envío falla, el batch se pierde (solo re-dispara lo que venza después). Aceptado para MVP: el banner in-app y la agenda cubren el caso. → log `(visitId, remindAt)` del spec si se quiere red-trigger por edición.
+  - **API key embebida en el bundle de la PWA** — un solo usuario; rotar la key revoca el acceso. → scheme de API keys con rotación o lambda authorizer cuando haya más usuarios.
+  - **Cron UTC fijo** — `cron(0 10 * * ? *)` (07:00 ART). La marca de agua hace la hora poco crítica (at-most-once + catch-up).
+  - **Freshness best-effort** — si no se abre la app durante días, el feed queda viejo → aviso tarde o para una visita ya realizada. Mitigación parcial: `plannedFor > now` en la lambda (una visita cumplida deja de estar en el snapshot al subir el cambio).
 
 ---
 
