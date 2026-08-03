@@ -3,7 +3,7 @@ import type { EditVisitInput } from '@/application/use-cases/edit-visit';
 import { useCampo } from '@/ui/CampoProvider';
 
 export function useEditVisit() {
-  const { editVisit } = useCampo();
+  const { editVisit, syncPendingVisitsFeed } = useCampo();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<Error | undefined>();
   const [done, setDone] = useState(false);
@@ -15,13 +15,14 @@ export function useEditVisit() {
       try {
         await editVisit.execute(input);
         setDone(true);
+        void syncPendingVisitsFeed();
       } catch (e) {
         setError(e as Error);
       } finally {
         setSubmitting(false);
       }
     },
-    [editVisit],
+    [editVisit, syncPendingVisitsFeed],
   );
 
   return { submit, submitting, error, done };

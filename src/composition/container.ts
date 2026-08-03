@@ -31,6 +31,8 @@ import {
   ListCatalogFields,
 } from '@/application/use-cases/field-catalog';
 import { ClearAllData } from '@/application/use-cases/clear-all-data';
+import { SyncPendingVisitsFeed } from '@/application/use-cases/sync-pending-visits-feed';
+import { HttpReminderFeedRepository } from '@/infrastructure/persistence/http';
 import { IdbFieldRepository } from '@/infrastructure/persistence/idb/idb-field-repository';
 import { IdbVisitRepository } from '@/infrastructure/persistence/idb/idb-visit-repository';
 import { IdbReminderRepository } from '@/infrastructure/persistence/idb/idb-reminder-repository';
@@ -72,6 +74,8 @@ export interface Container {
   restoreField: RestoreField;
   listCatalogFields: ListCatalogFields;
   clearAllData: ClearAllData;
+  /** Sube el snapshot de programadas al backend de recordatorios (no-op si no hay env configurado). */
+  syncPendingVisitsFeed: () => Promise<void>;
 }
 
 export function buildContainer(db: CampoDb): Container {
@@ -89,6 +93,15 @@ export function buildContainer(db: CampoDb): Container {
   const createField = new CreateField(fields, ids);
   const scheduleVisit = new ScheduleVisit(fields, visits, reminders, clock, ids);
   const recordVisit = new RecordVisit(fields, visits, reminders, clock, ids);
+  const remindersApiUrl = import.meta.env.VITE_REMINDERS_API_URL as string | undefined;
+  const remindersApiKey = import.meta.env.VITE_REMINDERS_API_KEY as string | undefined;
+  const syncPendingVisitsFeed =
+    remindersApiUrl && remindersApiKey
+      ? (() => {
+          const sync = new SyncPendingVisitsFeed(visits, fields, new HttpReminderFeedRepository(remindersApiUrl, remindersApiKey));
+          return () => sync.execute().catch(() => undefined);
+        })()
+      : async () => undefined;
   return {
     searchFields: new SearchFields(fields),
     recordVisit,
@@ -118,5 +131,6 @@ export function buildContainer(db: CampoDb): Container {
     restoreField: new RestoreField(fields),
     listCatalogFields: new ListCatalogFields(fields),
     clearAllData: new ClearAllData(dataReset),
+    syncPendingVisitsFeed,
   };
 }

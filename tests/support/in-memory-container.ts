@@ -136,6 +136,7 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
     scheduleVisitEnsuringField: new ScheduleVisitEnsuringField(createZone, createClient, createField, scheduleVisit),
     recordVisitEnsuringField: new RecordVisitEnsuringField(createZone, createClient, createField, recordVisit),
     reminderAviso: notifier,
+    syncPendingVisitsFeed: async () => undefined,
     ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
 }

@@ -6,7 +6,7 @@ import type {
 import { useCampo } from '@/ui/CampoProvider';
 
 export function useScheduleVisitEnsuringField() {
-  const { scheduleVisitEnsuringField } = useCampo();
+  const { scheduleVisitEnsuringField, syncPendingVisitsFeed } = useCampo();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<Error | undefined>();
 
@@ -15,7 +15,9 @@ export function useScheduleVisitEnsuringField() {
       setSubmitting(true);
       setError(undefined);
       try {
-        return await scheduleVisitEnsuringField.execute(input);
+        const result = await scheduleVisitEnsuringField.execute(input);
+        void syncPendingVisitsFeed();
+        return result;
       } catch (e) {
         setError(e as Error);
         return undefined;
@@ -23,7 +25,7 @@ export function useScheduleVisitEnsuringField() {
         setSubmitting(false);
       }
     },
-    [scheduleVisitEnsuringField],
+    [scheduleVisitEnsuringField, syncPendingVisitsFeed],
   );
 
   return { submit, submitting, error };

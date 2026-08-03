@@ -6,7 +6,7 @@ import type {
 import { useCampo } from '@/ui/CampoProvider';
 
 export function useRecordVisitEnsuringField() {
-  const { recordVisitEnsuringField } = useCampo();
+  const { recordVisitEnsuringField, syncPendingVisitsFeed } = useCampo();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<Error | undefined>();
 
@@ -15,7 +15,9 @@ export function useRecordVisitEnsuringField() {
       setSubmitting(true);
       setError(undefined);
       try {
-        return await recordVisitEnsuringField.execute(input);
+        const result = await recordVisitEnsuringField.execute(input);
+        void syncPendingVisitsFeed();
+        return result;
       } catch (e) {
         setError(e as Error);
         return undefined;
@@ -23,7 +25,7 @@ export function useRecordVisitEnsuringField() {
         setSubmitting(false);
       }
     },
-    [recordVisitEnsuringField],
+    [recordVisitEnsuringField, syncPendingVisitsFeed],
   );
 
   return { submit, submitting, error };
