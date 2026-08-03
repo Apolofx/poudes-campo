@@ -5,7 +5,7 @@ import type { IdGenerator } from '@/domain/ports/outbound/id-generator';
 import type { VisitId } from '@/domain/shared/ids';
 import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
-import { addDays, daysBetween } from '@/domain/shared/date-utils';
+import { addDays, daysBetweenIso, isoDay } from '@/domain/shared/date-utils';
 import { clampLeadDays } from '@/application/use-cases/next-visit';
 import {
   VisitNotFound,
@@ -29,32 +29,32 @@ export class EditVisit {
   ) {}
 
   async execute(input: EditVisitInput): Promise<void> {
-    const now = this.clock.now();
+    const today = this.clock.today();
 
     const existing = await this.visits.findById(input.visitId);
     if (!existing) throw new VisitNotFound(`unknown visit ${input.visitId}`);
     if (existing.status === 'CANCELLED') throw new VisitAlreadyCancelled(`visit ${input.visitId} is cancelled`);
 
     if (input.kind === 'pending') {
-      await this.editPending(existing, input, now);
+      await this.editPending(existing, input, today);
       return;
     }
-    await this.editDone(existing, input, now);
+    await this.editDone(existing, input, today);
   }
 
   private async editPending(
     existing: Visit,
     input: Extract<EditVisitInput, { kind: 'pending' }>,
-    now: Date,
+    today: string,
   ): Promise<void> {
     if (existing.status !== 'PENDING') {
       throw new InvalidVisit(`visit ${existing.id} is not pending`);
     }
-    if (input.plannedFor.getTime() <= now.getTime()) {
+    if (isoDay(input.plannedFor) <= today) {
       throw new PlannedDateNotFuture('planned date must be in the future');
     }
 
-    const lead = clampLeadDays(input.reminderLeadDays, daysBetween(now, input.plannedFor));
+    const lead = clampLeadDays(input.reminderLeadDays, daysBetweenIso(today, isoDay(input.plannedFor)));
 
     await this.visits.save(
       new Visit({
@@ -88,12 +88,12 @@ export class EditVisit {
   private async editDone(
     existing: Visit,
     input: Extract<EditVisitInput, { kind: 'done' }>,
-    now: Date,
+    today: string,
   ): Promise<void> {
     if (existing.status !== 'DONE') {
       throw new InvalidVisit(`visit ${existing.id} is not done`);
     }
-    if (input.visitedAt.getTime() > now.getTime()) {
+    if (isoDay(input.visitedAt) > today) {
       throw new FutureVisitDate('visit date cannot be in the future');
     }
 

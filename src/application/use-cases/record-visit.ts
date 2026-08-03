@@ -7,7 +7,7 @@ import type { FieldId, VisitId, ReminderId } from '@/domain/shared/ids';
 import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
 import { FieldNotFound, FutureVisitDate, DuplicateVisitForDay } from '@/domain/shared/errors';
-import { addDays } from '@/domain/shared/date-utils';
+import { addDays, isoDay } from '@/domain/shared/date-utils';
 import { resolveNextPending, type NextVisitInput } from '@/application/use-cases/next-visit';
 
 export type { NextVisitInput };
@@ -36,11 +36,12 @@ export class RecordVisit {
 
   async execute(input: RecordVisitInput): Promise<RecordVisitResult> {
     const now = this.clock.now();
+    const today = this.clock.today();
 
     const field = await this.fields.findById(input.fieldId);
     if (!field) throw new FieldNotFound(`unknown field ${input.fieldId}`);
 
-    if (input.visitedAt.getTime() > now.getTime()) {
+    if (isoDay(input.visitedAt) > today) {
       throw new FutureVisitDate('visit date cannot be in the future');
     }
 
@@ -83,7 +84,7 @@ export class RecordVisit {
       await this.reminders.save(reminder);
     }
 
-    const next = resolveNextPending(input.next ?? { kind: 'none' }, now);
+    const next = resolveNextPending(input.next ?? { kind: 'none' }, now, today);
     if (!next) return { visitId };
 
     const pendingRecord = new Visit({

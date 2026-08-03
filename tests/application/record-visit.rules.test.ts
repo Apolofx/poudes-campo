@@ -17,6 +17,23 @@ describe('RecordVisit — rules and edges', () => {
     ).rejects.toThrow(FutureVisitDate);
   });
 
+  it('rechaza una visita con fecha en el mañana local de noche (UTC ya lo cruzó)', async () => {
+    const h = makeRecordVisitHarness(new Date('2026-08-03T02:25:00Z'), '2026-08-02');
+    await expect(
+      h.uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-08-03T00:00:00Z'), next: { kind: 'none' } }),
+    ).rejects.toThrow(FutureVisitDate);
+  });
+
+  it('acepta una próxima visita en el mañana local de noche', async () => {
+    const h = makeRecordVisitHarness(new Date('2026-08-03T02:25:00Z'), '2026-08-02');
+    const res = await h.uc.execute({
+      fieldId: 'f1',
+      visitedAt: new Date('2026-08-02T20:00:00Z'),
+      next: { kind: 'date', date: new Date('2026-08-03T00:00:00Z'), reminderLeadDays: 0 },
+    });
+    expect(res.pendingId).toBeDefined();
+  });
+
   it('rejects a second done visit on the same day', async () => {
     const { uc } = makeRecordVisitHarness(new Date('2026-07-27T20:00:00Z'));
     await uc.execute({ fieldId: 'f1', visitedAt: new Date('2026-07-27T09:00:00Z'), next: { kind: 'none' } });

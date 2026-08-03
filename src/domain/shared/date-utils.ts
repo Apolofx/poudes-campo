@@ -17,3 +17,13 @@ export function daysBetween(from: Date, to: Date): number {
   const startTo = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
   return Math.round((startTo - startFrom) / MS_PER_DAY);
 }
+
+export function isoDay(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export function daysBetweenIso(fromIso: string, toIso: string): number {
+  return Math.round(
+    (Date.parse(`${toIso}T00:00:00.000Z`) - Date.parse(`${fromIso}T00:00:00.000Z`)) / MS_PER_DAY,
+  );
+}

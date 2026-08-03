@@ -8,7 +8,7 @@ import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
 
-export function makeRecordVisitHarness(now = new Date('2026-07-27T10:00:00Z')) {
+export function makeRecordVisitHarness(now = new Date('2026-07-27T10:00:00Z'), today?: string) {
   const zones = new Map([['z1', new Zone('z1', 'Quiroga')]]);
   const clients = new Map([['c1', new Client('c1', 'Martinez')]]);
   const fields = new InMemoryFieldRepository(zones, clients, [
@@ -16,7 +16,7 @@ export function makeRecordVisitHarness(now = new Date('2026-07-27T10:00:00Z')) {
   ]);
   const visits = new InMemoryVisitRepository();
   const reminders = new InMemoryReminderRepository();
-  const clock = new FixedClock(now);
+  const clock = new FixedClock(now, today);
   const ids = new IncrementingIdGenerator('id');
   const uc = new RecordVisit(fields, visits, reminders, clock, ids);
   return { uc, fields, visits, reminders, clock, ids };

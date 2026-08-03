@@ -68,6 +68,32 @@ describe('ScheduleVisit', () => {
     await expect(uc.execute({ fieldId: 'f1', plannedFor: now, reminderLeadDays: 3 })).rejects.toThrow(PlannedDateNotFuture);
   });
 
+  it('acepta el mañana local de noche aunque UTC ya cruzó el día', async () => {
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(
+      fields, visits, reminders,
+      new FixedClock(new Date('2026-08-03T02:25:00.000Z'), '2026-08-02'),
+      new IncrementingIdGenerator(),
+    );
+
+    await uc.execute({ fieldId: 'f1', plannedFor: at('2026-08-03'), reminderLeadDays: 0 });
+
+    expect((await visits.findPendingByField('f1'))?.plannedFor?.toISOString()).toBe('2026-08-03T00:00:00.000Z');
+  });
+
+  it('rechaza el hoy local de noche aunque UTC ya lo cruzó', async () => {
+    const { fields, visits, reminders } = build();
+    const uc = new ScheduleVisit(
+      fields, visits, reminders,
+      new FixedClock(new Date('2026-08-03T02:25:00.000Z'), '2026-08-02'),
+      new IncrementingIdGenerator(),
+    );
+
+    await expect(
+      uc.execute({ fieldId: 'f1', plannedFor: at('2026-08-02'), reminderLeadDays: 0 }),
+    ).rejects.toThrow(PlannedDateNotFuture);
+  });
+
   it('rejects an unknown field', async () => {
     const { fields, visits, reminders } = build();
     const uc = new ScheduleVisit(fields, visits, reminders, new FixedClock(now), new IncrementingIdGenerator());

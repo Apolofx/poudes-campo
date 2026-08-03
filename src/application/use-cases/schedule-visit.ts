@@ -7,7 +7,7 @@ import type { FieldId, VisitId, ReminderId } from '@/domain/shared/ids';
 import { Visit } from '@/domain/entities/visit';
 import { Reminder } from '@/domain/entities/reminder';
 import { FieldNotFound, PlannedDateNotFuture } from '@/domain/shared/errors';
-import { addDays, daysBetween } from '@/domain/shared/date-utils';
+import { addDays, daysBetweenIso, isoDay } from '@/domain/shared/date-utils';
 import { clampLeadDays } from '@/application/use-cases/next-visit';
 
 export interface ScheduleVisitInput {
@@ -33,11 +33,12 @@ export class ScheduleVisit {
 
   async execute(input: ScheduleVisitInput): Promise<ScheduleVisitResult> {
     const now = this.clock.now();
+    const today = this.clock.today();
 
     const field = await this.fields.findById(input.fieldId);
     if (!field) throw new FieldNotFound(`unknown field ${input.fieldId}`);
 
-    if (input.plannedFor.getTime() <= now.getTime()) {
+    if (isoDay(input.plannedFor) <= today) {
       throw new PlannedDateNotFuture('planned date must be in the future');
     }
 
@@ -64,7 +65,7 @@ export class ScheduleVisit {
       await this.reminders.save(reminder);
     }
 
-    const lead = clampLeadDays(input.reminderLeadDays, daysBetween(now, input.plannedFor));
+    const lead = clampLeadDays(input.reminderLeadDays, daysBetweenIso(today, isoDay(input.plannedFor)));
 
     const visit = new Visit({
       id: this.ids.next(),

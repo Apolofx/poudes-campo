@@ -4,6 +4,7 @@ import { openCampoDb } from '@/infrastructure/persistence/idb/open-campo-db';
 import { seedIfEmpty } from '@/composition/seed';
 import { buildContainer } from '@/composition/container';
 import { makeInMemoryContainer } from '../support/in-memory-container';
+import { localTodayIso, utcDate } from '@/ui/date-utils';
 
 describe('buildContainer', () => {
   it('wires searchFields over the db', async () => {
@@ -22,7 +23,7 @@ describe('buildContainer', () => {
     const [first] = await container.searchFields.execute('');
     const result = await container.recordVisit.execute({
       fieldId: first.field.id,
-      visitedAt: new Date(),
+      visitedAt: utcDate(localTodayIso()),
     });
     expect(result.visitId).toBeTruthy();
     db.close();
@@ -36,7 +37,7 @@ describe('buildContainer', () => {
     // Registrar una visita con próxima ya vencida hoy (lead grande sobre intervalo corto).
     await container.recordVisit.execute({
       fieldId: first.field.id,
-      visitedAt: new Date(),
+      visitedAt: utcDate(localTodayIso()),
       next: { kind: 'interval', days: 1, reminderLeadDays: 1 }, // remindAt = ahora
     });
     const batch = await container.dispatchDueReminders.execute();

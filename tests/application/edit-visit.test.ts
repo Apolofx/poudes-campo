@@ -51,6 +51,14 @@ describe('EditVisit — pending', () => {
     ).rejects.toBeInstanceOf(PlannedDateNotFuture);
   });
 
+  it('acepta editar una programada con el mañana local de noche', async () => {
+    const h = makeEditCancelHarness(new Date('2026-08-03T02:25:00Z'), '2026-08-02');
+    await h.visits.save(pendingVisit('p1', '2026-08-10T00:00:00Z'));
+    await expect(
+      h.edit.execute({ kind: 'pending', visitId: 'p1', plannedFor: D('2026-08-03T00:00:00Z'), reminderLeadDays: 0 }),
+    ).resolves.toBeUndefined();
+  });
+
   it('clamps the lead and recreates the own reminder', async () => {
     const h = makeEditCancelHarness(new Date('2026-07-27T10:00:00Z'));
     await h.visits.save(pendingVisit('p1', '2026-08-10T00:00:00Z'));
@@ -90,6 +98,14 @@ describe('EditVisit — done', () => {
     await h.visits.save(doneVisit('v1', '2026-07-27T10:00:00Z'));
     await expect(
       h.edit.execute({ kind: 'done', visitId: 'v1', visitedAt: D('2026-07-30T10:00:00Z') }),
+    ).rejects.toBeInstanceOf(FutureVisitDate);
+  });
+
+  it('rechaza editar una realizada con fecha en el mañana local de noche', async () => {
+    const h = makeEditCancelHarness(new Date('2026-08-03T02:25:00Z'), '2026-08-02');
+    await h.visits.save(doneVisit('v1', '2026-07-27T10:00:00Z'));
+    await expect(
+      h.edit.execute({ kind: 'done', visitId: 'v1', visitedAt: D('2026-08-03T00:00:00Z') }),
     ).rejects.toBeInstanceOf(FutureVisitDate);
   });
 
