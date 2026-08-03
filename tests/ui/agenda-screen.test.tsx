@@ -71,6 +71,7 @@ async function makeContainer(): Promise<Container> {
     scheduleVisitEnsuringField: ensuringFieldStub,
     recordVisitEnsuringField: recordEnsuringFieldStub,
     reminderAviso: notifier,
+    syncPendingVisitsFeed: async () => undefined,
     ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
 }
@@ -142,6 +143,7 @@ describe('AgendaScreen', () => {
       scheduleVisitEnsuringField: ensuringFieldStub,
       recordVisitEnsuringField: recordEnsuringFieldStub,
       reminderAviso: notifier,
+      syncPendingVisitsFeed: async () => undefined,
       ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
     };
     render(

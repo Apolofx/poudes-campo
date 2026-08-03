@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useCampo } from '@/ui/CampoProvider';
 
 export function useCancelVisit() {
-  const { cancelVisit } = useCampo();
+  const { cancelVisit, syncPendingVisitsFeed } = useCampo();
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<Error | undefined>();
   const [done, setDone] = useState(false);
@@ -14,13 +14,14 @@ export function useCancelVisit() {
       try {
         await cancelVisit.execute({ visitId });
         setDone(true);
+        void syncPendingVisitsFeed();
       } catch (e) {
         setError(e as Error);
       } finally {
         setCancelling(false);
       }
     },
-    [cancelVisit],
+    [cancelVisit, syncPendingVisitsFeed],
   );
 
   return { cancel, cancelling, error, done };

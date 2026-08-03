@@ -21,6 +21,8 @@ async function main() {
     console.error('reminder dispatch failed', error);
   }
 
+  void container.syncPendingVisitsFeed();
+
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <CampoProvider container={container}>
