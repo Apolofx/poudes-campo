@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { NextVisitInput } from '@/application/use-cases/next-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
@@ -54,6 +54,8 @@ export function RecordVisitScreen() {
   const [intervalDays, setIntervalDays] = useState(14);
   const [nextDate, setNextDate] = useState(localFutureIso(14));
   const [leadDays, setLeadDays] = useState(3);
+  const diasRef = useRef<HTMLInputElement>(null);
+  const avisoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!pickingLot) return;
@@ -200,16 +202,37 @@ export function RecordVisitScreen() {
           </div>
           <div className="conditional-row">
             {kind === 'interval' && (
-              <label className="field">
-                <span className="field-label">Días</span>
+              <div className="field">
+                <span className="field-label" id="dias-label">Días</span>
+                <div className="chips" role="group" aria-label="Días rápido">
+                  {[7, 10, 14].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`chip${intervalDays === n ? ' active' : ''}`}
+                      onClick={() => setIntervalDays(n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`chip${![7, 10, 14].includes(intervalDays) ? ' active' : ''}`}
+                    onClick={() => diasRef.current?.focus()}
+                  >
+                    Otro
+                  </button>
+                </div>
                 <input
+                  ref={diasRef}
                   className="control"
                   type="number"
                   min="1"
                   value={intervalDays}
                   onChange={(e) => setIntervalDays(Number(e.target.value))}
+                  aria-labelledby="dias-label"
                 />
-              </label>
+              </div>
             )}
             {kind === 'date' && (
               <label className="field">
@@ -223,17 +246,39 @@ export function RecordVisitScreen() {
               </label>
             )}
             {kind !== 'none' && (
-              <label className="field">
-                <span className="field-label">Avisar días antes</span>
+              <div className="field">
+                <span className="field-label" id="aviso-label">Avisar días antes</span>
+                <div className="chips" role="group" aria-label="Aviso rápido">
+                  {[0, 1, 3, 7].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`chip${leadDays === n ? ' active' : ''}`}
+                      disabled={n > leadMax}
+                      onClick={() => setLeadDays(n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`chip${![0, 1, 3, 7].includes(leadDays) ? ' active' : ''}`}
+                    onClick={() => avisoRef.current?.focus()}
+                  >
+                    Otro
+                  </button>
+                </div>
                 <input
+                  ref={avisoRef}
                   className="control"
                   type="number"
                   min="0"
                   max={leadMax}
                   value={leadDays}
                   onChange={(e) => setLeadDays(Number(e.target.value))}
+                  aria-labelledby="aviso-label"
                 />
-              </label>
+              </div>
             )}
           </div>
         </fieldset>

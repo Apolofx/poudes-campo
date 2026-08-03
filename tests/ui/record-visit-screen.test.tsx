@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { CampoProvider } from '@/ui/CampoProvider';
@@ -105,6 +105,47 @@ describe('RecordVisitScreen', () => {
     renderScreen();
     const lead = screen.getByLabelText('Avisar días antes') as HTMLInputElement;
     expect(lead).toHaveAttribute('max', '14');
+  });
+
+  it('ofrece presets de intervalo (7/10/14) y tocar uno llena el input de Días', async () => {
+    renderScreen();
+    const diasGroup = screen.getByRole('group', { name: /Días rápido/ });
+    const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
+    await userEvent.click(within(diasGroup).getByRole('button', { name: '7' }));
+    expect(daysInput).toHaveValue(7);
+    await userEvent.click(within(diasGroup).getByRole('button', { name: '14' }));
+    expect(daysInput).toHaveValue(14);
+  });
+
+  it('marca el preset Otro cuando el intervalo es un valor custom', async () => {
+    renderScreen();
+    const diasGroup = screen.getByRole('group', { name: /Días rápido/ });
+    const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
+    await userEvent.clear(daysInput);
+    await userEvent.type(daysInput, '21');
+    expect(within(diasGroup).getByRole('button', { name: 'Otro' })).toHaveClass('active');
+    expect(within(diasGroup).getByRole('button', { name: '7' })).not.toHaveClass('active');
+  });
+
+  it('ofrece presets de aviso (0/1/3/7) y tocar uno llena el input de lead', async () => {
+    renderScreen();
+    const avisoGroup = screen.getByRole('group', { name: /Aviso rápido/ });
+    const leadInput = screen.getByLabelText('Avisar días antes') as HTMLInputElement;
+    await userEvent.click(within(avisoGroup).getByRole('button', { name: '1' }));
+    expect(leadInput).toHaveValue(1);
+    await userEvent.click(within(avisoGroup).getByRole('button', { name: '3' }));
+    expect(leadInput).toHaveValue(3);
+  });
+
+  it('deshabilita presets de aviso mayores que el intervalo', async () => {
+    renderScreen();
+    const avisoGroup = screen.getByRole('group', { name: /Aviso rápido/ });
+    const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
+    const chip7 = within(avisoGroup).getByRole('button', { name: '7' });
+    expect(chip7).toBeEnabled();
+    await userEvent.clear(daysInput);
+    await userEvent.type(daysInput, '3');
+    expect(chip7).toBeDisabled();
   });
 
   it('marca la fecha con max = hoy para que el navegador bloquee una fecha futura', () => {
