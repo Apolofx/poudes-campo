@@ -33,6 +33,7 @@ import {
 import { ClearAllData } from '@/application/use-cases/clear-all-data';
 import { SyncPendingVisitsFeed } from '@/application/use-cases/sync-pending-visits-feed';
 import { HttpReminderFeedRepository } from '@/infrastructure/persistence/http';
+import { LocalTenantConfigRepository } from '@/infrastructure/persistence/local/tenant-config-repository';
 import { IdbFieldRepository } from '@/infrastructure/persistence/idb/idb-field-repository';
 import { IdbVisitRepository } from '@/infrastructure/persistence/idb/idb-visit-repository';
 import { IdbReminderRepository } from '@/infrastructure/persistence/idb/idb-reminder-repository';
@@ -43,6 +44,7 @@ import { InAppReminderNotifier } from '@/infrastructure/notification/in-app-remi
 import { SystemClock } from '@/infrastructure/clock/system-clock';
 import { Uuidv7IdGenerator } from '@/infrastructure/id/uuidv7-id-generator';
 import type { ReminderAvisoStore } from '@/domain/ports/outbound/reminder-notifier';
+import type { TenantConfig, TenantConfigRepository } from '@/domain/ports/outbound/tenant-config-repository';
 import type { CampoDb } from '@/infrastructure/persistence/idb/open-campo-db';
 
 export interface Container {
@@ -74,8 +76,11 @@ export interface Container {
   restoreField: RestoreField;
   listCatalogFields: ListCatalogFields;
   clearAllData: ClearAllData;
-  /** Sube el snapshot de programadas al backend de recordatorios (no-op si no hay env configurado). */
+  /** Sube el snapshot de programadas al backend de recordatorios (no-op si no hay config de tenant). */
   syncPendingVisitsFeed: () => Promise<void>;
+  getTenantConfig: () => Promise<TenantConfig | null>;
+  saveTenantConfig: (config: TenantConfig) => Promise<void>;
+  clearTenantConfig: () => Promise<void>;
 }
 
 export function buildContainer(db: CampoDb): Container {
@@ -95,13 +100,15 @@ export function buildContainer(db: CampoDb): Container {
   const recordVisit = new RecordVisit(fields, visits, reminders, clock, ids);
   const remindersApiUrl = import.meta.env.VITE_REMINDERS_API_URL as string | undefined;
   const remindersApiKey = import.meta.env.VITE_REMINDERS_API_KEY as string | undefined;
-  const syncPendingVisitsFeed =
-    remindersApiUrl && remindersApiKey
-      ? (() => {
-          const sync = new SyncPendingVisitsFeed(visits, fields, new HttpReminderFeedRepository(remindersApiUrl, remindersApiKey));
-          return () => sync.execute().catch(() => undefined);
-        })()
-      : async () => undefined;
+  const envFallback: TenantConfig | null =
+    remindersApiUrl && remindersApiKey ? { apiUrl: remindersApiUrl, apiKey: remindersApiKey } : null;
+  const tenantConfigRepo = new LocalTenantConfigRepository();
+  const syncPendingVisitsFeed = async (): Promise<void> => {
+    const config = (await tenantConfigRepo.get()) ?? envFallback;
+    if (!config) return;
+    const sync = new SyncPendingVisitsFeed(visits, fields, new HttpReminderFeedRepository(config.apiUrl, config.apiKey));
+    await sync.execute().catch(() => undefined);
+  };
   return {
     searchFields: new SearchFields(fields),
     recordVisit,
@@ -132,5 +139,8 @@ export function buildContainer(db: CampoDb): Container {
     listCatalogFields: new ListCatalogFields(fields),
     clearAllData: new ClearAllData(dataReset),
     syncPendingVisitsFeed,
+    getTenantConfig: () => tenantConfigRepo.get(),
+    saveTenantConfig: (config: TenantConfig) => tenantConfigRepo.save(config),
+    clearTenantConfig: () => tenantConfigRepo.clear(),
   };
 }

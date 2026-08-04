@@ -72,6 +72,9 @@ async function makeContainer(): Promise<Container> {
     recordVisitEnsuringField: recordEnsuringFieldStub,
     reminderAviso: notifier,
     syncPendingVisitsFeed: async () => undefined,
+    getTenantConfig: async () => null,
+    saveTenantConfig: async () => undefined,
+    clearTenantConfig: async () => undefined,
     ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
 }
@@ -144,6 +147,9 @@ describe('AgendaScreen', () => {
       recordVisitEnsuringField: recordEnsuringFieldStub,
       reminderAviso: notifier,
       syncPendingVisitsFeed: async () => undefined,
+      getTenantConfig: async () => null,
+      saveTenantConfig: async () => undefined,
+      clearTenantConfig: async () => undefined,
       ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
     };
     render(
