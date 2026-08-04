@@ -15,8 +15,9 @@ export default defineConfig({
         name: 'Campo',
         short_name: 'Campo',
         description: 'Registro de visitas a lotes',
-        theme_color: '#2e7d32',
-        background_color: '#ffffff',
+        lang: 'es',
+        theme_color: '#2f7d4f',
+        background_color: '#f7f6f1',
         display: 'standalone',
         start_url: '/',
         icons: [
