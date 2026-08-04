@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet } from 'react-router-dom';
+import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { AgendaScreen } from '@/ui/screens/AgendaScreen';
 import { SearchScreen } from '@/ui/screens/SearchScreen';
 import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
@@ -12,7 +12,9 @@ import { FieldsListScreen } from '@/ui/screens/FieldsListScreen';
 import { FieldFormScreen } from '@/ui/screens/FieldFormScreen';
 import { VisitDetailScreen } from '@/ui/screens/VisitDetailScreen';
 import { ScheduledVisitFormScreen } from '@/ui/screens/ScheduledVisitFormScreen';
+import { ConfigScreen } from '@/ui/screens/ConfigScreen';
 import { TabBar } from '@/ui/components/TabBar';
+import { useTenantConfig } from '@/ui/TenantConfigProvider';
 
 function TabsLayout() {
   return (
@@ -25,30 +27,40 @@ function TabsLayout() {
   );
 }
 
+function ConfigGate() {
+  const { config, loading } = useTenantConfig();
+  if (loading) return null;
+  if (!config) return <Navigate to="/configuracion" replace />;
+  return <Outlet />;
+}
+
 export function App() {
   return (
     <Routes>
-      <Route element={<TabsLayout />}>
-        <Route path="/" element={<AgendaScreen />} />
-        <Route path="/buscar" element={<SearchScreen />} />
-        <Route path="/catalogo" element={<CatalogHubScreen />} />
-        <Route path="/catalogo/zonas" element={<ZonesListScreen />} />
-        <Route path="/catalogo/clientes" element={<ClientsListScreen />} />
-        <Route path="/catalogo/lotes" element={<FieldsListScreen />} />
+      <Route path="/configuracion" element={<ConfigScreen />} />
+      <Route element={<ConfigGate />}>
+        <Route element={<TabsLayout />}>
+          <Route path="/" element={<AgendaScreen />} />
+          <Route path="/buscar" element={<SearchScreen />} />
+          <Route path="/catalogo" element={<CatalogHubScreen />} />
+          <Route path="/catalogo/zonas" element={<ZonesListScreen />} />
+          <Route path="/catalogo/clientes" element={<ClientsListScreen />} />
+          <Route path="/catalogo/lotes" element={<FieldsListScreen />} />
+        </Route>
+        <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
+        <Route path="/registrar" element={<RecordVisitScreen />} />
+        <Route path="/field/:fieldId/visitas" element={<FieldHistoryScreen />} />
+        <Route path="/field/:fieldId/visitas/:visitId" element={<VisitDetailScreen />} />
+        <Route path="/field/:fieldId/programar" element={<ScheduledVisitFormScreen />} />
+        <Route path="/programar" element={<ScheduledVisitFormScreen />} />
+        <Route path="/field/:fieldId/programar/:visitId" element={<ScheduledVisitFormScreen />} />
+        <Route path="/catalogo/zonas/nueva" element={<ZoneFormScreen />} />
+        <Route path="/catalogo/zonas/:id" element={<ZoneFormScreen />} />
+        <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />
+        <Route path="/catalogo/clientes/:id" element={<ClientFormScreen />} />
+        <Route path="/catalogo/lotes/nuevo" element={<FieldFormScreen />} />
+        <Route path="/catalogo/lotes/:id" element={<FieldFormScreen />} />
       </Route>
-      <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
-      <Route path="/registrar" element={<RecordVisitScreen />} />
-      <Route path="/field/:fieldId/visitas" element={<FieldHistoryScreen />} />
-      <Route path="/field/:fieldId/visitas/:visitId" element={<VisitDetailScreen />} />
-      <Route path="/field/:fieldId/programar" element={<ScheduledVisitFormScreen />} />
-      <Route path="/programar" element={<ScheduledVisitFormScreen />} />
-      <Route path="/field/:fieldId/programar/:visitId" element={<ScheduledVisitFormScreen />} />
-      <Route path="/catalogo/zonas/nueva" element={<ZoneFormScreen />} />
-      <Route path="/catalogo/zonas/:id" element={<ZoneFormScreen />} />
-      <Route path="/catalogo/clientes/nuevo" element={<ClientFormScreen />} />
-      <Route path="/catalogo/clientes/:id" element={<ClientFormScreen />} />
-      <Route path="/catalogo/lotes/nuevo" element={<FieldFormScreen />} />
-      <Route path="/catalogo/lotes/:id" element={<FieldFormScreen />} />
     </Routes>
   );
 }
