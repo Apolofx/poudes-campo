@@ -42,9 +42,11 @@ import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
 import type { IdGenerator } from '@/domain/ports/outbound/id-generator';
+import type { TenantConfig } from '@/domain/ports/outbound/tenant-config-repository';
 import type { Container } from '@/composition/container';
 import { FixedClock } from './fixed-clock';
 import { IncrementingIdGenerator } from './incrementing-id-generator';
+import { InMemoryTenantConfigRepository } from './in-memory-tenant-config-repository';
 
 /**
  * Builds the catalog slice of a Container (zone/client/field CRUD + clearAllData)
@@ -104,7 +106,7 @@ export function wireCatalogUseCases(
   };
 }
 
-export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): Container {
+export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z'), config: TenantConfig | null = null): Container {
   const zoneMap = new Map([['z1', new Zone('z1', 'Norte')]]);
   const clientMap = new Map([['c1', new Client('c1', 'Pérez')]]);
   const fields = new InMemoryFieldRepository(zoneMap, clientMap, [
@@ -118,6 +120,7 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
   const clock = new FixedClock(now);
   const ids = new IncrementingIdGenerator();
   const notifier = new InAppReminderNotifier();
+  const tenantConfigRepo = new InMemoryTenantConfigRepository(config);
   const createZone = new CreateZone(zones, ids);
   const createClient = new CreateClient(clients, ids);
   const createField = new CreateField(fields, ids);
@@ -137,6 +140,9 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z')): C
     recordVisitEnsuringField: new RecordVisitEnsuringField(createZone, createClient, createField, recordVisit),
     reminderAviso: notifier,
     syncPendingVisitsFeed: async () => undefined,
+    getTenantConfig: () => tenantConfigRepo.get(),
+    saveTenantConfig: (c: TenantConfig) => tenantConfigRepo.save(c),
+    clearTenantConfig: () => tenantConfigRepo.clear(),
     ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
   };
 }

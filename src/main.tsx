@@ -6,6 +6,7 @@ import { openCampoDb } from '@/infrastructure/persistence/idb/open-campo-db';
 import { seedIfEmpty } from '@/composition/seed';
 import { buildContainer } from '@/composition/container';
 import { CampoProvider } from '@/ui/CampoProvider';
+import { TenantConfigProvider } from '@/ui/TenantConfigProvider';
 import { App } from '@/ui/App';
 
 async function main() {
@@ -26,9 +27,11 @@ async function main() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <CampoProvider container={container}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <TenantConfigProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </TenantConfigProvider>
       </CampoProvider>
     </StrictMode>,
   );

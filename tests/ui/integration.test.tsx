@@ -7,7 +7,21 @@ import { openCampoDb } from '@/infrastructure/persistence/idb/open-campo-db';
 import { seedIfEmpty } from '@/composition/seed';
 import { buildContainer } from '@/composition/container';
 import { CampoProvider } from '@/ui/CampoProvider';
+import { TenantConfigProvider } from '@/ui/TenantConfigProvider';
 import { App } from '@/ui/App';
+
+async function renderApp(container: ReturnType<typeof buildContainer>, initialEntries: string[]) {
+  await container.saveTenantConfig({ apiUrl: 'https://api.example.com', apiKey: 'tnt_t1_secret' });
+  render(
+    <CampoProvider container={container}>
+      <TenantConfigProvider>
+        <MemoryRouter initialEntries={initialEntries}>
+          <App />
+        </MemoryRouter>
+      </TenantConfigProvider>
+    </CampoProvider>,
+  );
+}
 
 function isoInDays(days: number): string {
   const d = new Date();
@@ -21,13 +35,7 @@ describe('search → record visit (real IndexedDB adapter)', () => {
     await seedIfEmpty(db);
     const container = buildContainer(db);
 
-    render(
-      <CampoProvider container={container}>
-        <MemoryRouter initialEntries={['/buscar']}>
-          <App />
-        </MemoryRouter>
-      </CampoProvider>,
-    );
+    await renderApp(container, ['/buscar']);
 
     // Buscar y abrir el historial del primer lote sembrado.
     const link = await screen.findByRole('link', { name: /^El Alto(?!\s*2)/ });
@@ -53,13 +61,7 @@ describe('search → record visit (real IndexedDB adapter)', () => {
     const db = await openCampoDb(`t-${Math.random()}`);
     const container = buildContainer(db);
 
-    render(
-      <CampoProvider container={container}>
-        <MemoryRouter initialEntries={['/']}>
-          <App />
-        </MemoryRouter>
-      </CampoProvider>,
-    );
+    await renderApp(container, ['/']);
 
     // Inicio vacío → FAB "Programar visita".
     await screen.findByText('No hay visitas agendadas.');
