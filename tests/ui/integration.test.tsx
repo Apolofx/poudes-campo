@@ -39,6 +39,7 @@ describe('search → record visit (real IndexedDB adapter)', () => {
 
     // Registrar sin próxima visita.
     await screen.findByRole('heading', { name: 'Registrar visita' });
+    await userEvent.click(screen.getByRole('button', { name: /Próxima|Programar próxima/ }));
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
 

@@ -25,9 +25,14 @@ function renderScreen(now = new Date()) {
     </CampoProvider>,
   );
 }
+
+async function expandNextVisit() {
+  await userEvent.click(screen.getByRole('button', { name: /Próxima|Programar próxima/ }));
+}
 describe('RecordVisitScreen', () => {
   it('records a visit and navigates back to the list', async () => {
     renderScreen();
+    await expandNextVisit();
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
     expect(await screen.findByText('Listado')).toBeInTheDocument();
@@ -41,6 +46,7 @@ describe('RecordVisitScreen', () => {
     const dateInput = screen.getByLabelText('Fecha') as HTMLInputElement;
     await userEvent.clear(dateInput);
     await userEvent.type(dateInput, localFutureIso(30));
+    await expandNextVisit();
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     fireEvent.submit(container.querySelector('form')!);
     await waitFor(() =>
@@ -50,19 +56,22 @@ describe('RecordVisitScreen', () => {
 
   it('records a visit with the default "En una fecha" date and navigates back', async () => {
     renderScreen();
+    await expandNextVisit();
     await userEvent.click(screen.getByLabelText(/En una fecha/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
     expect(await screen.findByText('Listado')).toBeInTheDocument();
   });
 
-  it('marks "Días" with a min of 1 so the browser blocks an empty/zero submission', () => {
+  it('marks "Días" with a min of 1 so the browser blocks an empty/zero submission', async () => {
     renderScreen();
+    await expandNextVisit();
     const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
     expect(daysInput).toHaveAttribute('min', '1');
   });
 
-  it('marks "Avisar días antes" with a min of 0', () => {
+  it('marks "Avisar días antes" with a min of 0', async () => {
     renderScreen();
+    await expandNextVisit();
     const leadInput = screen.getByLabelText('Avisar días antes') as HTMLInputElement;
     expect(leadInput).toHaveAttribute('min', '0');
   });
@@ -72,6 +81,7 @@ describe('RecordVisitScreen', () => {
     // test bypasses native constraint validation (by dispatching `submit` directly instead of
     // clicking the button) to exercise the JS-level safeInterval/safeLead fallback itself.
     const { container } = renderScreen();
+    await expandNextVisit();
     const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
     await userEvent.clear(daysInput);
     fireEvent.submit(container.querySelector('form')!);
@@ -101,14 +111,16 @@ describe('RecordVisitScreen', () => {
     expect(back).toHaveAttribute('href', '/');
   });
 
-  it('limita el aviso al intervalo (max en el input de lead)', () => {
+  it('limita el aviso al intervalo (max en el input de lead)', async () => {
     renderScreen();
+    await expandNextVisit();
     const lead = screen.getByLabelText('Avisar días antes') as HTMLInputElement;
     expect(lead).toHaveAttribute('max', '14');
   });
 
   it('ofrece presets de intervalo (7/10/14) y tocar uno llena el input de Días', async () => {
     renderScreen();
+    await expandNextVisit();
     const diasGroup = screen.getByRole('group', { name: /Días rápido/ });
     const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
     await userEvent.click(within(diasGroup).getByRole('button', { name: '7' }));
@@ -119,6 +131,7 @@ describe('RecordVisitScreen', () => {
 
   it('marca el preset Otro cuando el intervalo es un valor custom', async () => {
     renderScreen();
+    await expandNextVisit();
     const diasGroup = screen.getByRole('group', { name: /Días rápido/ });
     const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
     await userEvent.clear(daysInput);
@@ -129,6 +142,7 @@ describe('RecordVisitScreen', () => {
 
   it('ofrece presets de aviso (0/1/3/7) y tocar uno llena el input de lead', async () => {
     renderScreen();
+    await expandNextVisit();
     const avisoGroup = screen.getByRole('group', { name: /Aviso rápido/ });
     const leadInput = screen.getByLabelText('Avisar días antes') as HTMLInputElement;
     await userEvent.click(within(avisoGroup).getByRole('button', { name: '1' }));
@@ -139,6 +153,7 @@ describe('RecordVisitScreen', () => {
 
   it('deshabilita presets de aviso mayores que el intervalo', async () => {
     renderScreen();
+    await expandNextVisit();
     const avisoGroup = screen.getByRole('group', { name: /Aviso rápido/ });
     const daysInput = screen.getByLabelText('Días') as HTMLInputElement;
     const chip7 = within(avisoGroup).getByRole('button', { name: '7' });
@@ -187,6 +202,18 @@ describe('RecordVisitScreen', () => {
       expect(screen.queryByRole('button', { name: /Cancelar visita/ })).not.toBeInTheDocument(),
     );
   });
+
+  it('muestra la próxima visita colapsada y al expandir revela los controles', async () => {
+    renderScreen();
+    // colapsado: el resumen está visible, los controles no
+    const trigger = screen.getByRole('button', { name: /Próxima:/ });
+    expect(trigger).toHaveTextContent(/14 días/);
+    expect(screen.queryByLabelText('Días')).not.toBeInTheDocument();
+    // expandir
+    await userEvent.click(trigger);
+    expect(screen.getByLabelText('Días')).toBeInTheDocument();
+    expect(screen.getByLabelText('Avisar días antes')).toBeInTheDocument();
+  });
 });
 
 describe('RecordVisitScreen (camino global /registrar)', () => {
@@ -210,6 +237,7 @@ describe('RecordVisitScreen (camino global /registrar)', () => {
     await userEvent.type(screen.getByLabelText('Lote'), 'Paso 9');
     await userEvent.type(screen.getByLabelText('Zona'), 'La Costa');
     await userEvent.type(screen.getByLabelText('Cliente'), 'Herrera');
+    await expandNextVisit();
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
 
@@ -225,6 +253,7 @@ describe('RecordVisitScreen (camino global /registrar)', () => {
     renderGlobal(c);
     await userEvent.type(screen.getByLabelText('Lote'), 'Alto');
     await userEvent.click(screen.getByRole('button', { name: 'Lote El Alto' }));
+    await expandNextVisit();
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
 
@@ -234,6 +263,7 @@ describe('RecordVisitScreen (camino global /registrar)', () => {
 
   it('exige el nombre del lote en /registrar', async () => {
     renderGlobal();
+    await expandNextVisit();
     await userEvent.click(screen.getByLabelText(/Sin próxima/));
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Ingresá el nombre del lote/);

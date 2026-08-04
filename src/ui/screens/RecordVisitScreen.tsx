@@ -54,6 +54,7 @@ export function RecordVisitScreen() {
   const [intervalDays, setIntervalDays] = useState(14);
   const [nextDate, setNextDate] = useState(localFutureIso(14));
   const [leadDays, setLeadDays] = useState(3);
+  const [nextExpanded, setNextExpanded] = useState(false);
   const diasRef = useRef<HTMLInputElement>(null);
   const avisoRef = useRef<HTMLInputElement>(null);
 
@@ -121,6 +122,13 @@ export function RecordVisitScreen() {
   const domainError = error ?? cancelHook.error ?? ensuring.error;
   const isSubmitting = submitting || ensuring.submitting;
 
+  const nextSummary =
+    kind === 'interval'
+      ? `${intervalDays} días · Aviso ${leadDays}d`
+      : kind === 'date'
+        ? `${dateLabel(utcDate(nextDate))} · Aviso ${leadDays}d`
+        : 'Sin próxima';
+
   return (
     <main className="screen record">
       <BackLink to={back.to}>{back.label}</BackLink>
@@ -184,104 +192,111 @@ export function RecordVisitScreen() {
             onChange={(e) => setNotes(e.target.value)}
           />
         </label>
-        <fieldset className="field fieldset">
-          <legend className="field-label">Próxima visita</legend>
-          <div className="segmented">
-            <label className="segment">
-              <input type="radio" name="kind" checked={kind === 'interval'} onChange={() => setKind('interval')} />
-              <span>En N días</span>
-            </label>
-            <label className="segment">
-              <input type="radio" name="kind" checked={kind === 'date'} onChange={() => setKind('date')} />
-              <span>En una fecha</span>
-            </label>
-            <label className="segment">
-              <input type="radio" name="kind" checked={kind === 'none'} onChange={() => setKind('none')} />
-              <span>Sin próxima</span>
-            </label>
-          </div>
-          <div className="conditional-row">
-            {kind === 'interval' && (
-              <div className="field">
-                <span className="field-label" id="dias-label">Días</span>
-                <div className="chips" role="group" aria-label="Días rápido">
-                  {[7, 10, 14].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`chip${intervalDays === n ? ' active' : ''}`}
-                      onClick={() => setIntervalDays(n)}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    className={`chip${![7, 10, 14].includes(intervalDays) ? ' active' : ''}`}
-                    onClick={() => diasRef.current?.focus()}
-                  >
-                    Otro
-                  </button>
-                </div>
-                <input
-                  ref={diasRef}
-                  className="control"
-                  type="number"
-                  min="1"
-                  value={intervalDays}
-                  onChange={(e) => setIntervalDays(Number(e.target.value))}
-                  aria-labelledby="dias-label"
-                />
-              </div>
-            )}
-            {kind === 'date' && (
-              <label className="field">
-                <span className="field-label">Fecha próxima</span>
-                <input
-                  className="control"
-                  type="date"
-                  value={nextDate}
-                  onChange={(e) => setNextDate(e.target.value)}
-                />
+        {!nextExpanded && (
+          <button type="button" className="expand-trigger" onClick={() => setNextExpanded(true)}>
+            {kind === 'none' ? '▸ Programar próxima visita' : `▸ Próxima: ${nextSummary}`}
+          </button>
+        )}
+        {nextExpanded && (
+          <fieldset className="field fieldset">
+            <legend className="field-label">Próxima visita</legend>
+            <div className="segmented">
+              <label className="segment">
+                <input type="radio" name="kind" checked={kind === 'interval'} onChange={() => setKind('interval')} />
+                <span>En N días</span>
               </label>
-            )}
-            {kind !== 'none' && (
-              <div className="field">
-                <span className="field-label" id="aviso-label">Avisar días antes</span>
-                <div className="chips" role="group" aria-label="Aviso rápido">
-                  {[0, 1, 3, 7].map((n) => (
+              <label className="segment">
+                <input type="radio" name="kind" checked={kind === 'date'} onChange={() => setKind('date')} />
+                <span>En una fecha</span>
+              </label>
+              <label className="segment">
+                <input type="radio" name="kind" checked={kind === 'none'} onChange={() => setKind('none')} />
+                <span>Sin próxima</span>
+              </label>
+            </div>
+            <div className="conditional-row">
+              {kind === 'interval' && (
+                <div className="field">
+                  <span className="field-label" id="dias-label">Días</span>
+                  <div className="chips" role="group" aria-label="Días rápido">
+                    {[7, 10, 14].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={`chip${intervalDays === n ? ' active' : ''}`}
+                        onClick={() => setIntervalDays(n)}
+                      >
+                        {n}
+                      </button>
+                    ))}
                     <button
-                      key={n}
                       type="button"
-                      className={`chip${leadDays === n ? ' active' : ''}`}
-                      disabled={n > leadMax}
-                      onClick={() => setLeadDays(n)}
+                      className={`chip${![7, 10, 14].includes(intervalDays) ? ' active' : ''}`}
+                      onClick={() => diasRef.current?.focus()}
                     >
-                      {n}
+                      Otro
                     </button>
-                  ))}
-                  <button
-                    type="button"
-                    className={`chip${![0, 1, 3, 7].includes(leadDays) ? ' active' : ''}`}
-                    onClick={() => avisoRef.current?.focus()}
-                  >
-                    Otro
-                  </button>
+                  </div>
+                  <input
+                    ref={diasRef}
+                    className="control"
+                    type="number"
+                    min="1"
+                    value={intervalDays}
+                    onChange={(e) => setIntervalDays(Number(e.target.value))}
+                    aria-labelledby="dias-label"
+                  />
                 </div>
-                <input
-                  ref={avisoRef}
-                  className="control"
-                  type="number"
-                  min="0"
-                  max={leadMax}
-                  value={leadDays}
-                  onChange={(e) => setLeadDays(Number(e.target.value))}
-                  aria-labelledby="aviso-label"
-                />
-              </div>
-            )}
-          </div>
-        </fieldset>
+              )}
+              {kind === 'date' && (
+                <label className="field">
+                  <span className="field-label">Fecha próxima</span>
+                  <input
+                    className="control"
+                    type="date"
+                    value={nextDate}
+                    onChange={(e) => setNextDate(e.target.value)}
+                  />
+                </label>
+              )}
+              {kind !== 'none' && (
+                <div className="field">
+                  <span className="field-label" id="aviso-label">Avisar días antes</span>
+                  <div className="chips" role="group" aria-label="Aviso rápido">
+                    {[0, 1, 3, 7].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={`chip${leadDays === n ? ' active' : ''}`}
+                        disabled={n > leadMax}
+                        onClick={() => setLeadDays(n)}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className={`chip${![0, 1, 3, 7].includes(leadDays) ? ' active' : ''}`}
+                      onClick={() => avisoRef.current?.focus()}
+                    >
+                      Otro
+                    </button>
+                  </div>
+                  <input
+                    ref={avisoRef}
+                    className="control"
+                    type="number"
+                    min="0"
+                    max={leadMax}
+                    value={leadDays}
+                    onChange={(e) => setLeadDays(Number(e.target.value))}
+                    aria-labelledby="aviso-label"
+                  />
+                </div>
+              )}
+            </div>
+          </fieldset>
+        )}
         {domainError && (
           <p className="alert" role="alert">{domainErrorMessage(domainError)}</p>
         )}
