@@ -21,7 +21,7 @@ export function ConfigScreen() {
   };
 
   return (
-    <main className="screen">
+    <main className="screen record">
       <h1 className="screen-title">Configuración</h1>
       <p className="field-sub">Pegá la clave de acceso que te pasaron para activar los recordatorios por email.</p>
       <form className="form" onSubmit={onSubmit}>
@@ -34,7 +34,7 @@ export function ConfigScreen() {
           <input className="control" type="url" value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} />
         </label>
         {localError && (
-          <p className="field-sub" role="alert">
+          <p className="alert" role="alert">
             {localError}
           </p>
         )}
