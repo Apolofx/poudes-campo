@@ -552,6 +552,54 @@ body {
 .reminder-aviso-list li { margin-top: var(--space-1); }
 .reminder-aviso-zone { font-weight: 700; color: var(--ink); }
 
+/* ---- Banner de instalación PWA ---- */
+.install-banner {
+  margin: var(--space-4) var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+}
+
+.install-banner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.install-banner-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.install-banner-close {
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  padding: var(--space-1);
+  cursor: pointer;
+  color: var(--muted);
+  min-height: var(--touch);
+  min-width: var(--touch);
+}
+
+.install-banner-text {
+  margin: var(--space-2) 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.install-banner .btn-primary {
+  margin-top: var(--space-3);
+  width: 100%;
+}
+
 /* ---- Catálogo (hub) ---- */
 .catalog-menu { list-style: none; margin: 0; padding: 0; }
 

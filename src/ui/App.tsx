@@ -14,12 +14,14 @@ import { VisitDetailScreen } from '@/ui/screens/VisitDetailScreen';
 import { ScheduledVisitFormScreen } from '@/ui/screens/ScheduledVisitFormScreen';
 import { ConfigScreen } from '@/ui/screens/ConfigScreen';
 import { TabBar } from '@/ui/components/TabBar';
+import { InstallBanner } from '@/ui/components/InstallBanner';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
 
 function TabsLayout() {
   return (
     <div className="app-shell">
       <div className="app-content">
+        <InstallBanner />
         <Outlet />
       </div>
       <TabBar />
