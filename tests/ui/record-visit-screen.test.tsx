@@ -207,12 +207,18 @@ describe('RecordVisitScreen', () => {
     renderScreen();
     // colapsado: el resumen está visible, los controles no
     const trigger = screen.getByRole('button', { name: /Próxima:/ });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
     expect(trigger).toHaveTextContent(/14 días/);
     expect(screen.queryByLabelText('Días')).not.toBeInTheDocument();
     // expandir
     await userEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByLabelText('Días')).toBeInTheDocument();
     expect(screen.getByLabelText('Avisar días antes')).toBeInTheDocument();
+    // colapsar de nuevo: vuelve a ocultar los controles y conserva el resumen
+    await userEvent.click(trigger);
+    expect(screen.queryByLabelText('Días')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Próxima:/ })).toHaveTextContent(/14 días/);
   });
 });
 

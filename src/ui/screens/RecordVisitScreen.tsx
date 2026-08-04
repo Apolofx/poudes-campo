@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { NextVisitInput } from '@/application/use-cases/next-visit';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
@@ -192,14 +193,23 @@ export function RecordVisitScreen() {
             onChange={(e) => setNotes(e.target.value)}
           />
         </label>
-        {!nextExpanded && (
-          <button type="button" className="expand-trigger" onClick={() => setNextExpanded(true)}>
-            {kind === 'none' ? '▸ Programar próxima visita' : `▸ Próxima: ${nextSummary}`}
-          </button>
-        )}
+        <button
+          type="button"
+          className="expand-trigger"
+          aria-expanded={nextExpanded}
+          aria-controls="next-visit-panel"
+          onClick={() => setNextExpanded((expanded) => !expanded)}
+        >
+          <ChevronDown
+            className={`expand-chevron${nextExpanded ? ' open' : ''}`}
+            size={18}
+            strokeWidth={2.5}
+            aria-hidden="true"
+          />
+          <span>{kind === 'none' ? 'Sin próxima programada' : `Próxima: ${nextSummary}`}</span>
+        </button>
         {nextExpanded && (
-          <fieldset className="field fieldset">
-            <legend className="field-label">Próxima visita</legend>
+          <fieldset id="next-visit-panel" className="field fieldset">
             <div className="segmented">
               <label className="segment">
                 <input type="radio" name="kind" checked={kind === 'interval'} onChange={() => setKind('interval')} />
