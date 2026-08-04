@@ -1,4 +1,5 @@
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { AgendaScreen } from '@/ui/screens/AgendaScreen';
 import { SearchScreen } from '@/ui/screens/SearchScreen';
 import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
@@ -15,6 +16,7 @@ import { ScheduledVisitFormScreen } from '@/ui/screens/ScheduledVisitFormScreen'
 import { ConfigScreen } from '@/ui/screens/ConfigScreen';
 import { TabBar } from '@/ui/components/TabBar';
 import { InstallBanner } from '@/ui/components/InstallBanner';
+import { PwaInstallTracker } from '@/ui/components/PwaInstallTracker';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
 
 function TabsLayout() {
@@ -38,7 +40,10 @@ function ConfigGate() {
 
 export function App() {
   return (
-    <Routes>
+    <>
+      <Analytics />
+      <PwaInstallTracker />
+      <Routes>
       <Route path="/configuracion" element={<ConfigScreen />} />
       <Route element={<ConfigGate />}>
         <Route element={<TabsLayout />}>
@@ -63,6 +68,7 @@ export function App() {
         <Route path="/catalogo/lotes/nuevo" element={<FieldFormScreen />} />
         <Route path="/catalogo/lotes/:id" element={<FieldFormScreen />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
