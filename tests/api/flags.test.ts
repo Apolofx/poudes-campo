@@ -27,17 +27,17 @@ describe('api/flags', () => {
     evaluate.mockReset();
   });
 
-  it('devuelve el valor de onboardingNuevo evaluado por Vercel', async () => {
-    evaluate.mockResolvedValue({ value: true, reason: 'static' });
+  it('devuelve onboardingNuevo y mediaVisitas evaluados por Vercel', async () => {
+    evaluate.mockImplementation(async (name: string) => ({ value: name === 'onboardingNuevo', reason: 'static' }));
     const res = makeRes();
     await handler({} as IncomingMessage, res as unknown as ServerResponse);
-    expect(bodyOf(res)).toEqual({ onboardingNuevo: true });
+    expect(bodyOf(res)).toEqual({ onboardingNuevo: true, mediaVisitas: false });
   });
 
-  it('devuelve off si la evaluación del flag falla', async () => {
+  it('devuelve todos off si la evaluación falla', async () => {
     evaluate.mockRejectedValue(new Error('network'));
     const res = makeRes();
     await handler({} as IncomingMessage, res as unknown as ServerResponse);
-    expect(bodyOf(res)).toEqual({ onboardingNuevo: false });
+    expect(bodyOf(res)).toEqual({ onboardingNuevo: false, mediaVisitas: false });
   });
 });
