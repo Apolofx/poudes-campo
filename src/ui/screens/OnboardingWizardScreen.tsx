@@ -219,7 +219,7 @@ function StepVisit({ fieldId, onDone }: { fieldId: string; onDone: () => void })
           </p>
         )}
         <button className="btn-primary" type="submit" disabled={schedule.submitting}>
-          Programar y listo
+          Programar
         </button>
       </form>
       <div className="wizard-skip">
