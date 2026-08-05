@@ -1,6 +1,7 @@
 import { Field } from '@/domain/entities/field';
 import { Visit, type VisitStatus } from '@/domain/entities/visit';
 import { Reminder, type ReminderStatus } from '@/domain/entities/reminder';
+import { VisitMedia, type MediaKind } from '@/domain/entities/visit-media';
 import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Coordinates } from '@/domain/value-objects/coordinates';
@@ -47,6 +48,16 @@ export interface ReminderRecord {
   fieldId: string;
   remindAt: Date;
   status: ReminderStatus;
+}
+
+export interface MediaRecord {
+  id: string;
+  visitId: string;
+  kind: MediaKind;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: Date;
+  blob: Blob;
 }
 
 export function toZoneRecord(z: Zone): ZoneRecord {
@@ -140,5 +151,29 @@ export function fromReminderRecord(r: ReminderRecord): Reminder {
     fieldId: r.fieldId,
     remindAt: r.remindAt,
     status: r.status,
+  });
+}
+
+export function toMediaRecord(m: VisitMedia): MediaRecord {
+  return {
+    id: m.id,
+    visitId: m.visitId,
+    kind: m.kind,
+    mimeType: m.mimeType,
+    sizeBytes: m.sizeBytes,
+    createdAt: m.createdAt,
+    blob: m.blob,
+  };
+}
+
+export function fromMediaRecord(r: MediaRecord): VisitMedia {
+  return new VisitMedia({
+    id: r.id,
+    visitId: r.visitId,
+    kind: r.kind,
+    mimeType: r.mimeType,
+    sizeBytes: r.sizeBytes,
+    createdAt: r.createdAt,
+    blob: r.blob,
   });
 }

@@ -79,9 +79,9 @@ async function openLegacyDb(name: string, version: 1 | 2): Promise<LegacyDb> {
 }
 
 describe('openCampoDb', () => {
-  it('creates all object stores of schema v3', async () => {
+  it('creates all object stores of schema v4', async () => {
     const db = await openCampoDb(`t-${Math.random()}`);
-    expect([...db.objectStoreNames].sort()).toEqual(['clients', 'fields', 'reminders', 'visits', 'zones']);
+    expect([...db.objectStoreNames].sort()).toEqual(['clients', 'fields', 'media', 'reminders', 'visits', 'zones']);
     db.close();
   });
 
