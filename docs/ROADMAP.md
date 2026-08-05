@@ -4,7 +4,7 @@
 
 **Qué es Campo:** PWA offline-first para un asesor agronómico que recorre ~40 lotes: registrar visitas y saber cuándo volver. Arquitectura hexagonal (TypeScript + Vitest, dominio puro sin infra). Regla dura: **ningún dato de dosis/agroquímicos/prescripciones entra jamás al sistema**.
 
-Última actualización: 2026-08-05 (media-visitas en rama, sin merge).
+Última actualización: 2026-08-05.
 
 ---
 
@@ -57,7 +57,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **recordatorios-remotos-mvp** | Implementación del MVP (plan `docs/superpowers/plans/2026-08-02-recordatorios-remotos-mvp.md`): **backend `campo-poudes-backend`** (proyecto hermano, molde `hexagonal-serverless-ts`: DynamoDB 2 items `FEED#SNAPSHOT`/`FEED#LAST_RUN` con watermark CAS — reemplaza al log `(visitId, remindAt)` del spec —, SES digest, cron UTC, bearer in-handler; endpoints `PUT /v1/pending-visits` + `POST /v1/notify`; **42 tests jest**) + **push del feed desde la app** (puerto `ReminderFeedRepository` + `SyncPendingVisitsFeed` + adapter HTTP + triggers boot/mutaciones; **321 tests**) | ✅ Completa (backend 42 tests, app 321; **deployada en AWS dev**) |
 | **multitenant-keys** | Instancias aisladas por owner: **API keys por tenant** (`tnt_<id>_<secreto>`, solo sha256 en DynamoDB, auth timing-safe por `GetItem` directo), digest al **email del tenant** (no lo manda el cliente), envío por **Resend** (reemplaza SES, dominio `navlogvfr.app`, `FROM_EMAIL=avisos@navlogvfr.app`); cron y endpoints particionados por tenant (`scan` de perfiles), script `create-tenant`. En la app: puerto `TenantConfigRepository` + adapter `localStorage`, **pantalla de Configuración** + gate de primer uso, config efectiva en runtime con compat env legacy. Plan `docs/superpowers/plans/2026-08-04-multitenant-keys.md`, spec `docs/superpowers/specs/2026-08-04-multitenant-keys-design.md` | ⏳ Código completo (backend 60 tests, app 343); **deploy del backend pendiente** de verificar `navlogvfr.app` en Resend |
 | **onboarding-wizard** | Mini wizard de primer uso para terceros gateado por flag de Vercel `onboardingNuevo`: 3 pasos (clave → primer lote → programar visita), estado derivable (retoma donde quedó), `CreateFieldEnsuring`, ruta `/onboarding` fuera del ConfigGate, `FlagsProvider` con `loading`/`initialFlags`, `nextBusinessDayIso` | ✅ Completa (381 tests) |
-| **media-visitas** | Adjuntos por visita gateados por flag de Vercel `mediaVisitas`: fotos (compresión 1600px JPEG q0.8 con orientación EXIF) y nota de voz (Opus, máx 5 min) persistidas post-registro en idb schema v4 (store `media`), galería con escuchar/ver/quitar en el detalle (read-only en canceladas), borrado individual con confirmación. Ramas: implementada en `media-visitas`, **sin merge** a `main` — pendiente prueba local | ⏳ Código completo (ramas `media-visitas`, sin merge) |
+| **media-visitas** | Adjuntos por visita gateados por flag de Vercel `mediaVisitas`: fotos (compresión 1600px JPEG q0.8 con orientación EXIF) y nota de voz (Opus, máx 5 min) persistidas post-registro en idb schema v4 (store `media`), galería con escuchar/ver/quitar en el detalle (read-only en canceladas), borrado individual con confirmación | ✅ Completa (merge a `main`) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
