@@ -753,7 +753,7 @@ body {
 
 .list-header .btn-primary { align-self: flex-start; }
 
-.list-actions { display: flex; gap: var(--space-2); }
+.list-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); }
 .list-actions > .btn-primary, .list-actions > .btn-secondary, .list-actions > .btn-danger { flex: 1; }
 
 /* acciones fijas al pie de pantalla, apiladas y de ancho completo */
