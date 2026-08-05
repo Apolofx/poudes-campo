@@ -7,6 +7,7 @@ import { seedIfEmpty } from '@/composition/seed';
 import { buildContainer } from '@/composition/container';
 import { CampoProvider } from '@/ui/CampoProvider';
 import { TenantConfigProvider } from '@/ui/TenantConfigProvider';
+import { FlagsProvider } from '@/ui/FlagsProvider';
 import { App } from '@/ui/App';
 
 async function main() {
@@ -28,9 +29,11 @@ async function main() {
     <StrictMode>
       <CampoProvider container={container}>
         <TenantConfigProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <FlagsProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </FlagsProvider>
         </TenantConfigProvider>
       </CampoProvider>
     </StrictMode>,

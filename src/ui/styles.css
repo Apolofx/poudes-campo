@@ -32,6 +32,26 @@
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
+[data-theme='dark'] {
+  --bg: #12160f;
+  --surface: #1b201a;
+  --ink: #e6eadf;
+  --muted: #9aa69b;
+  --accent: #5da877;
+  --accent-ink: #0d140e;
+  --border: #343d34;
+  --divider: #262c25;
+  --header-border: #2c332b;
+  --segment-bg: #262d25;
+  --placeholder: #7d897d;
+  --chevron: #5a655a;
+  --danger: #d97771;
+  --danger-bg: #3a2220;
+}
+
+[data-theme='dark'] .visit-badge.is-active { background: #20392a; color: #8fd8a5; }
+[data-theme='dark'] .visit-badge.is-cancelled { background: #2b2b28; color: #9c9c96; }
+
 * { box-sizing: border-box; }
 
 html, body { margin: 0; padding: 0; }
