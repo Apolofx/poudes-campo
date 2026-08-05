@@ -81,6 +81,9 @@ export function VisitDetailScreen() {
         {visit.notes && <p className="field-sub">{visit.notes}</p>}
         {cancelHook.error && <p className="alert" role="alert">{domainErrorMessage(cancelHook.error)}</p>}
         <div className="list-actions">
+          <button type="button" className="btn-danger" onClick={() => setConfirming(true)} disabled={cancelHook.cancelling}>
+            Cancelar visita
+          </button>
           <Link
             className="btn-secondary"
             to={`/field/${fieldId}/programar/${visitId}`}
@@ -88,9 +91,6 @@ export function VisitDetailScreen() {
           >
             Editar
           </Link>
-          <button type="button" className="btn-danger" onClick={() => setConfirming(true)} disabled={cancelHook.cancelling}>
-            Cancelar visita
-          </button>
         </div>
         <ConfirmDialog
           open={confirming}
@@ -152,11 +152,11 @@ export function VisitDetailScreen() {
         </section>
       )}
       <div className="list-actions">
-        <button className="btn-primary" type="submit" form="edit-visit-form" disabled={edit.submitting}>
-          Guardar
-        </button>
         <button type="button" className="btn-danger" onClick={() => setConfirming(true)} disabled={cancelHook.cancelling}>
           Eliminar visita
+        </button>
+        <button className="btn-primary" type="submit" form="edit-visit-form" disabled={edit.submitting}>
+          Guardar
         </button>
       </div>
       <ConfirmDialog

@@ -33,7 +33,7 @@ describe('domainErrorMessage', () => {
 
   it('falls back to a generic message for unknown errors', () => {
     expect(domainErrorMessage(errorNamed('SomethingElse'))).toBe(
-      'Ocurrió un error con la visita.',
+      'Ocurrió un error con la visita (SomethingElse).',
     );
   });
 
