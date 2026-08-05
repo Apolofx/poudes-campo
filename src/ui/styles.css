@@ -966,6 +966,38 @@ body {
 
 .media-file-input { display: none; }
 .media-capture { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; }
+.capture-btn {
+  position: relative;
+  flex: 1;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+  min-width: 96px;
+  padding: var(--space-2);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 80ms ease;
+}
+.capture-btn:active:not(:disabled) { transform: scale(0.96); }
+.capture-btn:disabled { opacity: 0.5; cursor: default; }
+.capture-btn .capture-icon { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--accent); }
+.capture-btn .capture-label { font-size: 13px; font-weight: 700; }
+.capture-btn.is-recording { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); animation: capture-pulse 1.2s ease-in-out infinite; }
+.capture-btn.is-recording .capture-icon { color: var(--danger); }
+.capture-ring { position: absolute; inset: 0; width: 36px; height: 36px; transform: rotate(-90deg); }
+.capture-ring-track { fill: none; stroke: color-mix(in srgb, var(--danger) 25%, transparent); stroke-width: 3; }
+.capture-ring-fill { fill: none; stroke: var(--danger); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 300ms linear; }
+@keyframes capture-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
 .media-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-3); }
 .media-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-2); }
 .media-thumb { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius-sm); }

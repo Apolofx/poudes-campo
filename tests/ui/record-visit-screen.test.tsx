@@ -12,6 +12,7 @@ vi.mock('@/ui/media/capture-image', () => ({
   captureImage: vi.fn(async () => new Blob(['jpeg'], { type: 'image/jpeg' })),
 }));
 vi.mock('@/ui/media/use-voice-capture', () => ({
+  MAX_VOICE_SECONDS: 300,
   useVoiceCapture: () => ({ status: 'idle', seconds: 0, start: vi.fn(), stopNow: vi.fn(), cancel: vi.fn() }),
 }));
 
@@ -356,6 +357,16 @@ describe('RecordVisitScreen (media, flag mediaVisitas)', () => {
     const done = visitHistory.visits.find((v) => v.status === 'DONE');
     expect((await c.listVisitMedia.execute(done!.id))).toHaveLength(1);
     expect(attachSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('la sección de adjuntos queda entre las notas y la próxima visita', async () => {
+    renderScreenWithMedia();
+    const notes = await screen.findByLabelText('Notas');
+    const gallery = await screen.findByLabelText('Fotos y nota de voz');
+    const nextTrigger = screen.getByRole('button', { name: /Próxima|Sin próxima/ });
+
+    expect(notes.compareDocumentPosition(gallery) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(gallery.compareDocumentPosition(nextTrigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('sin flag la sección de media no existe', async () => {
