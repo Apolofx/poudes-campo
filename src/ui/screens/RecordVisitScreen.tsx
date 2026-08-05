@@ -7,10 +7,13 @@ import { useRecordVisitEnsuringField } from '@/ui/hooks/use-record-visit-ensurin
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
 import { useSearchFields } from '@/ui/hooks/use-search-fields';
 import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
+import { useAttachMedia } from '@/ui/hooks/use-attach-media';
 import { useCampo } from '@/ui/CampoProvider';
+import { useFlag } from '@/ui/FlagsProvider';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { PickOrCreate, type PickOrCreateValue } from '@/ui/components/PickOrCreate';
 import { BackLink } from '@/ui/components/BackLink';
+import { MediaGallery, type MediaItemView } from '@/ui/components/MediaGallery';
 import { domainErrorMessage } from '@/ui/error-messages';
 import { dateLabel, localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
@@ -32,8 +35,14 @@ export function RecordVisitScreen() {
   const ensuring = useRecordVisitEnsuringField();
   const fieldHistory = useFieldHistory(fieldId);
   const cancelHook = useCancelVisit();
+  const attach = useAttachMedia();
   const { results: lots, search } = useSearchFields();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+
+  const mediaVisitas = useFlag('mediaVisitas');
+  const [pendingMedia, setPendingMedia] = useState<MediaItemView[]>([]);
+  const pendingMediaRef = useRef<MediaItemView[]>([]);
+  useEffect(() => { pendingMediaRef.current = pendingMedia; }, [pendingMedia]);
 
   const pickingLot = !fieldId;
 
@@ -71,8 +80,14 @@ export function RecordVisitScreen() {
   }, [pending?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (result) navigate('/');
-  }, [result, navigate]);
+    if (!result) return;
+    void (async () => {
+      for (const item of pendingMediaRef.current) {
+        await attach.submit({ visitId: result.visitId, kind: item.kind, mimeType: item.mimeType, blob: item.blob });
+      }
+      navigate('/');
+    })();
+  }, [result, navigate, attach]);
 
   useEffect(() => {
     if (cancelHook.done) navigate(back.to);
@@ -108,7 +123,12 @@ export function RecordVisitScreen() {
               : clientValue.type === 'existing' ? { id: clientValue.id } : { name: clientValue.name },
           };
       const ensuringResult = await ensuring.submit({ ...base, field });
-      if (ensuringResult) navigate('/');
+      if (ensuringResult) {
+        for (const item of pendingMediaRef.current) {
+          await attach.submit({ visitId: ensuringResult.visitId, kind: item.kind, mimeType: item.mimeType, blob: item.blob });
+        }
+        navigate('/');
+      }
       return;
     }
 
@@ -120,7 +140,7 @@ export function RecordVisitScreen() {
       ? Math.max(1, intervalDays)
       : Math.max(1, Math.round((utcDate(nextDate).getTime() - utcDate(localTodayIso()).getTime()) / 86_400_000));
 
-  const domainError = error ?? cancelHook.error ?? ensuring.error;
+  const domainError = error ?? cancelHook.error ?? ensuring.error ?? attach.error;
   const isSubmitting = submitting || ensuring.submitting;
 
   const nextSummary =
@@ -306,6 +326,17 @@ export function RecordVisitScreen() {
               )}
             </div>
           </fieldset>
+        )}
+        {mediaVisitas && (
+          <section className="media-section" aria-label="Fotos y nota de voz">
+            <span className="field-label">Fotos y nota de voz</span>
+            <MediaGallery
+              items={pendingMedia}
+              onAdd={(added) => setPendingMedia((p) => [...p, ...added])}
+              onRemove={(id) => setPendingMedia((p) => p.filter((i) => i.id !== id))}
+              busy={isSubmitting}
+            />
+          </section>
         )}
         {domainError && (
           <p className="alert" role="alert">{domainErrorMessage(domainError)}</p>
