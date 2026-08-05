@@ -105,6 +105,30 @@ describe('VisitDetailScreen', () => {
     expect(editLink).toHaveAttribute('href', `/field/f1/programar/${visitId}`);
     expect(screen.getByRole('button', { name: /Cancelar visita/ })).toBeInTheDocument();
   });
+
+  it('en visita realizada el destructivo queda a la izquierda del primario', async () => {
+    const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
+    const id = await seedActive(c);
+    renderAt(c, id);
+
+    const remove = await screen.findByRole('button', { name: /Eliminar visita/ });
+    const save = screen.getByRole('button', { name: /Guardar/ });
+    expect(remove.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('en visita programada el destructivo queda a la izquierda de editar', async () => {
+    const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
+    const { visitId } = await c.scheduleVisit.execute({
+      fieldId: 'f1',
+      plannedFor: new Date('2026-08-10T00:00:00Z'),
+      reminderLeadDays: 3,
+    });
+    renderAt(c, visitId);
+
+    const cancel = await screen.findByRole('button', { name: /Cancelar visita/ });
+    const edit = screen.getByRole('link', { name: /Editar/ });
+    expect(cancel.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
 
 describe('VisitDetailScreen (media, flag mediaVisitas)', () => {
