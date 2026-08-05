@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { FlagsProvider, useFlag } from '@/ui/FlagsProvider';
+import { FlagsProvider, useFlag, useFlagsLoading } from '@/ui/FlagsProvider';
 
 function Probe({ name }: { name: string }) {
   return <div data-testid={`flag-${name}`}>{String(useFlag(name))}</div>;
+}
+
+function LoadingProbe() {
+  return <div data-testid="loading">{String(useFlagsLoading())}</div>;
 }
 
 function mockFlags(payload: unknown) {
@@ -52,5 +56,29 @@ describe('FlagsProvider', () => {
     );
 
     await waitFor(() => expect(screen.getByTestId('flag-darkMode')).toHaveTextContent('false'));
+  });
+
+  it('con initialFlags expone los flags sin esperar el fetch', () => {
+    render(
+      <FlagsProvider initialFlags={{ onboardingNuevo: true }}>
+        <Probe name="onboardingNuevo" />
+        <LoadingProbe />
+      </FlagsProvider>,
+    );
+
+    expect(screen.getByTestId('flag-onboardingNuevo')).toHaveTextContent('true');
+    expect(screen.getByTestId('loading')).toHaveTextContent('false');
+  });
+
+  it('loading true hasta que resuelve /api/flags', async () => {
+    mockFlags({});
+    render(
+      <FlagsProvider>
+        <LoadingProbe />
+      </FlagsProvider>,
+    );
+
+    expect(screen.getByTestId('loading')).toHaveTextContent('true');
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
   });
 });

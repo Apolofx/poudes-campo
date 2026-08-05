@@ -14,10 +14,13 @@ import { FieldFormScreen } from '@/ui/screens/FieldFormScreen';
 import { VisitDetailScreen } from '@/ui/screens/VisitDetailScreen';
 import { ScheduledVisitFormScreen } from '@/ui/screens/ScheduledVisitFormScreen';
 import { ConfigScreen } from '@/ui/screens/ConfigScreen';
+import { OnboardingWizardScreen } from '@/ui/screens/OnboardingWizardScreen';
 import { TabBar } from '@/ui/components/TabBar';
 import { InstallBanner } from '@/ui/components/InstallBanner';
 import { PwaInstallTracker } from '@/ui/components/PwaInstallTracker';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
+import { useFlag } from '@/ui/FlagsProvider';
+import { useHasAnyField } from '@/ui/hooks/use-has-any-field';
 
 function TabsLayout() {
   return (
@@ -33,7 +36,10 @@ function TabsLayout() {
 
 function ConfigGate() {
   const { config, loading } = useTenantConfig();
-  if (loading) return null;
+  const onboardingNuevo = useFlag('onboardingNuevo');
+  const { hasAnyField, loading: fieldsLoading } = useHasAnyField();
+  if (loading || (onboardingNuevo && fieldsLoading)) return null;
+  if (onboardingNuevo && (!config || !hasAnyField)) return <Navigate to="/onboarding" replace />;
   if (!config) return <Navigate to="/configuracion" replace />;
   return <Outlet />;
 }
@@ -45,6 +51,7 @@ export function App() {
       <PwaInstallTracker />
       <Routes>
       <Route path="/configuracion" element={<ConfigScreen />} />
+      <Route path="/onboarding" element={<OnboardingWizardScreen />} />
       <Route element={<ConfigGate />}>
         <Route element={<TabsLayout />}>
           <Route path="/" element={<AgendaScreen />} />

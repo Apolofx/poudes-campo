@@ -15,6 +15,7 @@ import { GetVisit } from '@/application/use-cases/get-visit';
 import { ScheduleVisit } from '@/application/use-cases/schedule-visit';
 import { ScheduleVisitEnsuringField } from '@/application/use-cases/schedule-visit-ensuring-field';
 import { RecordVisitEnsuringField } from '@/application/use-cases/record-visit-ensuring-field';
+import { CreateFieldEnsuring } from '@/application/use-cases/create-field-ensuring';
 import {
   CreateZone,
   EditZone,
@@ -137,6 +138,7 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z'), co
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     scheduleVisit,
     scheduleVisitEnsuringField: new ScheduleVisitEnsuringField(createZone, createClient, createField, scheduleVisit),
+    createFieldEnsuring: new CreateFieldEnsuring(createZone, createClient, createField),
     recordVisitEnsuringField: new RecordVisitEnsuringField(createZone, createClient, createField, recordVisit),
     reminderAviso: notifier,
     syncPendingVisitsFeed: async () => undefined,

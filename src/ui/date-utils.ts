@@ -26,3 +26,14 @@ export function localFutureIso(days: number): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+
+export function nextBusinessDayIso(): string {
+  const d = new Date();
+  do {
+    d.setDate(d.getDate() + 1);
+  } while (d.getDay() === 0 || d.getDay() === 6);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}

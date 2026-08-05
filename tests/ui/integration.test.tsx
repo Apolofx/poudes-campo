@@ -8,16 +8,26 @@ import { seedIfEmpty } from '@/composition/seed';
 import { buildContainer } from '@/composition/container';
 import { CampoProvider } from '@/ui/CampoProvider';
 import { TenantConfigProvider } from '@/ui/TenantConfigProvider';
+import { FlagsProvider, type FlagValues } from '@/ui/FlagsProvider';
 import { App } from '@/ui/App';
 
-async function renderApp(container: ReturnType<typeof buildContainer>, initialEntries: string[]) {
-  await container.saveTenantConfig({ apiUrl: 'https://api.example.com', apiKey: 'tnt_t1_secret' });
+async function renderApp(
+  container: ReturnType<typeof buildContainer>,
+  initialEntries: string[],
+  flags: FlagValues = {},
+  seedConfig = true,
+) {
+  if (seedConfig) {
+    await container.saveTenantConfig({ apiUrl: 'https://api.example.com', apiKey: 'tnt_t1_secret' });
+  }
   render(
     <CampoProvider container={container}>
       <TenantConfigProvider>
-        <MemoryRouter initialEntries={initialEntries}>
-          <App />
-        </MemoryRouter>
+        <FlagsProvider initialFlags={flags}>
+          <MemoryRouter initialEntries={initialEntries}>
+            <App />
+          </MemoryRouter>
+        </FlagsProvider>
       </TenantConfigProvider>
     </CampoProvider>,
   );
@@ -86,6 +96,32 @@ describe('search → record visit (real IndexedDB adapter)', () => {
     expect(await db.count('fields')).toBe(1);
     expect(await db.count('visits')).toBe(1);
     expect(await db.count('reminders')).toBe(1);
+    db.close();
+  });
+
+  it('primer uso vía wizard: completa los 3 pasos sobre IndexedDB real', async () => {
+    const db = await openCampoDb(`t-${Math.random()}`);
+    const container = buildContainer(db);
+    await container.clearTenantConfig();
+
+    await renderApp(container, ['/onboarding'], { onboardingNuevo: true }, false);
+
+    await screen.findByRole('heading', { name: 'Bienvenido a Campo' });
+    await userEvent.type(screen.getByLabelText(/Clave de acceso/), 'tnt_t1_secret');
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await screen.findByRole('heading', { name: 'Tu primer lote' });
+    await userEvent.type(screen.getByLabelText('Lote'), 'Paso 9');
+    await userEvent.type(screen.getByLabelText('Zona'), 'La Costa');
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await screen.findByRole('heading', { name: 'Programá tu primera visita' });
+    await userEvent.click(screen.getByRole('button', { name: 'Programar y listo' }));
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Próximas visitas' })).toBeInTheDocument());
+    await waitFor(async () => expect(await db.count('visits')).toBe(1));
+    expect(await db.count('fields')).toBe(1);
+    expect(await db.count('zones')).toBe(1);
     db.close();
   });
 });

@@ -34,6 +34,7 @@ const at = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 // La pantalla de Inicio no ejerce ScheduleVisitEnsuringField; stub para satisfacer el interface.
 const ensuringFieldStub = undefined as unknown as import('@/application/use-cases/schedule-visit-ensuring-field').ScheduleVisitEnsuringField;
 const recordEnsuringFieldStub = undefined as unknown as import('@/application/use-cases/record-visit-ensuring-field').RecordVisitEnsuringField;
+const createFieldEnsuringStub = undefined as unknown as import('@/application/use-cases/create-field-ensuring').CreateFieldEnsuring;
 
 async function makeContainer(): Promise<Container> {
   const zoneMap = new Map([['z1', new Zone('z1', 'El Séptimo')], ['z2', new Zone('z2', 'La Costa')]]);
@@ -69,6 +70,7 @@ async function makeContainer(): Promise<Container> {
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     scheduleVisit,
     scheduleVisitEnsuringField: ensuringFieldStub,
+    createFieldEnsuring: createFieldEnsuringStub,
     recordVisitEnsuringField: recordEnsuringFieldStub,
     reminderAviso: notifier,
     syncPendingVisitsFeed: async () => undefined,
@@ -144,6 +146,7 @@ describe('AgendaScreen', () => {
       dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
       scheduleVisit,
       scheduleVisitEnsuringField: ensuringFieldStub,
+      createFieldEnsuring: createFieldEnsuringStub,
       recordVisitEnsuringField: recordEnsuringFieldStub,
       reminderAviso: notifier,
       syncPendingVisitsFeed: async () => undefined,
