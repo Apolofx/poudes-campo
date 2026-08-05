@@ -71,7 +71,7 @@ describe('VisitDetailScreen', () => {
     const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
     const id = await seedActive(c);
     renderAt(c, id);
-    await userEvent.click(await screen.findByRole('button', { name: /Cancelar visita/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Eliminar visita/ }));
     await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
     expect(await screen.findByText('Historial')).toBeInTheDocument();
     expect((await c.getVisit.execute(id))?.status).toBe('CANCELLED');
@@ -85,6 +85,7 @@ describe('VisitDetailScreen', () => {
     expect(await screen.findByText(/Cancelada/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Visita del.*jul/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Eliminar visita/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Cancelar visita/ })).not.toBeInTheDocument();
   });
 
@@ -130,6 +131,22 @@ describe('VisitDetailScreen (media, flag mediaVisitas)', () => {
 
     expect(await screen.findByAltText('Foto de la visita')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Agregar foto' })).toBeInTheDocument();
+  });
+
+  it('la galería queda entre las notas y los botones (los botones al final)', async () => {
+    const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
+    const id = await seedActive(c);
+    await c.attachMediaToVisit.execute({ visitId: id, kind: 'image', mimeType: 'image/jpeg', blob: new Blob(['abc']) });
+    renderAtWithMedia(c, id);
+
+    const notes = await screen.findByLabelText('Notas');
+    const gallery = await screen.findByLabelText('Adjuntos');
+    const save = screen.getByRole('button', { name: /Guardar/ });
+    const cancel = screen.getByRole('button', { name: /Eliminar visita/ });
+
+    expect(notes.compareDocumentPosition(gallery) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(gallery.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(gallery.compareDocumentPosition(cancel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('quita un adjunto tras confirmar', async () => {

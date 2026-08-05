@@ -27,6 +27,11 @@ function renderScreen(c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z')
 }
 
 describe('FieldHistoryScreen', () => {
+  it('titulo con el nombre del lote', async () => {
+    renderScreen();
+    expect(await screen.findByRole('heading', { name: 'Historial visitas Lote El Alto' })).toBeInTheDocument();
+  });
+
   it('lists visits newest-first with a status badge', async () => {
     const c = makeInMemoryContainer(new Date('2026-07-27T12:00:00Z'));
     await seed(c);

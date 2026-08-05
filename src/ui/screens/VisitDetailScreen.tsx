@@ -119,7 +119,7 @@ export function VisitDetailScreen() {
     <main className="screen record">
       <BackLink to={back}>Historial</BackLink>
       <h1 className="screen-title">Editar visita</h1>
-      <form className="form" onSubmit={onSubmit}>
+      <form id="edit-visit-form" className="form" onSubmit={onSubmit}>
         <label className="field">
           <span className="field-label">Fecha</span>
           <input className="control" type="date" value={visitedAt} onChange={(e) => setVisitedAt(e.target.value)} />
@@ -131,20 +131,7 @@ export function VisitDetailScreen() {
         {(edit.error || cancelHook.error) && (
           <p className="alert" role="alert">{domainErrorMessage((edit.error ?? cancelHook.error)!)}</p>
         )}
-        <button className="btn-primary" type="submit" disabled={edit.submitting}>Guardar</button>
       </form>
-      <button type="button" className="btn-danger" onClick={() => setConfirming(true)} disabled={cancelHook.cancelling}>
-        Cancelar visita
-      </button>
-      <ConfirmDialog
-        open={confirming}
-        title="Cancelar visita"
-        message="La visita quedará cancelada y no volverá a aparecer como activa. ¿Confirmás?"
-        confirmLabel="Confirmar"
-        cancelLabel="Volver"
-        onCancel={() => setConfirming(false)}
-        onConfirm={() => { setConfirming(false); cancelHook.cancel(visitId); }}
-      />
       {mediaVisitas && (
         <section className="media-section" aria-label="Adjuntos">
           <span className="field-label">Fotos y nota de voz</span>
@@ -162,21 +149,38 @@ export function VisitDetailScreen() {
           {(attach.error || removeMedia.error) && (
             <p className="alert" role="alert">{domainErrorMessage((attach.error ?? removeMedia.error)!)}</p>
           )}
-          <ConfirmDialog
-            open={removingId !== null}
-            title="Quitar adjunto"
-            message="El adjunto se borrará de forma permanente. ¿Confirmás?"
-            confirmLabel="Quitar"
-            cancelLabel="Volver"
-            onCancel={() => setRemovingId(null)}
-            onConfirm={() => {
-              if (removingId) void removeMedia.submit(removingId);
-              setRemovingId(null);
-              media.refresh();
-            }}
-          />
         </section>
       )}
+      <div className="list-actions">
+        <button className="btn-primary" type="submit" form="edit-visit-form" disabled={edit.submitting}>
+          Guardar
+        </button>
+        <button type="button" className="btn-danger" onClick={() => setConfirming(true)} disabled={cancelHook.cancelling}>
+          Eliminar visita
+        </button>
+      </div>
+      <ConfirmDialog
+        open={confirming}
+        title="Eliminar visita"
+        message="La visita se eliminará y no volverá a aparecer como activa. ¿Confirmás?"
+        confirmLabel="Confirmar"
+        cancelLabel="Volver"
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => { setConfirming(false); cancelHook.cancel(visitId); }}
+      />
+      <ConfirmDialog
+        open={removingId !== null}
+        title="Quitar adjunto"
+        message="El adjunto se borrará de forma permanente. ¿Confirmás?"
+        confirmLabel="Quitar"
+        cancelLabel="Volver"
+        onCancel={() => setRemovingId(null)}
+        onConfirm={() => {
+          if (removingId) void removeMedia.submit(removingId);
+          setRemovingId(null);
+          media.refresh();
+        }}
+      />
     </main>
   );
 }
