@@ -25,7 +25,7 @@
 
 ### ❌ Todavía no se puede
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
-- **Vista semanal de la agenda** — alternar la pantalla Inicio a una vista de calendario semanal con las visitas por día, para planificar la recorrida. Gateada por **feature flag de Vercel** (`agendaSemanal`), como `darkMode`.
+- **Vista semanal de la agenda** — alternar la pantalla Inicio a una vista de calendario semanal con las visitas por día, para planificar la recorrida. Gateada por **feature flag de Vercel** (`agendaSemanal`).
 
 ### Datos
 El seed de ~40 lotes de ejemplo quedó **gateado a modo dev** (`import.meta.env.DEV`); **producción arranca vacía**. Se cargan los lotes reales a mano por el ABM. Para limpiar un install que ya tiene el fixture: acción "Borrar todos los datos" en Catálogo.

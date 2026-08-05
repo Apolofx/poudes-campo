@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { CampoProvider } from '@/ui/CampoProvider';
 import { TenantConfigProvider } from '@/ui/TenantConfigProvider';
+import { ThemeProvider } from '@/ui/ThemeProvider';
 import { ConfigScreen } from '@/ui/screens/ConfigScreen';
 import { makeInMemoryContainer } from '../support/in-memory-container';
 
@@ -11,12 +12,14 @@ function renderConfig(container = makeInMemoryContainer()) {
   render(
     <CampoProvider container={container}>
       <TenantConfigProvider>
-        <MemoryRouter initialEntries={['/configuracion']}>
-          <Routes>
-            <Route path="/" element={<div>Inicio</div>} />
-            <Route path="/configuracion" element={<ConfigScreen />} />
-          </Routes>
-        </MemoryRouter>
+        <ThemeProvider>
+          <MemoryRouter initialEntries={['/configuracion']}>
+            <Routes>
+              <Route path="/" element={<div>Inicio</div>} />
+              <Route path="/configuracion" element={<ConfigScreen />} />
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
       </TenantConfigProvider>
     </CampoProvider>,
   );
@@ -30,6 +33,14 @@ describe('ConfigScreen', () => {
     await screen.findByRole('heading', { name: 'Configuración' });
     expect(screen.getByLabelText(/Clave de acceso/)).toHaveAttribute('type', 'password');
     expect(screen.getByLabelText(/URL de la API/)).toBeInTheDocument();
+  });
+
+  it('ofrece el toggle de tema', async () => {
+    renderConfig();
+
+    await screen.findByRole('heading', { name: 'Configuración' });
+    expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Sistema' })).toBeChecked();
   });
 
   it('submit vacío muestra error', async () => {

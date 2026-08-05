@@ -17,7 +17,6 @@ import { ConfigScreen } from '@/ui/screens/ConfigScreen';
 import { TabBar } from '@/ui/components/TabBar';
 import { InstallBanner } from '@/ui/components/InstallBanner';
 import { PwaInstallTracker } from '@/ui/components/PwaInstallTracker';
-import { ThemeGate } from '@/ui/components/ThemeGate';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
 
 function TabsLayout() {
@@ -44,7 +43,6 @@ export function App() {
     <>
       <Analytics />
       <PwaInstallTracker />
-      <ThemeGate />
       <Routes>
       <Route path="/configuracion" element={<ConfigScreen />} />
       <Route element={<ConfigGate />}>

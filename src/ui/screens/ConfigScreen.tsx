@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
+import { ThemeToggle } from '@/ui/components/ThemeToggle';
 
 export function ConfigScreen() {
   const { save } = useTenantConfig();
@@ -24,6 +25,10 @@ export function ConfigScreen() {
     <main className="screen record">
       <h1 className="screen-title">Configuración</h1>
       <p className="field-sub">Pegá la clave de acceso que te pasaron para activar los recordatorios por email.</p>
+      <div className="field config-theme">
+        <span className="field-label">Tema</span>
+        <ThemeToggle />
+      </div>
       <form className="form" onSubmit={onSubmit}>
         <label className="field">
           <span className="field-label">Clave de acceso</span>

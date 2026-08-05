@@ -210,6 +210,8 @@ body {
 
 .field { display: flex; flex-direction: column; gap: var(--space-1); border: 0; padding: 0; margin: 0; }
 
+.config-theme { margin-bottom: var(--space-3); }
+
 .field-label {
   font-size: 11px;
   font-weight: 600;

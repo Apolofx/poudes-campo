@@ -8,6 +8,7 @@ import { buildContainer } from '@/composition/container';
 import { CampoProvider } from '@/ui/CampoProvider';
 import { TenantConfigProvider } from '@/ui/TenantConfigProvider';
 import { FlagsProvider } from '@/ui/FlagsProvider';
+import { ThemeProvider } from '@/ui/ThemeProvider';
 import { App } from '@/ui/App';
 
 async function main() {
@@ -30,9 +31,11 @@ async function main() {
       <CampoProvider container={container}>
         <TenantConfigProvider>
           <FlagsProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
+            <ThemeProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </ThemeProvider>
           </FlagsProvider>
         </TenantConfigProvider>
       </CampoProvider>
