@@ -4,8 +4,13 @@ import type { Visit } from '@/domain/entities/visit';
 import { useCampo } from '@/ui/CampoProvider';
 import { useEditVisit } from '@/ui/hooks/use-edit-visit';
 import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
+import { useAttachMedia } from '@/ui/hooks/use-attach-media';
+import { useRemoveMedia } from '@/ui/hooks/use-remove-media';
+import { useVisitMedia } from '@/ui/hooks/use-visit-media';
+import { useFlag } from '@/ui/FlagsProvider';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { BackLink } from '@/ui/components/BackLink';
+import { MediaGallery } from '@/ui/components/MediaGallery';
 import { domainErrorMessage } from '@/ui/error-messages';
 import { visitStatusLabel } from '@/ui/labels';
 import { dateLabel, isoDay, utcDate } from '@/ui/date-utils';
@@ -22,6 +27,14 @@ export function VisitDetailScreen() {
 
   const [notes, setNotes] = useState('');
   const [visitedAt, setVisitedAt] = useState('');
+
+  const mediaVisitas = useFlag('mediaVisitas');
+  const media = useVisitMedia(visitId);
+  const attach = useAttachMedia();
+  const removeMedia = useRemoveMedia();
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const items = media.media.map((m) => ({ id: m.id, kind: m.kind, mimeType: m.mimeType, blob: m.blob }));
 
   useEffect(() => {
     getVisit.execute(visitId).then((v) => {
@@ -46,6 +59,12 @@ export function VisitDetailScreen() {
         <h1 className="screen-title">Visita del {dateLabel(visit.visitedAt ?? visit.plannedFor!)}</h1>
         <p className={`visit-badge is-cancelled`}>{visitStatusLabel(visit.status)}</p>
         {visit.notes && <p className="field-sub">{visit.notes}</p>}
+        {mediaVisitas && (
+          <section className="media-section" aria-label="Adjuntos">
+            <span className="field-label">Fotos y nota de voz</span>
+            <MediaGallery readOnly items={items} onAdd={() => undefined} onRemove={() => undefined} />
+          </section>
+        )}
       </main>
     );
   }
@@ -126,6 +145,38 @@ export function VisitDetailScreen() {
         onCancel={() => setConfirming(false)}
         onConfirm={() => { setConfirming(false); cancelHook.cancel(visitId); }}
       />
+      {mediaVisitas && (
+        <section className="media-section" aria-label="Adjuntos">
+          <span className="field-label">Fotos y nota de voz</span>
+          <MediaGallery
+            items={items}
+            onAdd={async (added) => {
+              for (const item of added) {
+                await attach.submit({ visitId, kind: item.kind, mimeType: item.mimeType, blob: item.blob });
+              }
+              media.refresh();
+            }}
+            onRemove={(id) => setRemovingId(id)}
+            busy={attach.attaching || removeMedia.removing}
+          />
+          {(attach.error || removeMedia.error) && (
+            <p className="alert" role="alert">{domainErrorMessage((attach.error ?? removeMedia.error)!)}</p>
+          )}
+          <ConfirmDialog
+            open={removingId !== null}
+            title="Quitar adjunto"
+            message="El adjunto se borrará de forma permanente. ¿Confirmás?"
+            confirmLabel="Quitar"
+            cancelLabel="Volver"
+            onCancel={() => setRemovingId(null)}
+            onConfirm={() => {
+              if (removingId) void removeMedia.submit(removingId);
+              setRemovingId(null);
+              media.refresh();
+            }}
+          />
+        </section>
+      )}
     </main>
   );
 }
