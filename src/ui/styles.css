@@ -215,7 +215,29 @@ body {
 .stepper { display: flex; gap: 6px; margin-bottom: var(--space-3); }
 .stepper-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--divider); transition: background-color 150ms ease; }
 .stepper-dot.is-active { background: var(--accent); }
-.wizard-skip { margin-top: var(--space-2); }
+.wizard-skip {
+  margin-top: var(--space-2);
+  display: flex;
+  justify-content: center;
+}
+
+.skip-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  border: 0;
+  background: transparent;
+  min-height: var(--touch);
+  padding: 0 var(--space-2);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
 
 .field-label {
   font-size: 11px;
@@ -668,11 +690,11 @@ body {
   background: var(--danger-bg);
   color: var(--danger);
   border-radius: var(--radius-lg);
-  min-height: var(--touch);
+  min-height: 48px;
   padding: 0 var(--space-4);
   font: inherit;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   transition: background-color 150ms ease, border-color 150ms ease;
 }
@@ -685,16 +707,16 @@ body {
   background: var(--danger);
   color: #fff;
   border-radius: var(--radius-lg);
-  min-height: var(--touch);
+  min-height: 48px;
   padding: 0 var(--space-4);
   font: inherit;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   transition: background-color 150ms ease;
 }
 
-.screen.record > .btn-danger { margin-top: var(--space-4); }
+.screen.record > .btn-danger { margin-top: var(--space-4); width: 100%; }
 
 .btn-secondary {
   display: inline-flex;
@@ -704,11 +726,11 @@ body {
   background: var(--surface);
   color: var(--ink);
   border-radius: var(--radius-lg);
-  min-height: var(--touch);
+  min-height: 48px;
   padding: 0 var(--space-4);
   font: inherit;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   text-decoration: none;
   cursor: pointer;
   transition: background-color 150ms ease, border-color 150ms ease;

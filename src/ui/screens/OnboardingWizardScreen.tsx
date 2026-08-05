@@ -223,7 +223,7 @@ function StepVisit({ fieldId, onDone }: { fieldId: string; onDone: () => void })
         </button>
       </form>
       <div className="wizard-skip">
-        <button className="btn-secondary" type="button" onClick={onDone}>
+        <button className="skip-link" type="button" onClick={onDone}>
           Lo hago después
         </button>
       </div>
