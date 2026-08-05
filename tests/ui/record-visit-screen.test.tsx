@@ -1,11 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { CampoProvider } from '@/ui/CampoProvider';
+import { FlagsProvider } from '@/ui/FlagsProvider';
 import { RecordVisitScreen } from '@/ui/screens/RecordVisitScreen';
 import { makeInMemoryContainer } from '../support/in-memory-container';
 import { localFutureIso, localTodayIso } from '@/ui/date-utils';
+
+vi.mock('@/ui/media/capture-image', () => ({
+  captureImage: vi.fn(async () => new Blob(['jpeg'], { type: 'image/jpeg' })),
+}));
+vi.mock('@/ui/media/use-voice-capture', () => ({
+  useVoiceCapture: () => ({ status: 'idle', seconds: 0, start: vi.fn(), stopNow: vi.fn(), cancel: vi.fn() }),
+}));
 
 // `RecordVisitScreen` builds its default visit date from the real system clock
 // (`localTodayIso()`), which tests can't inject into the component. So the use-case clock
@@ -274,5 +282,114 @@ describe('RecordVisitScreen (camino global /registrar)', () => {
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Ingresá el nombre del lote/);
     expect(screen.queryByText('Listado')).not.toBeInTheDocument();
+  });
+});
+
+describe('RecordVisitScreen (media, flag mediaVisitas)', () => {
+  function renderScreenWithMedia(c = makeInMemoryContainer(new Date())) {
+    return render(
+      <FlagsProvider initialFlags={{ mediaVisitas: true }}>
+        <CampoProvider container={c}>
+          <MemoryRouter initialEntries={['/field/f1/record']}>
+            <Routes>
+              <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
+              <Route path="/" element={<div>Listado</div>} />
+            </Routes>
+          </MemoryRouter>
+        </CampoProvider>
+      </FlagsProvider>,
+    );
+  }
+
+  it('con flag on captura una foto y la adjunta una sola vez al registrar la visita', async () => {
+    const c = makeInMemoryContainer(new Date());
+    const attachSpy = vi.spyOn(c.attachMediaToVisit, 'execute');
+    renderScreenWithMedia(c);
+
+    const input = (await screen.findByRole('group', { name: /Agregar fotos/ })).querySelector('.media-file-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['x'], 'foto.jpg')] } });
+    await screen.findByAltText('Foto de la visita');
+
+    await expandNextVisit();
+    await userEvent.click(screen.getByLabelText(/Sin próxima/));
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+
+    await waitFor(() => expect(screen.getByText('Listado')).toBeInTheDocument());
+    const history = (await c.getFieldHistory.execute('f1'))!;
+    const done = history.visits.find((v) => v.status === 'DONE');
+    const media = await c.listVisitMedia.execute(done!.id);
+    expect(media).toHaveLength(1);
+    expect(media[0].kind).toBe('image');
+    expect(media[0].mimeType).toBe('image/jpeg');
+    expect(attachSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('adjunta cada adjunto una sola vez al registrar desde /registrar', async () => {
+    const c = makeInMemoryContainer(new Date());
+    await c.clearAllData.execute();
+    const attachSpy = vi.spyOn(c.attachMediaToVisit, 'execute');
+    render(
+      <FlagsProvider initialFlags={{ mediaVisitas: true }}>
+        <CampoProvider container={c}>
+          <MemoryRouter initialEntries={['/registrar']}>
+            <Routes>
+              <Route path="/registrar" element={<RecordVisitScreen />} />
+              <Route path="/" element={<div>Listado</div>} />
+            </Routes>
+          </MemoryRouter>
+        </CampoProvider>
+      </FlagsProvider>,
+    );
+
+    await userEvent.type(screen.getByLabelText('Lote'), 'Paso 9');
+    const input = (await screen.findByRole('group', { name: /Agregar fotos/ })).querySelector('.media-file-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['x'], 'foto.jpg')] } });
+    await screen.findByAltText('Foto de la visita');
+
+    await expandNextVisit();
+    await userEvent.click(screen.getByLabelText(/Sin próxima/));
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+
+    expect(await screen.findByText('Listado')).toBeInTheDocument();
+    const fields = await c.listCatalogFields.execute();
+    const visitHistory = (await c.getFieldHistory.execute(fields[0].field.id))!;
+    const done = visitHistory.visits.find((v) => v.status === 'DONE');
+    expect((await c.listVisitMedia.execute(done!.id))).toHaveLength(1);
+    expect(attachSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('sin flag la sección de media no existe', async () => {
+    render(
+      <CampoProvider container={makeInMemoryContainer()}>
+        <MemoryRouter initialEntries={['/field/f1/record']}>
+          <Routes>
+            <Route path="/field/:fieldId/record" element={<RecordVisitScreen />} />
+            <Route path="/" element={<div>Listado</div>} />
+          </Routes>
+        </MemoryRouter>
+      </CampoProvider>,
+    );
+    await screen.findByLabelText('Fecha');
+    expect(screen.queryByText('Fotos y nota de voz')).not.toBeInTheDocument();
+  });
+
+  it('si un attach falla, la visita queda guardada igual', async () => {
+    const c = makeInMemoryContainer(new Date());
+    c.attachMediaToVisit = {
+      execute: vi.fn(async () => { throw new (await import('@/domain/shared/errors')).MediaTooLarge(); }),
+    } as unknown as typeof c.attachMediaToVisit;
+    renderScreenWithMedia(c);
+
+    const input = (await screen.findByRole('group', { name: /Agregar fotos/ })).querySelector('.media-file-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['x'], 'foto.jpg')] } });
+    await screen.findByAltText('Foto de la visita');
+
+    await expandNextVisit();
+    await userEvent.click(screen.getByLabelText(/Sin próxima/));
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+
+    await waitFor(() => expect(screen.getByText('Listado')).toBeInTheDocument());
+    const history = (await c.getFieldHistory.execute('f1'))!;
+    expect(history.visits.some((v) => v.status === 'DONE')).toBe(true);
   });
 });

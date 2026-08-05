@@ -116,7 +116,7 @@ describe('search → record visit (real IndexedDB adapter)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
     await screen.findByRole('heading', { name: 'Programá tu primera visita' });
-    await userEvent.click(screen.getByRole('button', { name: 'Programar y listo' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Programar' }));
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Próximas visitas' })).toBeInTheDocument());
     await waitFor(async () => expect(await db.count('visits')).toBe(1));

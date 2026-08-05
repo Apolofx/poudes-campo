@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
 import type {
-  ZoneRecord, ClientRecord, FieldRecord, VisitRecord, ReminderRecord,
+  ZoneRecord, ClientRecord, FieldRecord, VisitRecord, ReminderRecord, MediaRecord,
 } from './records';
 
 export interface CampoSchema extends DBSchema {
@@ -9,6 +9,7 @@ export interface CampoSchema extends DBSchema {
   fields: { key: string; value: FieldRecord };
   visits: { key: string; value: VisitRecord; indexes: { 'by-field': string } };
   reminders: { key: string; value: ReminderRecord; indexes: { 'by-field': string } };
+  media: { key: string; value: MediaRecord; indexes: { 'by-visit': string } };
 }
 
 export type CampoDb = IDBPDatabase<CampoSchema>;
@@ -55,7 +56,7 @@ interface LegacyReminderRecord {
 const DAY_MS = 86_400_000;
 
 export function openCampoDb(name = 'campo'): Promise<CampoDb> {
-  return openDB<CampoSchema>(name, 3, {
+  return openDB<CampoSchema>(name, 4, {
     async upgrade(db, oldVersion, _newVersion, tx) {
       if (oldVersion < 1) {
         db.createObjectStore('zones', { keyPath: 'id' });
@@ -65,10 +66,12 @@ export function openCampoDb(name = 'campo'): Promise<CampoDb> {
         visits.createIndex('by-field', 'fieldId');
         const reminders = db.createObjectStore('reminders', { keyPath: 'id' });
         reminders.createIndex('by-field', 'fieldId');
-        return;
-      }
-      if (oldVersion < 3) {
+      } else if (oldVersion < 3) {
         await migrateToV3(tx, oldVersion);
+      }
+      if (oldVersion < 4) {
+        const media = db.createObjectStore('media', { keyPath: 'id' });
+        media.createIndex('by-visit', 'visitId');
       }
     },
   });

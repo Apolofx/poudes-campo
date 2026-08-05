@@ -17,7 +17,7 @@ export function FieldHistoryScreen() {
     <main className="screen with-bottom-bar">
       <header className="list-header">
         <BackLink to="/buscar">Buscar lote</BackLink>
-        <h1 className="screen-title">{view.field.name}</h1>
+        <h1 className="screen-title">Historial visitas {view.field.name}</h1>
         <p className="field-sub">{clientLabel(view.clientName)} · {zoneLabel(view.zoneName)}</p>
       </header>
 

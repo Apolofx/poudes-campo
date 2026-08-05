@@ -219,11 +219,11 @@ function StepVisit({ fieldId, onDone }: { fieldId: string; onDone: () => void })
           </p>
         )}
         <button className="btn-primary" type="submit" disabled={schedule.submitting}>
-          Programar y listo
+          Programar
         </button>
       </form>
       <div className="wizard-skip">
-        <button className="btn-secondary" type="button" onClick={onDone}>
+        <button className="skip-link" type="button" onClick={onDone}>
           Lo hago después
         </button>
       </div>

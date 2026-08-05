@@ -2,15 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { NextVisitInput } from '@/application/use-cases/next-visit';
+import type { VisitId } from '@/domain/shared/ids';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
 import { useRecordVisitEnsuringField } from '@/ui/hooks/use-record-visit-ensuring-field';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
 import { useSearchFields } from '@/ui/hooks/use-search-fields';
 import { useCancelVisit } from '@/ui/hooks/use-cancel-visit';
+import { useAttachMedia } from '@/ui/hooks/use-attach-media';
 import { useCampo } from '@/ui/CampoProvider';
+import { useFlag } from '@/ui/FlagsProvider';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { PickOrCreate, type PickOrCreateValue } from '@/ui/components/PickOrCreate';
 import { BackLink } from '@/ui/components/BackLink';
+import { MediaGallery, type MediaItemView } from '@/ui/components/MediaGallery';
 import { domainErrorMessage } from '@/ui/error-messages';
 import { dateLabel, localFutureIso, localTodayIso, utcDate } from '@/ui/date-utils';
 
@@ -28,12 +32,16 @@ export function RecordVisitScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { listZones, listClients } = useCampo();
-  const { submit, submitting, error, result } = useRecordVisit();
+  const { submit, submitting, error } = useRecordVisit();
   const ensuring = useRecordVisitEnsuringField();
   const fieldHistory = useFieldHistory(fieldId);
   const cancelHook = useCancelVisit();
+  const attach = useAttachMedia();
   const { results: lots, search } = useSearchFields();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+
+  const mediaVisitas = useFlag('mediaVisitas');
+  const [pendingMedia, setPendingMedia] = useState<MediaItemView[]>([]);
 
   const pickingLot = !fieldId;
 
@@ -70,9 +78,11 @@ export function RecordVisitScreen() {
     if (pending) setNotes(pending.notes ?? '');
   }, [pending?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (result) navigate('/');
-  }, [result, navigate]);
+  const attachPendingMedia = async (visitId: VisitId): Promise<void> => {
+    for (const item of pendingMedia) {
+      await attach.submit({ visitId, kind: item.kind, mimeType: item.mimeType, blob: item.blob });
+    }
+  };
 
   useEffect(() => {
     if (cancelHook.done) navigate(back.to);
@@ -108,11 +118,17 @@ export function RecordVisitScreen() {
               : clientValue.type === 'existing' ? { id: clientValue.id } : { name: clientValue.name },
           };
       const ensuringResult = await ensuring.submit({ ...base, field });
-      if (ensuringResult) navigate('/');
+      if (ensuringResult) {
+        await attachPendingMedia(ensuringResult.visitId);
+        navigate('/');
+      }
       return;
     }
 
-    submit({ fieldId, ...base });
+    const result = await submit({ fieldId, ...base });
+    if (!result) return;
+    await attachPendingMedia(result.visitId);
+    navigate('/');
   };
 
   const leadMax =
@@ -120,7 +136,7 @@ export function RecordVisitScreen() {
       ? Math.max(1, intervalDays)
       : Math.max(1, Math.round((utcDate(nextDate).getTime() - utcDate(localTodayIso()).getTime()) / 86_400_000));
 
-  const domainError = error ?? cancelHook.error ?? ensuring.error;
+  const domainError = error ?? cancelHook.error ?? ensuring.error ?? attach.error;
   const isSubmitting = submitting || ensuring.submitting;
 
   const nextSummary =
@@ -306,6 +322,17 @@ export function RecordVisitScreen() {
               )}
             </div>
           </fieldset>
+        )}
+        {mediaVisitas && (
+          <section className="media-section" aria-label="Fotos y nota de voz">
+            <span className="field-label">Fotos y nota de voz</span>
+            <MediaGallery
+              items={pendingMedia}
+              onAdd={(added) => setPendingMedia((p) => [...p, ...added])}
+              onRemove={(id) => setPendingMedia((p) => p.filter((i) => i.id !== id))}
+              busy={isSubmitting}
+            />
+          </section>
         )}
         {domainError && (
           <p className="alert" role="alert">{domainErrorMessage(domainError)}</p>

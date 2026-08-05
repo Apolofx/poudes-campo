@@ -50,7 +50,7 @@ describe('OnboardingWizardScreen', () => {
     await completeStep2();
 
     await screen.findByRole('heading', { name: 'Programá tu primera visita' });
-    await userEvent.click(screen.getByRole('button', { name: 'Programar y listo' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Programar' }));
 
     await waitFor(() => expect(screen.getByText('Inicio')).toBeInTheDocument());
     await expect(container.getTenantConfig()).resolves.toEqual(CONFIG);

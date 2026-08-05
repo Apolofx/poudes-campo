@@ -14,6 +14,10 @@ export function domainErrorMessage(error: Error): string {
       return 'No se encontró la visita.';
     case 'VisitAlreadyCancelled':
       return 'La visita ya fue cancelada.';
+    case 'MediaRequiresDoneVisit':
+      return 'Los adjuntos solo se agregan a visitas realizadas.';
+    case 'MediaTooLarge':
+      return 'El archivo es demasiado grande.';
     default:
       return 'Ocurrió un error con la visita.';
   }

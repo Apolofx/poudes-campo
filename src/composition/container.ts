@@ -32,6 +32,9 @@ import {
   ListCatalogFields,
 } from '@/application/use-cases/field-catalog';
 import { ClearAllData } from '@/application/use-cases/clear-all-data';
+import { AttachMediaToVisit } from '@/application/use-cases/attach-media';
+import { ListVisitMedia } from '@/application/use-cases/list-visit-media';
+import { RemoveMediaFromVisit } from '@/application/use-cases/remove-media';
 import { SyncPendingVisitsFeed } from '@/application/use-cases/sync-pending-visits-feed';
 import { HttpReminderFeedRepository } from '@/infrastructure/persistence/http';
 import { LocalTenantConfigRepository } from '@/infrastructure/persistence/local/tenant-config-repository';
@@ -41,6 +44,7 @@ import { IdbReminderRepository } from '@/infrastructure/persistence/idb/idb-remi
 import { IdbZoneRepository } from '@/infrastructure/persistence/idb/idb-zone-repository';
 import { IdbClientRepository } from '@/infrastructure/persistence/idb/idb-client-repository';
 import { IdbDataReset } from '@/infrastructure/persistence/idb/idb-data-reset';
+import { IdbMediaRepository } from '@/infrastructure/persistence/idb/idb-media-repository';
 import { InAppReminderNotifier } from '@/infrastructure/notification/in-app-reminder-notifier';
 import { SystemClock } from '@/infrastructure/clock/system-clock';
 import { Uuidv7IdGenerator } from '@/infrastructure/id/uuidv7-id-generator';
@@ -78,6 +82,9 @@ export interface Container {
   restoreField: RestoreField;
   listCatalogFields: ListCatalogFields;
   clearAllData: ClearAllData;
+  attachMediaToVisit: AttachMediaToVisit;
+  listVisitMedia: ListVisitMedia;
+  removeMediaFromVisit: RemoveMediaFromVisit;
   /** Sube el snapshot de programadas al backend de recordatorios (no-op si no hay config de tenant). */
   syncPendingVisitsFeed: () => Promise<void>;
   getTenantConfig: () => Promise<TenantConfig | null>;
@@ -92,6 +99,7 @@ export function buildContainer(db: CampoDb): Container {
   const zones = new IdbZoneRepository(db);
   const clients = new IdbClientRepository(db);
   const dataReset = new IdbDataReset(db);
+  const media = new IdbMediaRepository(db);
   const clock = new SystemClock();
   const ids = new Uuidv7IdGenerator();
   const notifier = new InAppReminderNotifier();
@@ -141,6 +149,9 @@ export function buildContainer(db: CampoDb): Container {
     restoreField: new RestoreField(fields),
     listCatalogFields: new ListCatalogFields(fields),
     clearAllData: new ClearAllData(dataReset),
+    attachMediaToVisit: new AttachMediaToVisit(media, visits, clock, ids),
+    listVisitMedia: new ListVisitMedia(media),
+    removeMediaFromVisit: new RemoveMediaFromVisit(media),
     syncPendingVisitsFeed,
     getTenantConfig: () => tenantConfigRepo.get(),
     saveTenantConfig: (config: TenantConfig) => tenantConfigRepo.save(config),
