@@ -23,7 +23,7 @@ export function OnboardingWizardScreen() {
 
   useEffect(() => {
     if (loading || config === undefined) return;
-    if (hasAnyField) {
+    if (config && hasAnyField) {
       navigate('/', { replace: true });
       return;
     }
