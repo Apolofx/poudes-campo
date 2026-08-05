@@ -8,6 +8,7 @@ import { GetFieldHistory } from '@/application/use-cases/get-field-history';
 import { GetVisit } from '@/application/use-cases/get-visit';
 import { ScheduleVisit } from '@/application/use-cases/schedule-visit';
 import { ScheduleVisitEnsuringField } from '@/application/use-cases/schedule-visit-ensuring-field';
+import { CreateFieldEnsuring } from '@/application/use-cases/create-field-ensuring';
 import { RecordVisitEnsuringField } from '@/application/use-cases/record-visit-ensuring-field';
 import {
   CreateZone,
@@ -58,6 +59,7 @@ export interface Container {
   dispatchDueReminders: DispatchDueReminders;
   scheduleVisit: ScheduleVisit;
   scheduleVisitEnsuringField: ScheduleVisitEnsuringField;
+  createFieldEnsuring: CreateFieldEnsuring;
   recordVisitEnsuringField: RecordVisitEnsuringField;
   reminderAviso: ReminderAvisoStore;
   createZone: CreateZone;
@@ -120,6 +122,7 @@ export function buildContainer(db: CampoDb): Container {
     dispatchDueReminders: new DispatchDueReminders(reminders, visits, fields, clock, notifier),
     scheduleVisit,
     scheduleVisitEnsuringField: new ScheduleVisitEnsuringField(createZone, createClient, createField, scheduleVisit),
+    createFieldEnsuring: new CreateFieldEnsuring(createZone, createClient, createField),
     recordVisitEnsuringField: new RecordVisitEnsuringField(createZone, createClient, createField, recordVisit),
     reminderAviso: notifier,
     createZone,
