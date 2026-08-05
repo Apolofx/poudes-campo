@@ -18,3 +18,5 @@ export class VisitNotFound extends DomainError {}
 export class VisitAlreadyCancelled extends DomainError {}
 export class InvalidVisit extends DomainError {}
 export class PlannedDateNotFuture extends DomainError {}
+export class MediaRequiresDoneVisit extends DomainError {}
+export class MediaTooLarge extends DomainError {}
