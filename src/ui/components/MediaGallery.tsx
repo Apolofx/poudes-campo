@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { ImagePlus, Mic, Square } from 'lucide-react';
 import type { MediaKind } from '@/domain/entities/visit-media';
 import { captureImage } from '@/ui/media/capture-image';
-import { useVoiceCapture } from '@/ui/media/use-voice-capture';
+import { useVoiceCapture, MAX_VOICE_SECONDS } from '@/ui/media/use-voice-capture';
 
 export interface MediaItemView {
   id: string;
@@ -24,6 +25,9 @@ function formatSeconds(total: number): string {
   const s = total % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
+
+const RING_R = 15.9;
+const RING_C = 2 * Math.PI * RING_R;
 
 export function MediaGallery({ items, onAdd, onRemove, readOnly = false, busy = false }: MediaGalleryProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,22 +83,53 @@ export function MediaGallery({ items, onAdd, onRemove, readOnly = false, busy = 
 
   const recording = voice.status === 'recording';
   const canCapture = !readOnly && !busy && !startingVoice && !recording;
+  const ringProgress = Math.min(1, voice.seconds / MAX_VOICE_SECONDS);
 
   return (
     <>
       {!readOnly && (
         <div className="media-capture" role="group" aria-label="Agregar fotos o nota de voz">
           <input ref={fileInputRef} className="media-file-input" type="file" accept="image/*" multiple onChange={onFiles} />
-          <button type="button" className="btn-secondary" disabled={!canCapture} onClick={() => fileInputRef.current?.click()}>
-            Agregar foto
+          <button
+            type="button"
+            className="capture-btn"
+            disabled={!canCapture}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <span className="capture-icon">
+              <ImagePlus size={22} strokeWidth={2} aria-hidden="true" />
+            </span>
+            <span className="capture-label">Foto</span>
           </button>
           {recording ? (
-            <button type="button" className="btn-danger" onClick={stopVoice}>
-              Detener · {formatSeconds(voice.seconds)}
+            <button
+              type="button"
+              className="capture-btn is-recording"
+              aria-label={`Detener · ${formatSeconds(voice.seconds)}`}
+              onClick={stopVoice}
+            >
+              <span className="capture-icon">
+                <svg className="capture-ring" viewBox="0 0 36 36" aria-hidden="true">
+                  <circle className="capture-ring-track" cx="18" cy="18" r={RING_R} />
+                  <circle
+                    className="capture-ring-fill"
+                    cx="18"
+                    cy="18"
+                    r={RING_R}
+                    strokeDasharray={RING_C}
+                    strokeDashoffset={RING_C * (1 - ringProgress)}
+                  />
+                </svg>
+                <Square size={18} strokeWidth={2.5} fill="currentColor" aria-hidden="true" />
+              </span>
+              <span className="capture-label">{formatSeconds(voice.seconds)}</span>
             </button>
           ) : (
-            <button type="button" className="btn-secondary" disabled={!canCapture} onClick={() => void startVoice()}>
-              Grabar nota de voz
+            <button type="button" className="capture-btn" disabled={!canCapture} onClick={() => void startVoice()}>
+              <span className="capture-icon">
+                <Mic size={22} strokeWidth={2} aria-hidden="true" />
+              </span>
+              <span className="capture-label">Nota de voz</span>
             </button>
           )}
         </div>

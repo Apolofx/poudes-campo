@@ -7,6 +7,7 @@ vi.mock('@/ui/media/capture-image', () => ({
   captureImage: vi.fn(async () => new Blob(['jpeg'], { type: 'image/jpeg' })),
 }));
 vi.mock('@/ui/media/use-voice-capture', () => ({
+  MAX_VOICE_SECONDS: 300,
   useVoiceCapture: () => ({ status: 'idle', seconds: 0, start: vi.fn(async () => new Blob(['voz'], { type: 'audio/webm' })), stopNow: vi.fn(), cancel: vi.fn() }),
 }));
 
@@ -41,7 +42,8 @@ describe('MediaGallery', () => {
 
   it('en modo readOnly no ofrece captura ni quitar', () => {
     render(<MediaGallery readOnly items={[image]} onAdd={() => undefined} onRemove={() => undefined} />);
-    expect(screen.queryByRole('button', { name: 'Agregar foto' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Foto' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nota de voz' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Quitar' })).not.toBeInTheDocument();
   });
 });

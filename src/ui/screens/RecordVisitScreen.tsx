@@ -209,6 +209,17 @@ export function RecordVisitScreen() {
             onChange={(e) => setNotes(e.target.value)}
           />
         </label>
+        {mediaVisitas && (
+          <section className="media-section" aria-label="Fotos y nota de voz">
+            <span className="field-label">Fotos y nota de voz</span>
+            <MediaGallery
+              items={pendingMedia}
+              onAdd={(added) => setPendingMedia((p) => [...p, ...added])}
+              onRemove={(id) => setPendingMedia((p) => p.filter((i) => i.id !== id))}
+              busy={isSubmitting}
+            />
+          </section>
+        )}
         <button
           type="button"
           className="expand-trigger"
@@ -322,17 +333,6 @@ export function RecordVisitScreen() {
               )}
             </div>
           </fieldset>
-        )}
-        {mediaVisitas && (
-          <section className="media-section" aria-label="Fotos y nota de voz">
-            <span className="field-label">Fotos y nota de voz</span>
-            <MediaGallery
-              items={pendingMedia}
-              onAdd={(added) => setPendingMedia((p) => [...p, ...added])}
-              onRemove={(id) => setPendingMedia((p) => p.filter((i) => i.id !== id))}
-              busy={isSubmitting}
-            />
-          </section>
         )}
         {domainError && (
           <p className="alert" role="alert">{domainErrorMessage(domainError)}</p>
