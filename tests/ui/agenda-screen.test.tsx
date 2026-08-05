@@ -10,6 +10,7 @@ import { InMemoryVisitRepository } from '@/infrastructure/persistence/in-memory/
 import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memory/in-memory-reminder-repository';
 import { InMemoryZoneRepository } from '@/infrastructure/persistence/in-memory/in-memory-zone-repository';
 import { InMemoryClientRepository } from '@/infrastructure/persistence/in-memory/in-memory-client-repository';
+import { InMemoryMediaRepository } from '@/infrastructure/persistence/in-memory/in-memory-media-repository';
 import { SearchFields } from '@/application/use-cases/search-fields';
 import { RecordVisit } from '@/application/use-cases/record-visit';
 import { ListUpcomingVisits } from '@/application/use-cases/list-upcoming-visits';
@@ -54,6 +55,7 @@ async function makeContainer(): Promise<Container> {
   await seed('v3', 'f3', '2026-08-30'); // en 33 d (LATER)
   const clock = new FixedClock(at('2026-07-28'));
   const reminders = new InMemoryReminderRepository();
+  const media = new InMemoryMediaRepository();
   const notifier = new InAppReminderNotifier();
   const ids = new IncrementingIdGenerator();
   const zones = new InMemoryZoneRepository(zoneMap);
@@ -77,7 +79,7 @@ async function makeContainer(): Promise<Container> {
     getTenantConfig: async () => null,
     saveTenantConfig: async () => undefined,
     clearTenantConfig: async () => undefined,
-    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
+    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, media, ids, clock),
   };
 }
 
@@ -130,6 +132,7 @@ describe('AgendaScreen', () => {
     const visits = new InMemoryVisitRepository();
     const clock = new FixedClock(at('2026-07-28'));
     const reminders = new InMemoryReminderRepository();
+    const media = new InMemoryMediaRepository();
     const notifier = new InAppReminderNotifier();
     const ids = new IncrementingIdGenerator();
     const zones = new InMemoryZoneRepository(zoneMap);
@@ -153,7 +156,7 @@ describe('AgendaScreen', () => {
       getTenantConfig: async () => null,
       saveTenantConfig: async () => undefined,
       clearTenantConfig: async () => undefined,
-      ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
+      ...wireCatalogUseCases(zones, clients, fields, visits, reminders, media, ids, clock),
     };
     render(
       <CampoProvider container={container}>

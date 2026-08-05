@@ -4,6 +4,10 @@ import { InMemoryReminderRepository } from '@/infrastructure/persistence/in-memo
 import { InMemoryZoneRepository } from '@/infrastructure/persistence/in-memory/in-memory-zone-repository';
 import { InMemoryClientRepository } from '@/infrastructure/persistence/in-memory/in-memory-client-repository';
 import { InMemoryDataReset } from '@/infrastructure/persistence/in-memory/in-memory-data-reset';
+import { InMemoryMediaRepository } from '@/infrastructure/persistence/in-memory/in-memory-media-repository';
+import { AttachMediaToVisit } from '@/application/use-cases/attach-media';
+import { ListVisitMedia } from '@/application/use-cases/list-visit-media';
+import { RemoveMediaFromVisit } from '@/application/use-cases/remove-media';
 import { SearchFields } from '@/application/use-cases/search-fields';
 import { RecordVisit } from '@/application/use-cases/record-visit';
 import { ListUpcomingVisits } from '@/application/use-cases/list-upcoming-visits';
@@ -43,6 +47,7 @@ import { Zone } from '@/domain/entities/zone';
 import { Client } from '@/domain/entities/client';
 import { Field } from '@/domain/entities/field';
 import type { IdGenerator } from '@/domain/ports/outbound/id-generator';
+import type { Clock } from '@/domain/ports/outbound/clock';
 import type { TenantConfig } from '@/domain/ports/outbound/tenant-config-repository';
 import type { Container } from '@/composition/container';
 import { FixedClock } from './fixed-clock';
@@ -60,7 +65,9 @@ export function wireCatalogUseCases(
   fields: InMemoryFieldRepository,
   visits: InMemoryVisitRepository,
   reminders: InMemoryReminderRepository,
+  media: InMemoryMediaRepository,
   ids: IdGenerator,
+  clock: Clock,
 ): Pick<
   Container,
   | 'createZone'
@@ -79,6 +86,9 @@ export function wireCatalogUseCases(
   | 'restoreField'
   | 'listCatalogFields'
   | 'clearAllData'
+  | 'attachMediaToVisit'
+  | 'listVisitMedia'
+  | 'removeMediaFromVisit'
 > {
   const dataReset = new InMemoryDataReset([
     () => zones.clear(),
@@ -86,6 +96,7 @@ export function wireCatalogUseCases(
     () => fields.clear(),
     () => visits.clear(),
     () => reminders.clear(),
+    () => media.clear(),
   ]);
   return {
     createZone: new CreateZone(zones, ids),
@@ -104,6 +115,9 @@ export function wireCatalogUseCases(
     restoreField: new RestoreField(fields),
     listCatalogFields: new ListCatalogFields(fields),
     clearAllData: new ClearAllData(dataReset),
+    attachMediaToVisit: new AttachMediaToVisit(media, visits, clock, ids),
+    listVisitMedia: new ListVisitMedia(media),
+    removeMediaFromVisit: new RemoveMediaFromVisit(media),
   };
 }
 
@@ -118,6 +132,7 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z'), co
   const clients = new InMemoryClientRepository(clientMap);
   const visits = new InMemoryVisitRepository();
   const reminders = new InMemoryReminderRepository();
+  const media = new InMemoryMediaRepository();
   const clock = new FixedClock(now);
   const ids = new IncrementingIdGenerator();
   const notifier = new InAppReminderNotifier();
@@ -145,6 +160,6 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z'), co
     getTenantConfig: () => tenantConfigRepo.get(),
     saveTenantConfig: (c: TenantConfig) => tenantConfigRepo.save(c),
     clearTenantConfig: () => tenantConfigRepo.clear(),
-    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, ids),
+    ...wireCatalogUseCases(zones, clients, fields, visits, reminders, media, ids, clock),
   };
 }
