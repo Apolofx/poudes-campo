@@ -212,6 +212,11 @@ body {
 
 .config-theme { margin-bottom: var(--space-3); }
 
+.stepper { display: flex; gap: 6px; margin-bottom: var(--space-3); }
+.stepper-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--divider); transition: background-color 150ms ease; }
+.stepper-dot.is-active { background: var(--accent); }
+.wizard-skip { margin-top: var(--space-2); }
+
 .field-label {
   font-size: 11px;
   font-weight: 600;
