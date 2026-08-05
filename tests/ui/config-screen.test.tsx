@@ -43,6 +43,19 @@ describe('ConfigScreen', () => {
     expect(screen.getByRole('radio', { name: 'Sistema' })).toBeChecked();
   });
 
+  it('pre-carga la clave y URL ya configuradas', async () => {
+    renderConfig(
+      makeInMemoryContainer(undefined, {
+        apiUrl: 'https://api.example.com',
+        apiKey: 'tnt_t1_secret',
+      }),
+    );
+
+    await screen.findByRole('heading', { name: 'Configuración' });
+    await waitFor(() => expect(screen.getByLabelText(/Clave de acceso/)).toHaveValue('tnt_t1_secret'));
+    expect(screen.getByLabelText(/URL de la API/)).toHaveValue('https://api.example.com');
+  });
+
   it('submit vacío muestra error', async () => {
     renderConfig();
 

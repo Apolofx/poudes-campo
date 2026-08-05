@@ -177,6 +177,13 @@ describe('AgendaScreen', () => {
     expect(screen.getAllByRole('link', { name: /Programar visita/ })).toHaveLength(1);
   });
 
+  it('muestra el acceso a Configuración con el engranaje', async () => {
+    await renderAgenda();
+    await screen.findByRole('heading', { name: /Vencidas/ });
+    const gear = screen.getByRole('link', { name: 'Configuración' });
+    expect(gear).toHaveAttribute('href', '/configuracion');
+  });
+
   it('muestra un error en vez del estado vacío cuando falla la carga', async () => {
     // Container mínimo: la pantalla solo usa listUpcomingVisits; los otros miembros
     // no se ejercitan en este flujo, así que un stub tipado basta.

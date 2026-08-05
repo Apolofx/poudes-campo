@@ -1,14 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
 import { ThemeToggle } from '@/ui/components/ThemeToggle';
 
 export function ConfigScreen() {
-  const { save } = useTenantConfig();
+  const { config, save } = useTenantConfig();
   const navigate = useNavigate();
   const [apiKey, setApiKey] = useState('');
   const [apiUrl, setApiUrl] = useState(import.meta.env.VITE_REMINDERS_API_URL ?? '');
   const [localError, setLocalError] = useState<string | undefined>();
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    if (hydrated.current || !config) return;
+    hydrated.current = true;
+    setApiKey(config.apiKey ?? '');
+    setApiUrl(config.apiUrl ?? '');
+  }, [config]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

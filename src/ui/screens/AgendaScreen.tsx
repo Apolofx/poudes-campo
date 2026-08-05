@@ -1,7 +1,7 @@
 // src/ui/screens/AgendaScreen.tsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarPlus } from 'lucide-react';
+import { CalendarPlus, Settings } from 'lucide-react';
 import { useAgenda } from '@/ui/hooks/use-agenda';
 import { groupUpcoming, formatRelativeDays, type GroupBy } from '@/ui/agenda-presentation';
 import { ReminderAvisoBanner } from '@/ui/components/ReminderAvisoBanner';
@@ -24,7 +24,12 @@ export function AgendaScreen() {
     <main className="screen agenda">
       <ReminderAvisoBanner />
       <header className="agenda-header">
-        <h1 className="screen-title">Próximas visitas</h1>
+        <div className="agenda-title-row">
+          <h1 className="screen-title">Próximas visitas</h1>
+          <Link className="icon-btn" to="/configuracion" aria-label="Configuración">
+            <Settings size={22} aria-hidden="true" />
+          </Link>
+        </div>
         <div className="segmented" role="group" aria-label="Agrupar por">
           {GROUP_OPTIONS.map((opt) => (
             <label className="segment" key={opt.value}>
