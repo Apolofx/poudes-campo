@@ -301,8 +301,9 @@ describe('RecordVisitScreen (media, flag mediaVisitas)', () => {
     );
   }
 
-  it('con flag on captura una foto y la adjunta al registrar la visita', async () => {
+  it('con flag on captura una foto y la adjunta una sola vez al registrar la visita', async () => {
     const c = makeInMemoryContainer(new Date());
+    const attachSpy = vi.spyOn(c.attachMediaToVisit, 'execute');
     renderScreenWithMedia(c);
 
     const input = (await screen.findByRole('group', { name: /Agregar fotos/ })).querySelector('.media-file-input') as HTMLInputElement;
@@ -320,6 +321,41 @@ describe('RecordVisitScreen (media, flag mediaVisitas)', () => {
     expect(media).toHaveLength(1);
     expect(media[0].kind).toBe('image');
     expect(media[0].mimeType).toBe('image/jpeg');
+    expect(attachSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('adjunta cada adjunto una sola vez al registrar desde /registrar', async () => {
+    const c = makeInMemoryContainer(new Date());
+    await c.clearAllData.execute();
+    const attachSpy = vi.spyOn(c.attachMediaToVisit, 'execute');
+    render(
+      <FlagsProvider initialFlags={{ mediaVisitas: true }}>
+        <CampoProvider container={c}>
+          <MemoryRouter initialEntries={['/registrar']}>
+            <Routes>
+              <Route path="/registrar" element={<RecordVisitScreen />} />
+              <Route path="/" element={<div>Listado</div>} />
+            </Routes>
+          </MemoryRouter>
+        </CampoProvider>
+      </FlagsProvider>,
+    );
+
+    await userEvent.type(screen.getByLabelText('Lote'), 'Paso 9');
+    const input = (await screen.findByRole('group', { name: /Agregar fotos/ })).querySelector('.media-file-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['x'], 'foto.jpg')] } });
+    await screen.findByAltText('Foto de la visita');
+
+    await expandNextVisit();
+    await userEvent.click(screen.getByLabelText(/Sin próxima/));
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+
+    expect(await screen.findByText('Listado')).toBeInTheDocument();
+    const fields = await c.listCatalogFields.execute();
+    const visitHistory = (await c.getFieldHistory.execute(fields[0].field.id))!;
+    const done = visitHistory.visits.find((v) => v.status === 'DONE');
+    expect((await c.listVisitMedia.execute(done!.id))).toHaveLength(1);
+    expect(attachSpy).toHaveBeenCalledTimes(1);
   });
 
   it('sin flag la sección de media no existe', async () => {

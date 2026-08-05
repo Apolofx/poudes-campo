@@ -9,13 +9,16 @@ export function useRecordVisit() {
   const [result, setResult] = useState<RecordVisitResult | undefined>();
 
   const submit = useCallback(
-    async (input: RecordVisitInput) => {
+    async (input: RecordVisitInput): Promise<RecordVisitResult | undefined> => {
       setSubmitting(true);
       setError(undefined);
       try {
-        setResult(await recordVisit.execute(input));
+        const result = await recordVisit.execute(input);
+        setResult(result);
+        return result;
       } catch (e) {
         setError(e as Error);
+        return undefined;
       } finally {
         setSubmitting(false);
       }

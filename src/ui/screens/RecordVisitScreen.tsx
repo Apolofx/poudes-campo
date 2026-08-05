@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { NextVisitInput } from '@/application/use-cases/next-visit';
+import type { VisitId } from '@/domain/shared/ids';
 import { useRecordVisit } from '@/ui/hooks/use-record-visit';
 import { useRecordVisitEnsuringField } from '@/ui/hooks/use-record-visit-ensuring-field';
 import { useFieldHistory } from '@/ui/hooks/use-field-history';
@@ -31,7 +32,7 @@ export function RecordVisitScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { listZones, listClients } = useCampo();
-  const { submit, submitting, error, result } = useRecordVisit();
+  const { submit, submitting, error } = useRecordVisit();
   const ensuring = useRecordVisitEnsuringField();
   const fieldHistory = useFieldHistory(fieldId);
   const cancelHook = useCancelVisit();
@@ -41,8 +42,6 @@ export function RecordVisitScreen() {
 
   const mediaVisitas = useFlag('mediaVisitas');
   const [pendingMedia, setPendingMedia] = useState<MediaItemView[]>([]);
-  const pendingMediaRef = useRef<MediaItemView[]>([]);
-  useEffect(() => { pendingMediaRef.current = pendingMedia; }, [pendingMedia]);
 
   const pickingLot = !fieldId;
 
@@ -79,15 +78,11 @@ export function RecordVisitScreen() {
     if (pending) setNotes(pending.notes ?? '');
   }, [pending?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!result) return;
-    void (async () => {
-      for (const item of pendingMediaRef.current) {
-        await attach.submit({ visitId: result.visitId, kind: item.kind, mimeType: item.mimeType, blob: item.blob });
-      }
-      navigate('/');
-    })();
-  }, [result, navigate, attach]);
+  const attachPendingMedia = async (visitId: VisitId): Promise<void> => {
+    for (const item of pendingMedia) {
+      await attach.submit({ visitId, kind: item.kind, mimeType: item.mimeType, blob: item.blob });
+    }
+  };
 
   useEffect(() => {
     if (cancelHook.done) navigate(back.to);
@@ -124,15 +119,16 @@ export function RecordVisitScreen() {
           };
       const ensuringResult = await ensuring.submit({ ...base, field });
       if (ensuringResult) {
-        for (const item of pendingMediaRef.current) {
-          await attach.submit({ visitId: ensuringResult.visitId, kind: item.kind, mimeType: item.mimeType, blob: item.blob });
-        }
+        await attachPendingMedia(ensuringResult.visitId);
         navigate('/');
       }
       return;
     }
 
-    submit({ fieldId, ...base });
+    const result = await submit({ fieldId, ...base });
+    if (!result) return;
+    await attachPendingMedia(result.visitId);
+    navigate('/');
   };
 
   const leadMax =
