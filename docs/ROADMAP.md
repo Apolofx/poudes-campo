@@ -4,7 +4,7 @@
 
 **Qué es Campo:** PWA offline-first para un asesor agronómico que recorre ~40 lotes: registrar visitas y saber cuándo volver. Arquitectura hexagonal (TypeScript + Vitest, dominio puro sin infra). Regla dura: **ningún dato de dosis/agroquímicos/prescripciones entra jamás al sistema**.
 
-Última actualización: 2026-08-05.
+Última actualización: 2026-08-05 (media-visitas en rama, sin merge).
 
 ---
 
@@ -23,6 +23,7 @@
 - Todo offline y persistente en el dispositivo (IndexedDB). Instalable como PWA.
 - **Primer arranque guiado (wizard):** si el flag de Vercel `onboardingNuevo` está activo, una instalación sin configuración o sin lotes arranca en `/onboarding` con un mini wizard de 3 pasos (clave → primer lote → programar visita). El estado se deriva de los datos (retoma donde quedó) y el paso 3 se puede saltar.
 - **Recordatorios por email:** cada día a las 07:00 un digest avisa las visitas cuyo umbral (`remindAt`) venció. La app sube el feed de programadas vigentes en cada arranque y tras registrar/editar/programar/cancelar (`PUT /v1/pending-visits`); el backend (`campo-poudes-backend`, AWS dev) calcula vencidos con watermark idempotente y manda el digest por **Resend** (`avisos@navlogvfr.app`) al **email de cada tenant**. Auth por **API key por tenant** (`tnt_<id>_<secreto>`, sha256 en DynamoDB, comparación timing-safe); la app guarda la key en `localStorage` (pantalla de Configuración) con compat del env legacy. Nota: por reputación de remitente (dominio nuevo) Gmail puede derivarlo a spam hasta calentar; ver diferido.
+- **Adjuntos de visita (fotos y nota de voz)** si el flag de Vercel `mediaVisitas` está prendido: al registrar una visita podés agregar fotos (se comprimen a 1600px JPEG, orientación EXIF respetada) y grabar una nota de voz (Opus, máx 5 min); se persisten post-registro en IndexedDB y se pueden ver, escuchar, agregar y quitar desde el detalle de la visita (read-only en canceladas).
 
 ### ❌ Todavía no se puede
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
@@ -56,6 +57,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **recordatorios-remotos-mvp** | Implementación del MVP (plan `docs/superpowers/plans/2026-08-02-recordatorios-remotos-mvp.md`): **backend `campo-poudes-backend`** (proyecto hermano, molde `hexagonal-serverless-ts`: DynamoDB 2 items `FEED#SNAPSHOT`/`FEED#LAST_RUN` con watermark CAS — reemplaza al log `(visitId, remindAt)` del spec —, SES digest, cron UTC, bearer in-handler; endpoints `PUT /v1/pending-visits` + `POST /v1/notify`; **42 tests jest**) + **push del feed desde la app** (puerto `ReminderFeedRepository` + `SyncPendingVisitsFeed` + adapter HTTP + triggers boot/mutaciones; **321 tests**) | ✅ Completa (backend 42 tests, app 321; **deployada en AWS dev**) |
 | **multitenant-keys** | Instancias aisladas por owner: **API keys por tenant** (`tnt_<id>_<secreto>`, solo sha256 en DynamoDB, auth timing-safe por `GetItem` directo), digest al **email del tenant** (no lo manda el cliente), envío por **Resend** (reemplaza SES, dominio `navlogvfr.app`, `FROM_EMAIL=avisos@navlogvfr.app`); cron y endpoints particionados por tenant (`scan` de perfiles), script `create-tenant`. En la app: puerto `TenantConfigRepository` + adapter `localStorage`, **pantalla de Configuración** + gate de primer uso, config efectiva en runtime con compat env legacy. Plan `docs/superpowers/plans/2026-08-04-multitenant-keys.md`, spec `docs/superpowers/specs/2026-08-04-multitenant-keys-design.md` | ⏳ Código completo (backend 60 tests, app 343); **deploy del backend pendiente** de verificar `navlogvfr.app` en Resend |
 | **onboarding-wizard** | Mini wizard de primer uso para terceros gateado por flag de Vercel `onboardingNuevo`: 3 pasos (clave → primer lote → programar visita), estado derivable (retoma donde quedó), `CreateFieldEnsuring`, ruta `/onboarding` fuera del ConfigGate, `FlagsProvider` con `loading`/`initialFlags`, `nextBusinessDayIso` | ✅ Completa (381 tests) |
+| **media-visitas** | Adjuntos por visita gateados por flag de Vercel `mediaVisitas`: fotos (compresión 1600px JPEG q0.8 con orientación EXIF) y nota de voz (Opus, máx 5 min) persistidas post-registro en idb schema v4 (store `media`), galería con escuchar/ver/quitar en el detalle (read-only en canceladas), borrado individual con confirmación. Ramas: implementada en `media-visitas`, **sin merge** a `main` — pendiente prueba local | ⏳ Código completo (ramas `media-visitas`, sin merge) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
