@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export interface SpeedDialAction {
   label: string;
@@ -49,12 +49,12 @@ export function SpeedDial({ actions, ariaLabel }: SpeedDialProps) {
       <button
         ref={fabRef}
         type="button"
-        className="fab"
+        className={`fab${open ? ' is-open' : ''}`}
         aria-label={ariaLabel}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? <X size={26} aria-hidden="true" /> : <Plus size={26} aria-hidden="true" />}
+        <Plus size={26} aria-hidden="true" />
       </button>
     </div>
   );
