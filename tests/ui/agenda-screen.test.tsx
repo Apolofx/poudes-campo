@@ -166,21 +166,18 @@ describe('AgendaScreen', () => {
     expect(await screen.findByText('No hay visitas agendadas.')).toBeInTheDocument();
     const register = screen.getByRole('link', { name: /Registrar visita/ });
     expect(register).toHaveAttribute('href', '/registrar');
-    const scheduleLinks = screen.getAllByRole('link', { name: /Programar visita/ });
-    const scheduleButton = scheduleLinks.find((l) => l.className.includes('btn-secondary'))!;
+    const scheduleButton = screen.getByRole('link', { name: /Programar visita/ });
     expect(scheduleButton).toHaveAttribute('href', '/programar');
-    const fab = scheduleLinks.find((l) => l.className.includes('fab'))!;
-    expect(fab).toHaveAttribute('href', '/programar');
-    expect(scheduleLinks).toHaveLength(2);
+    const fab = screen.getByRole('button', { name: 'Acciones de visita' });
+    expect(fab).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('link', { name: /Buscar un lote/ })).not.toBeInTheDocument();
   });
 
-  it('muestra el FAB para programar cuando hay visitas', async () => {
+  it('muestra el SpeedDial cuando hay visitas', async () => {
     await renderAgenda();
     await screen.findByRole('heading', { name: /Vencidas/ });
-    const fab = screen.getByRole('link', { name: /Programar visita/ });
-    expect(fab).toHaveAttribute('href', '/programar');
-    expect(screen.getAllByRole('link', { name: /Programar visita/ })).toHaveLength(1);
+    const fab = screen.getByRole('button', { name: 'Acciones de visita' });
+    expect(fab).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('muestra el acceso a Configuración con el engranaje', async () => {

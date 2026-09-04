@@ -1,10 +1,11 @@
 // src/ui/screens/AgendaScreen.tsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarPlus, Settings } from 'lucide-react';
+import { CalendarPlus, ClipboardPlus, Settings } from 'lucide-react';
 import { useAgenda } from '@/ui/hooks/use-agenda';
 import { groupUpcoming, formatRelativeDays, type GroupBy } from '@/ui/agenda-presentation';
 import { ReminderAvisoBanner } from '@/ui/components/ReminderAvisoBanner';
+import { SpeedDial } from '@/ui/components/SpeedDial';
 import { clientLabel, zoneLabel } from '@/ui/labels';
 
 const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
@@ -92,9 +93,13 @@ export function AgendaScreen() {
           </section>
         );
       })}
-      <Link className="fab" to="/programar" aria-label="Programar visita">
-        <CalendarPlus size={26} aria-hidden="true" />
-      </Link>
+      <SpeedDial
+        actions={[
+          { label: 'Registrar visita', to: '/registrar', icon: <ClipboardPlus size={20} aria-hidden="true" /> },
+          { label: 'Programar visita', to: '/programar', icon: <CalendarPlus size={20} aria-hidden="true" /> },
+        ]}
+        ariaLabel="Acciones de visita"
+      />
     </main>
   );
 }
