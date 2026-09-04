@@ -1,10 +1,11 @@
 {
   "name": "campo",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/gen-changelog.js && vite",
+    "build": "node scripts/gen-changelog.js && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
