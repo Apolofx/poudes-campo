@@ -1,11 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function readJson(path: string, fallback: unknown) {
+  try { return JSON.parse(readFileSync(resolve(__dirname, path), 'utf-8')); }
+  catch { return fallback; }
+}
+
+const pkg = readJson('package.json', { version: '0.0.0' });
+const changelog = readJson('src/changelog.json', { version: pkg.version, entries: [] });
 
 export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __CHANGELOG__: JSON.stringify(changelog),
   },
   plugins: [
     react(),

@@ -17,6 +17,7 @@ import { ConfigScreen } from '@/ui/screens/ConfigScreen';
 import { OnboardingWizardScreen } from '@/ui/screens/OnboardingWizardScreen';
 import { TabBar } from '@/ui/components/TabBar';
 import { InstallBanner } from '@/ui/components/InstallBanner';
+import { UpdateBanner } from '@/ui/components/UpdateBanner';
 import { PwaInstallTracker } from '@/ui/components/PwaInstallTracker';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
 import { useFlag } from '@/ui/FlagsProvider';
@@ -27,6 +28,7 @@ function TabsLayout() {
     <div className="app-shell">
       <div className="app-content">
         <InstallBanner />
+        <UpdateBanner />
         <Outlet />
       </div>
       <TabBar />
