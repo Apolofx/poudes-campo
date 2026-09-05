@@ -154,6 +154,9 @@ body {
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
   z-index: 20;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 .fab:active { transform: scale(0.96); }
@@ -196,6 +199,9 @@ body {
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .speed-dial-action-icon {
   display: flex;
