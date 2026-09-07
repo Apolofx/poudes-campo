@@ -40,9 +40,46 @@ describe('MediaGallery', () => {
     expect(onRemove).toHaveBeenCalledWith('m1');
   });
 
+  it('ofrece los botones Cámara y Galería', () => {
+    render(<MediaGallery items={[]} onAdd={() => undefined} onRemove={() => undefined} />);
+    expect(screen.getByRole('button', { name: 'Cámara' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Galería' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Foto' })).not.toBeInTheDocument();
+  });
+
+  it('el input de cámara pide captura y no permite múltiples', () => {
+    const { container } = render(<MediaGallery items={[]} onAdd={() => undefined} onRemove={() => undefined} />);
+    const camera = container.querySelector('input[data-source="camera"]') as HTMLInputElement;
+    const gallery = container.querySelector('input[data-source="gallery"]') as HTMLInputElement;
+    expect(camera.accept).toBe('image/*');
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.multiple).toBe(false);
+    expect(gallery.accept).toBe('image/*');
+    expect(gallery.getAttribute('capture')).toBeNull();
+    expect(gallery.multiple).toBe(true);
+  });
+
+  it('agrega una foto desde los inputs de cámara y galería', async () => {
+    const onAdd = vi.fn();
+    const { container } = render(<MediaGallery items={[]} onAdd={onAdd} onRemove={() => undefined} />);
+    const camera = container.querySelector('input[data-source="camera"]') as HTMLInputElement;
+    const gallery = container.querySelector('input[data-source="gallery"]') as HTMLInputElement;
+    fireEvent.change(camera, { target: { files: [new File(['x'], 'foto-camara.jpg')] } });
+    fireEvent.change(gallery, { target: { files: [new File(['x'], 'foto-galeria.jpg')] } });
+
+    await waitFor(() => expect(onAdd).toHaveBeenCalledTimes(2));
+    const fromCamera = onAdd.mock.calls[0][0] as MediaItemView[];
+    const fromGallery = onAdd.mock.calls[1][0] as MediaItemView[];
+    expect(fromCamera[0].kind).toBe('image');
+    expect(fromCamera[0].mimeType).toBe('image/jpeg');
+    expect(fromGallery[0].kind).toBe('image');
+    expect(fromGallery[0].mimeType).toBe('image/jpeg');
+  });
+
   it('en modo readOnly no ofrece captura ni quitar', () => {
     render(<MediaGallery readOnly items={[image]} onAdd={() => undefined} onRemove={() => undefined} />);
-    expect(screen.queryByRole('button', { name: 'Foto' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cámara' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Galería' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nota de voz' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Quitar' })).not.toBeInTheDocument();
   });

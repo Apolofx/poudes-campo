@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { ImagePlus, Mic, Square } from 'lucide-react';
+import { Camera, Images, Mic, Square } from 'lucide-react';
 import type { MediaKind } from '@/domain/entities/visit-media';
 import { captureImage } from '@/ui/media/capture-image';
 import { useVoiceCapture, MAX_VOICE_SECONDS } from '@/ui/media/use-voice-capture';
@@ -31,6 +31,7 @@ const RING_C = 2 * Math.PI * RING_R;
 
 export function MediaGallery({ items, onAdd, onRemove, readOnly = false, busy = false }: MediaGalleryProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const voice = useVoiceCapture();
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [imageError, setImageError] = useState<string | undefined>();
@@ -89,7 +90,35 @@ export function MediaGallery({ items, onAdd, onRemove, readOnly = false, busy = 
     <>
       {!readOnly && (
         <div className="media-capture" role="group" aria-label="Agregar fotos o nota de voz">
-          <input ref={fileInputRef} className="media-file-input" type="file" accept="image/*" multiple onChange={onFiles} />
+          <input
+            ref={fileInputRef}
+            className="media-file-input"
+            type="file"
+            accept="image/*"
+            multiple
+            data-source="gallery"
+            onChange={onFiles}
+          />
+          <input
+            ref={cameraInputRef}
+            className="media-file-input"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            data-source="camera"
+            onChange={onFiles}
+          />
+          <button
+            type="button"
+            className="capture-btn"
+            disabled={!canCapture}
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            <span className="capture-icon">
+              <Camera size={22} strokeWidth={2} aria-hidden="true" />
+            </span>
+            <span className="capture-label">Cámara</span>
+          </button>
           <button
             type="button"
             className="capture-btn"
@@ -97,9 +126,9 @@ export function MediaGallery({ items, onAdd, onRemove, readOnly = false, busy = 
             onClick={() => fileInputRef.current?.click()}
           >
             <span className="capture-icon">
-              <ImagePlus size={22} strokeWidth={2} aria-hidden="true" />
+              <Images size={22} strokeWidth={2} aria-hidden="true" />
             </span>
-            <span className="capture-label">Foto</span>
+            <span className="capture-label">Galería</span>
           </button>
           {recording ? (
             <button

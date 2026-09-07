@@ -154,7 +154,7 @@ describe('VisitDetailScreen (media, flag mediaVisitas)', () => {
     renderAtWithMedia(c, id);
 
     expect(await screen.findByAltText('Foto de la visita')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Foto' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Galería' })).toBeInTheDocument();
   });
 
   it('la galería queda entre las notas y los botones (los botones al final)', async () => {
@@ -193,7 +193,8 @@ describe('VisitDetailScreen (media, flag mediaVisitas)', () => {
     renderAtWithMedia(c, id);
 
     expect(await screen.findByAltText('Foto de la visita')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Foto' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cámara' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Galería' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Quitar' })).not.toBeInTheDocument();
   });
 
