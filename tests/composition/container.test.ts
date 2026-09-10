@@ -53,4 +53,24 @@ describe('buildContainer', () => {
     expect(c.listCatalogFields).toBeDefined();
     expect(c.clearAllData).toBeDefined();
   });
+
+  it('exports and imports all data end to end', async () => {
+    const db = await openCampoDb(`t-${Math.random()}`);
+    await seedIfEmpty(db);
+    const container = buildContainer(db);
+
+    const data = await container.exportData();
+    expect(data.version).toBe(1);
+    expect(data.fields.length).toBeGreaterThan(0);
+    expect(data.zones.length).toBeGreaterThan(0);
+
+    const db2 = await openCampoDb(`t-${Math.random()}`);
+    const container2 = buildContainer(db2);
+    const result = await container2.importData(data);
+    expect(result.skipped).toBe(0);
+    expect((await container2.listCatalogFields.execute()).length).toBe(data.fields.length);
+    expect((await container2.listZones.execute()).length).toBe(data.zones.length);
+    db.close();
+    db2.close();
+  });
 });
