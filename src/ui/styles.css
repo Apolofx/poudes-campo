@@ -775,7 +775,7 @@ body {
 .catalog-menu { list-style: none; margin: 0; padding: 0; }
 
 .danger-zone {
-  margin: var(--space-4);
+  margin: var(--space-4) 0 0;
   padding: var(--space-3);
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
   border-radius: var(--radius-lg);
