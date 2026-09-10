@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarPlus, ClipboardPlus, Settings } from 'lucide-react';
 import { useAgenda } from '@/ui/hooks/use-agenda';
+import { useHasAnyField } from '@/ui/hooks/use-has-any-field';
 import { groupUpcoming, formatRelativeDays, type GroupBy } from '@/ui/agenda-presentation';
 import { ReminderAvisoBanner } from '@/ui/components/ReminderAvisoBanner';
 import { SpeedDial } from '@/ui/components/SpeedDial';
@@ -16,6 +17,7 @@ const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
 
 export function AgendaScreen() {
   const { items, loading, error } = useAgenda();
+  const { hasAnyField } = useHasAnyField();
   const [groupBy, setGroupBy] = useState<GroupBy>('time');
   const [showLater, setShowLater] = useState(false);
 
@@ -52,6 +54,14 @@ export function AgendaScreen() {
       )}
       {!loading && !error && items.length === 0 && (
         <div className="empty-state">
+          {!hasAnyField && (
+            <img
+              src="/so-really.gif"
+              alt="John Travolta dancing"
+              className="travolta-gif"
+              style={{ width: 150, margin: 'auto', display: 'block' }}
+            />
+          )}
           <p className="empty">No hay visitas agendadas.</p>
           <div className="empty-actions">
             <Link className="btn-primary" to="/registrar">Registrar visita</Link>
