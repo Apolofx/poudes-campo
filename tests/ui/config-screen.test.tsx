@@ -81,10 +81,20 @@ describe('ConfigScreen', () => {
     });
   });
 
-  it('ofrece exportar e importar datos', async () => {
+  it('ofrece exportar, importar y borrar datos', async () => {
     renderConfig();
     await screen.findByRole('heading', { name: 'Configuración' });
-    expect(screen.getByRole('button', { name: 'Exportar datos' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Importar datos' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Exportar datos' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Importar datos' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Borrar todos los datos' })).toBeInTheDocument();
+  });
+
+  it('borra todos los datos tras confirmación', async () => {
+    const container = renderConfig();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Borrar todos los datos' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }));
+
+    expect((await container.listCatalogFields.execute()).length).toBe(0);
   });
 });

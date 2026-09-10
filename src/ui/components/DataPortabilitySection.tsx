@@ -1,8 +1,10 @@
-import { useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Download, Upload } from 'lucide-react';
+import { useCampo } from '@/ui/CampoProvider';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { useExportData } from '@/ui/hooks/use-export-data';
 import { useImportData } from '@/ui/hooks/use-import-data';
+import { useClearAllData } from '@/ui/hooks/use-clear-all-data';
 import { InvalidExportFormat, UnsupportedExportVersion } from '@/infrastructure/persistence/idb/export-errors';
 import type { ImportSummary } from '@/infrastructure/persistence/idb/export-types';
 
@@ -26,6 +28,21 @@ export function DataPortabilitySection() {
   const importData = useImportData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const busy = exportData.busy || importData.busy;
+  const { listCatalogFields } = useCampo();
+  const [hasData, setHasData] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCatalogFields.execute().then((rows) => {
+      if (!cancelled) setHasData(rows.length > 0);
+    });
+    return () => { cancelled = true; };
+  }, [listCatalogFields]);
+
+  const [confirming, setConfirming] = useState(false);
+  const { clear } = useClearAllData();
+
+  if (!hasData) return null;
 
   const importError = importData.error
     ? importData.error instanceof InvalidExportFormat
@@ -78,6 +95,24 @@ export function DataPortabilitySection() {
         confirmLabel="Importar"
         onConfirm={() => void importData.confirmImport()}
         onCancel={importData.reset}
+      />
+
+      <section className="danger-zone">
+        <h2 className="danger-zone-title">Zona de peligro</h2>
+        <div className="danger-zone-row">
+          <p>Borrar zonas, clientes, lotes, visitas y avisos de este dispositivo.</p>
+          <button type="button" className="btn-danger" onClick={() => setConfirming(true)}>
+            Borrar todos los datos
+          </button>
+        </div>
+      </section>
+      <ConfirmDialog
+        open={confirming}
+        title="Borrar todos los datos"
+        message="Se eliminarán zonas, clientes, lotes, visitas y avisos de este dispositivo. No se puede deshacer."
+        confirmLabel="Borrar"
+        onConfirm={async () => { setConfirming(false); await clear(); }}
+        onCancel={() => setConfirming(false)}
       />
     </section>
   );
