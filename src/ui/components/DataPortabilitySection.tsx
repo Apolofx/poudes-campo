@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Download, Upload } from 'lucide-react';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { useExportData } from '@/ui/hooks/use-export-data';
 import { useImportData } from '@/ui/hooks/use-import-data';
@@ -50,10 +51,10 @@ export function DataPortabilitySection() {
       <span className="field-label">Respaldo de datos</span>
       <div className="data-portability-actions">
         <button type="button" className="btn-secondary" disabled={busy} onClick={() => void exportData.exportNow()}>
-          Exportar datos
+          <Download size={16} aria-hidden="true" /> Exportar datos
         </button>
         <button type="button" className="btn-secondary" disabled={busy} onClick={() => fileInputRef.current?.click()}>
-          Importar datos
+          <Upload size={16} aria-hidden="true" /> Importar datos
         </button>
         <input
           ref={fileInputRef}

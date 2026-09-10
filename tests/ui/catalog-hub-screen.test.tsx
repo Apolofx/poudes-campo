@@ -25,6 +25,7 @@ describe('CatalogHubScreen', () => {
 
   it('clears all data after a two-step confirmation', async () => {
     const container = renderHub();
+    expect(screen.getByRole('heading', { name: 'Zona de peligro' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Borrar todos los datos/ }));
     // paso 2: confirmar en el diálogo
     await userEvent.click(screen.getByRole('button', { name: /^Borrar$/ }));

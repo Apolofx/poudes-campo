@@ -22,9 +22,13 @@ export function CatalogHubScreen() {
       <DataPortabilitySection />
 
       <section className="danger-zone">
-        <button type="button" className="btn-danger" onClick={() => setConfirming(true)}>
-          Borrar todos los datos
-        </button>
+        <h2 className="danger-zone-title">Zona de peligro</h2>
+        <div className="danger-zone-row">
+          <p>Borrar zonas, clientes, lotes, visitas y avisos de este dispositivo.</p>
+          <button type="button" className="btn-danger" onClick={() => setConfirming(true)}>
+            Borrar todos los datos
+          </button>
+        </div>
       </section>
 
       <ConfirmDialog
