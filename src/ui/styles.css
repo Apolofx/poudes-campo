@@ -1104,3 +1104,9 @@ body {
 .media-meta { color: var(--muted); font-size: 13px; }
 .btn-remove { color: var(--danger); background: transparent; border: none; padding: 0; font: inherit; cursor: pointer; }
 .media-section { margin-top: var(--space-3); }
+
+.data-file-input { display: none; }
+.data-portability { margin: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--divider); }
+.data-portability-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+.data-portability-actions > .btn-secondary { flex: 1; }
+.success { margin: var(--space-2) 0 0; padding: var(--space-3); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); font-size: 13.5px; }
