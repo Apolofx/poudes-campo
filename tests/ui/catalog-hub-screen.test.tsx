@@ -31,4 +31,10 @@ describe('CatalogHubScreen', () => {
     // los lotes del fixture in-memory quedaron vacíos
     expect((await container.listCatalogFields.execute()).length).toBe(0);
   });
+
+  it('ofrece exportar e importar datos', () => {
+    renderHub();
+    expect(screen.getByRole('button', { name: 'Exportar datos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Importar datos' })).toBeInTheDocument();
+  });
 });
