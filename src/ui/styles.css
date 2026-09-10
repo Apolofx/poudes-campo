@@ -515,8 +515,8 @@ body {
 .tab-bar {
   position: fixed;
   left: 0; right: 0; bottom: 0;
-  max-width: 480px;
-  margin: 0 auto;
+  /* max-width: 480px;
+  margin: 0 auto; */
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--header-border);

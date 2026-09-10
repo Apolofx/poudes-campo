@@ -52,11 +52,12 @@ export function AgendaScreen() {
       )}
       {!loading && !error && items.length === 0 && (
         <div className="empty-state">
-          <p className="empty">No hay visitas agendadas.</p>
-          <div className="empty-actions">
-            <Link className="btn-primary" to="/registrar">Registrar visita</Link>
-            <Link className="btn-secondary" to="/programar">Programar visita</Link>
-          </div>
+          <img
+            src="/so-really.gif"
+            alt="John Travolta dancing"
+            className="travolta-gif"
+            style={{ width: 150, margin: 'auto', display: 'block' }}
+          />
         </div>
       )}
 
