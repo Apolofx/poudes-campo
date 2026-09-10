@@ -80,4 +80,11 @@ describe('ConfigScreen', () => {
       apiKey: 'tnt_t1_secret',
     });
   });
+
+  it('ofrece exportar e importar datos', async () => {
+    renderConfig();
+    await screen.findByRole('heading', { name: 'Configuración' });
+    expect(screen.getByRole('button', { name: 'Exportar datos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Importar datos' })).toBeInTheDocument();
+  });
 });

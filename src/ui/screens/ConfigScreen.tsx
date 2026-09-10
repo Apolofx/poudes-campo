@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantConfig } from '@/ui/TenantConfigProvider';
 import { ThemeToggle } from '@/ui/components/ThemeToggle';
+import { DataPortabilitySection } from '@/ui/components/DataPortabilitySection';
 
 export function ConfigScreen() {
   const { config, save } = useTenantConfig();
@@ -37,6 +38,7 @@ export function ConfigScreen() {
         <span className="field-label">Tema</span>
         <ThemeToggle />
       </div>
+      <DataPortabilitySection />
       <form className="form" onSubmit={onSubmit}>
         <label className="field">
           <span className="field-label">Clave de acceso</span>
