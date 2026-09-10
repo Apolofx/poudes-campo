@@ -25,10 +25,17 @@ describe('CatalogHubScreen', () => {
 
   it('clears all data after a two-step confirmation', async () => {
     const container = renderHub();
+    expect(screen.getByRole('heading', { name: 'Zona de peligro' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Borrar todos los datos/ }));
     // paso 2: confirmar en el diálogo
     await userEvent.click(screen.getByRole('button', { name: /^Borrar$/ }));
     // los lotes del fixture in-memory quedaron vacíos
     expect((await container.listCatalogFields.execute()).length).toBe(0);
+  });
+
+  it('ofrece exportar e importar datos', () => {
+    renderHub();
+    expect(screen.getByRole('button', { name: 'Exportar datos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Importar datos' })).toBeInTheDocument();
   });
 });

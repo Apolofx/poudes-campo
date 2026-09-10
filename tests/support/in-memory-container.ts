@@ -49,6 +49,7 @@ import { Field } from '@/domain/entities/field';
 import type { IdGenerator } from '@/domain/ports/outbound/id-generator';
 import type { Clock } from '@/domain/ports/outbound/clock';
 import type { TenantConfig } from '@/domain/ports/outbound/tenant-config-repository';
+import type { CampoExport, ImportResult } from '@/infrastructure/persistence/idb/export-types';
 import type { Container } from '@/composition/container';
 import { FixedClock } from './fixed-clock';
 import { IncrementingIdGenerator } from './incrementing-id-generator';
@@ -157,6 +158,12 @@ export function makeInMemoryContainer(now = new Date('2026-07-27T12:00:00Z'), co
     recordVisitEnsuringField: new RecordVisitEnsuringField(createZone, createClient, createField, recordVisit),
     reminderAviso: notifier,
     syncPendingVisitsFeed: async () => undefined,
+    exportData: async (): Promise<CampoExport> => ({
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      zones: [], clients: [], fields: [], visits: [], reminders: [], media: [],
+    }),
+    importData: async (): Promise<ImportResult> => ({ skipped: 0 }),
     getTenantConfig: () => tenantConfigRepo.get(),
     saveTenantConfig: (c: TenantConfig) => tenantConfigRepo.save(c),
     clearTenantConfig: () => tenantConfigRepo.clear(),

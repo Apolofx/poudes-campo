@@ -38,6 +38,9 @@ import { RemoveMediaFromVisit } from '@/application/use-cases/remove-media';
 import { SyncPendingVisitsFeed } from '@/application/use-cases/sync-pending-visits-feed';
 import { HttpReminderFeedRepository } from '@/infrastructure/persistence/http';
 import { LocalTenantConfigRepository } from '@/infrastructure/persistence/local/tenant-config-repository';
+import { exportAllData } from '@/infrastructure/persistence/idb/data-export';
+import { importData } from '@/infrastructure/persistence/idb/data-import';
+import type { CampoExport, ImportResult } from '@/infrastructure/persistence/idb/export-types';
 import { IdbFieldRepository } from '@/infrastructure/persistence/idb/idb-field-repository';
 import { IdbVisitRepository } from '@/infrastructure/persistence/idb/idb-visit-repository';
 import { IdbReminderRepository } from '@/infrastructure/persistence/idb/idb-reminder-repository';
@@ -87,6 +90,10 @@ export interface Container {
   removeMediaFromVisit: RemoveMediaFromVisit;
   /** Sube el snapshot de programadas al backend de recordatorios (no-op si no hay config de tenant). */
   syncPendingVisitsFeed: () => Promise<void>;
+  /** Serializa todos los datos del dispositivo al formato de respaldo. */
+  exportData: () => Promise<CampoExport>;
+  /** Fusiona los datos de un respaldo por ID (upsert) con integridad referencial. */
+  importData: (data: CampoExport) => Promise<ImportResult>;
   getTenantConfig: () => Promise<TenantConfig | null>;
   saveTenantConfig: (config: TenantConfig) => Promise<void>;
   clearTenantConfig: () => Promise<void>;
@@ -153,6 +160,8 @@ export function buildContainer(db: CampoDb): Container {
     listVisitMedia: new ListVisitMedia(media),
     removeMediaFromVisit: new RemoveMediaFromVisit(media),
     syncPendingVisitsFeed,
+    exportData: () => exportAllData(db),
+    importData: (data: CampoExport) => importData(db, data),
     getTenantConfig: () => tenantConfigRepo.get(),
     saveTenantConfig: (config: TenantConfig) => tenantConfigRepo.save(config),
     clearTenantConfig: () => tenantConfigRepo.clear(),

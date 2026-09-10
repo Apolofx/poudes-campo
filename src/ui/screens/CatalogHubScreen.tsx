@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '@/ui/components/ConfirmDialog';
 import { useClearAllData } from '@/ui/hooks/use-clear-all-data';
+import { DataPortabilitySection } from '@/ui/components/DataPortabilitySection';
 
 export function CatalogHubScreen() {
   const { clear } = useClearAllData();
@@ -18,10 +19,16 @@ export function CatalogHubScreen() {
         <li><Link className="field-row" to="/catalogo/lotes"><span className="field-name">Lotes</span><span className="chevron" aria-hidden="true">›</span></Link></li>
       </ul>
 
+      <DataPortabilitySection />
+
       <section className="danger-zone">
-        <button type="button" className="btn-danger" onClick={() => setConfirming(true)}>
-          Borrar todos los datos
-        </button>
+        <h2 className="danger-zone-title">Zona de peligro</h2>
+        <div className="danger-zone-row">
+          <p>Borrar zonas, clientes, lotes, visitas y avisos de este dispositivo.</p>
+          <button type="button" className="btn-danger" onClick={() => setConfirming(true)}>
+            Borrar todos los datos
+          </button>
+        </div>
       </section>
 
       <ConfirmDialog

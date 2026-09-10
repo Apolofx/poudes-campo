@@ -4,7 +4,7 @@
 
 **Qué es Campo:** PWA offline-first para un asesor agronómico que recorre ~40 lotes: registrar visitas y saber cuándo volver. Arquitectura hexagonal (TypeScript + Vitest, dominio puro sin infra). Regla dura: **ningún dato de dosis/agroquímicos/prescripciones entra jamás al sistema**.
 
-Última actualización: 2026-08-05.
+Última actualización: 2026-09-10.
 
 ---
 
@@ -24,6 +24,7 @@
 - **Primer arranque guiado (wizard):** si el flag de Vercel `onboardingNuevo` está activo, una instalación sin configuración o sin lotes arranca en `/onboarding` con un mini wizard de 3 pasos (clave → primer lote → programar visita). El estado se deriva de los datos (retoma donde quedó) y el paso 3 se puede saltar.
 - **Recordatorios por email:** cada día a las 07:00 un digest avisa las visitas cuyo umbral (`remindAt`) venció. La app sube el feed de programadas vigentes en cada arranque y tras registrar/editar/programar/cancelar (`PUT /v1/pending-visits`); el backend (`campo-poudes-backend`, AWS dev) calcula vencidos con watermark idempotente y manda el digest por **Resend** (`avisos@navlogvfr.app`) al **email de cada tenant**. Auth por **API key por tenant** (`tnt_<id>_<secreto>`, sha256 en DynamoDB, comparación timing-safe); la app guarda la key en `localStorage` (pantalla de Configuración) con compat del env legacy. Nota: por reputación de remitente (dominio nuevo) Gmail puede derivarlo a spam hasta calentar; ver diferido.
 - **Adjuntos de visita (fotos y nota de voz)** si el flag de Vercel `mediaVisitas` está prendido: al registrar una visita podés sacar una foto con la **cámara** (botón "Cámara", `capture="environment"`) o **elegir de la galería** (botón "Galería", chooser del SO); ambas se comprimen a 1600px JPEG (orientación EXIF respetada) y también se puede grabar una nota de voz (Opus, máx 5 min); se persisten post-registro en IndexedDB y se pueden ver, escuchar, agregar y quitar desde el detalle de la visita (read-only en canceladas).
+- **Exportar e importar todos los datos:** desde Configuración (o Catálogo → "Respaldo de datos") se exporta un archivo `campo-backup-YYYY-MM-DD.json` con zonas, clientes, lotes, visitas, avisos y adjuntos (fotos/voz como base64) para respaldo o migración entre dispositivos; importar fusiona por ID (nuevos se insertan, existentes se actualizan) con confirmación previa y resumen; los registros con referencias rotas se omiten con aviso.
 
 ### ❌ Todavía no se puede
 - Sincronizar con un servidor / usar en varios dispositivos → **Etapa 5**.
@@ -58,6 +59,7 @@ MVP real = Etapas 1–3. Cada etapa se hace en su propia rama, con brainstorming
 | **multitenant-keys** | Instancias aisladas por owner: **API keys por tenant** (`tnt_<id>_<secreto>`, solo sha256 en DynamoDB, auth timing-safe por `GetItem` directo), digest al **email del tenant** (no lo manda el cliente), envío por **Resend** (reemplaza SES, dominio `navlogvfr.app`, `FROM_EMAIL=avisos@navlogvfr.app`); cron y endpoints particionados por tenant (`scan` de perfiles), script `create-tenant`. En la app: puerto `TenantConfigRepository` + adapter `localStorage`, **pantalla de Configuración** + gate de primer uso, config efectiva en runtime con compat env legacy. Plan `docs/superpowers/plans/2026-08-04-multitenant-keys.md`, spec `docs/superpowers/specs/2026-08-04-multitenant-keys-design.md` | ⏳ Código completo (backend 60 tests, app 343); **deploy del backend pendiente** de verificar `navlogvfr.app` en Resend |
 | **onboarding-wizard** | Mini wizard de primer uso para terceros gateado por flag de Vercel `onboardingNuevo`: 3 pasos (clave → primer lote → programar visita), estado derivable (retoma donde quedó), `CreateFieldEnsuring`, ruta `/onboarding` fuera del ConfigGate, `FlagsProvider` con `loading`/`initialFlags`, `nextBusinessDayIso` | ✅ Completa (381 tests) |
 | **media-visitas** | Adjuntos por visita gateados por flag de Vercel `mediaVisitas`: fotos (compresión 1600px JPEG q0.8 con orientación EXIF) y nota de voz (Opus, máx 5 min) persistidas post-registro en idb schema v4 (store `media`), galería con escuchar/ver/quitar en el detalle (read-only en canceladas), borrado individual con confirmación; **botones separados Cámara (`capture="environment"`) / Galería** al adjuntar | ✅ Completa (merge a `main`) |
+| **export-import-data** | Respaldo/migración: exportar todos los datos a `campo-backup-YYYY-MM-DD.json` (JSON versionado con media base64) e importar con **merge por ID** e integridad referencial; desde Configuración y Catálogo hub | ✅ Completa (460 tests) |
 | **5 — sync + servidor** | Cola outbox en infra, LWW + tombstones terminales, `ConflictResolver` puro | ⏳ Pendiente |
 
 ---
@@ -100,6 +102,7 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
   - **Reputación del remitente** — `navlogvfr.app` es dominio nuevo (IP compartida de SES antes, ahora Resend); Gmail lo puede derivar a spam a pesar de `dkim/spf/dmarc=pass`. Se calienta con envíos reales + "No es spam" en Gmail (el digest diario ayuda). → revisar en 1–2 semanas; si persiste, DMARC `p=quarantine` o IP dedicada si el volumen lo pide.
   - **Multitenant sin UI de gestión** — el alta de tenants es por script (`npm run create-tenant`), a demanda; no hay panel de admin ni auto-provisioning. → cuando haya más de un owner.
   - **Scan de perfiles en el cron** — `listProfiles` usa `scan begins_with(pk, TENANT#)` + `sk=PROFILE`; a escala de pocos tenants es gratis, pero si crece conviene un GSI o tabla de índices. → cuando haya decenas de tenants.
+- **Diferidos de export-import-data (en el spec, sección Diferidos):** exportación programada / parcial / **sin media** (diferidas — el usuario exporta manualmente; todo el backup incluye media; YAGNI por ahora). **No se exporta el tenant config** (la API key no sale del dispositivo).
 
 ---
 
