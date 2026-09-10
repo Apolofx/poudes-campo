@@ -58,11 +58,6 @@ export function AgendaScreen() {
             className="travolta-gif"
             style={{ width: 150, margin: 'auto', display: 'block' }}
           />
-          <p className="empty">No hay visitas agendadas.</p>
-          <div className="empty-actions">
-            <Link className="btn-primary" to="/registrar">Registrar visita</Link>
-            <Link className="btn-secondary" to="/programar">Programar visita</Link>
-          </div>
         </div>
       )}
 

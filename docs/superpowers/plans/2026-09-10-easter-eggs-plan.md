@@ -5,8 +5,7 @@
 ### Steps
 
 - [x] Copy `so-really.gif` from Downloads to `public/` directory
-- [x] Import `useHasAnyField` hook in `AgendaScreen.tsx`
-- [x] Display GIF in empty state when no visits and no fields registered
+- [x] Display GIF in empty state when no visits (regardless of fields)
 - [x] Run typecheck - verify no TypeScript errors
 - [x] Run tests - verify existing tests still pass
 

@@ -8,7 +8,6 @@ Small delightful details that occur under certain states or events in the applic
 
 ### Trigger Condition
 - Home screen (AgendaScreen) with no scheduled visits (`items.length === 0`)
-- AND no fields have been registered yet (`!hasAnyField`)
 
 ### Location
 - `src/ui/screens/AgendaScreen.tsx`

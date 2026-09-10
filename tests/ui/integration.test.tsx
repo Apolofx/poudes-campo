@@ -73,8 +73,9 @@ describe('search → record visit (real IndexedDB adapter)', () => {
 
     await renderApp(container, ['/']);
 
-    // Inicio vacío → FAB "Programar visita".
-    await screen.findByText('No hay visitas agendadas.');
+    // Inicio vacío → FAB "Programar visita" (ahora el estado vacío muestra el GIF Travolta).
+    const fab = await screen.findByRole('button', { name: 'Acciones de visita' });
+    await userEvent.click(fab);
     await userEvent.click(screen.getAllByRole('link', { name: /Programar visita/ })[0]);
 
     // El camino único crea todo de paso.

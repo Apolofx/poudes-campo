@@ -167,11 +167,6 @@ describe('AgendaScreen', () => {
         <MemoryRouter><AgendaScreen /></MemoryRouter>
       </CampoProvider>,
     );
-    expect(await screen.findByText('No hay visitas agendadas.')).toBeInTheDocument();
-    const register = screen.getByRole('link', { name: /Registrar visita/ });
-    expect(register).toHaveAttribute('href', '/registrar');
-    const scheduleButton = screen.getByRole('link', { name: /Programar visita/ });
-    expect(scheduleButton).toHaveAttribute('href', '/programar');
     const fab = screen.getByRole('button', { name: 'Acciones de visita' });
     expect(fab).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('link', { name: /Buscar un lote/ })).not.toBeInTheDocument();
