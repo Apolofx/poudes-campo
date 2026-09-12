@@ -138,6 +138,19 @@ body {
 }
 .empty-actions .btn-primary, .empty-actions .btn-secondary { flex: 1; }
 
+/* Easter egg: Travolta parado sobre la tab bar */
+.agenda .travolta-gif {
+  position: fixed;
+  bottom: var(--touch);
+  left: 50%;
+  transform: translateX(-50%);
+  height: 45vh;
+  width: auto;
+  max-width: 92vw;
+  z-index: 4;
+  pointer-events: none;
+}
+
 .fab {
   position: fixed;
   right: var(--space-4);
