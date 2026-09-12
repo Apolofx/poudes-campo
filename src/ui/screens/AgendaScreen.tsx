@@ -52,12 +52,7 @@ export function AgendaScreen() {
       )}
       {!loading && !error && items.length === 0 && (
         <div className="empty-state">
-          <img
-            src="/so-really.gif"
-            alt="John Travolta dancing"
-            className="travolta-gif"
-            style={{ width: 150, margin: 'auto', display: 'block' }}
-          />
+          <img src="/so-really.gif" alt="John Travolta dancing" className="travolta-gif" />
         </div>
       )}
 
