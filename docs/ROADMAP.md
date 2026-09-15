@@ -116,4 +116,14 @@ Cosas conscientemente pospuestas, con el momento en que corresponde resolverlas:
 - **CRUD no uniforme**: catálogo (Zone/Client/Field) = alta/edición/archivado; eventos (Visit/Reminder) = no CRUD, se corrigen dentro de reglas o se cancelan (baja lógica).
 - **UI** = React + Vite tratado como adaptador reemplazable.
 
+### Cómo se evalúa el éxito de una etapa (principios operativos)
+
+Antes de cualquier implementación/refactor, **leer los 5 principios + checklist pre-mortem en `docs/superpowers/retrospectivas/2026-09-15-principios-operativos.md`** (nacidos de la retrospectiva del intento de migración UI archivado en `refactor/ui-tailwind-shadcn`; aplican a toda tarea, no solo a UI):
+
+1. El criterio de "hecho" mide el atributo que evalúa el usuario (visual→revisión visual humana; dato→valor correcto), no un proxy.
+2. Un contrato/global compartido se retira al **final**, como milestone de cierre con auditoría de cero referencias — nunca "a mitad de camino".
+3. Paralelismo solo sobre cortes **disjuntos** del grafo de dependencias; lo compartido va en serie con revisión entre cada uno.
+4. Versionar el **"antes" observable** (baseline) junto al plan.
+5. **Un único punto de verdad del estado real** (el que dice el disco/tests replicables); no revertir sobre mediciones no replicables (tests flaky se **aislan**, no disparan reversas).
+
 Los detalles completos de cada decisión viven en los specs y planes bajo `docs/superpowers/`.
