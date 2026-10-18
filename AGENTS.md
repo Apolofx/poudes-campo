@@ -44,6 +44,18 @@ npm run build      # build de producción (genera PWA: sw.js + manifest)
 
 Correr un test puntual: `npx vitest run tests/ruta/al.test.ts`.
 
+## Release (versión + changelog)
+
+Regla: **cada PR mergeado = un bump de versión** (patch/minor/major según semver) y **un solo banner de actualización** para el usuario. El banner muestra `v{X.Y.Z}` + changelog, donde el changelog son los commits `feat`/`fix` desde el tag anterior.
+
+Flujo por PR (el bump va DENTRO del PR, nunca después del merge — si no, hay 2 deploys = 2 banners):
+
+1. Último commit en la rama del PR: `npm version <part> --no-git-tag-version` + commit `chore: bump X.Y.Z` (el filtro de `gen-changelog.js` excluye `chore` del changelog).
+2. Merge a `main` → Vercel deploys → banner con la versión nueva y solo los cambios del PR.
+3. Cerrar la ventana para el próximo release: `git tag -a v{X.Y.Z> -m "v{X.Y.Z}"` apuntando al merge y `git push origin v{X.Y.Z}`. El tag **no** dispara deploy.
+
+El usuario ve su versión y commit actual en Configuración (`v{__APP_VERSION__} · {__GIT_SHA__}`).
+
 ## Cómo trabajamos (flujo confirmado)
 
 Este flujo es **agnóstico a la herramienta**: vale con cualquier agente de IA, o a mano. Los artefactos versionados en `docs/superpowers/specs/` y `docs/superpowers/plans/` son ejemplos vivos de cada paso — usalos de molde.
