@@ -89,6 +89,13 @@ describe('ConfigScreen', () => {
     expect(await screen.findByRole('button', { name: 'Borrar todos los datos' })).toBeInTheDocument();
   });
 
+  it('muestra la versión y el commit de la build en el footer', async () => {
+    renderConfig();
+
+    await screen.findByRole('heading', { name: 'Configuración' });
+    expect(await screen.findByText(/^v\d+\.\d+\.\d+ · [0-9a-f]{7,40}$/)).toBeInTheDocument();
+  });
+
   it('borra todos los datos tras confirmación', async () => {
     const container = renderConfig();
 

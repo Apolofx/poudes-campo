@@ -57,6 +57,7 @@ export function ConfigScreen() {
           Guardar
         </button>
       </form>
+      <footer className="field-sub">v{__APP_VERSION__} · {__GIT_SHA__}</footer>
     </main>
   );
 }
