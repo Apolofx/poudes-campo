@@ -71,6 +71,17 @@ describe('FieldHistoryScreen', () => {
     expect(row).toHaveTextContent(/Programada/);
   });
 
+  it('muestra la fecha realizada y no la programada cuando una visita se cumple temprano', async () => {
+    const c = makeInMemoryContainer(new Date('2026-08-05T12:00:00Z'));
+    await c.scheduleVisit.execute({ fieldId: 'f1', plannedFor: new Date('2026-08-10T00:00:00Z'), reminderLeadDays: 3 });
+    await c.recordVisit.execute({ fieldId: 'f1', visitedAt: new Date('2026-08-05T00:00:00Z'), notes: 'cumplida temprano', next: { kind: 'none' } });
+    renderScreen(c);
+
+    const row = await screen.findByRole('link', { name: /cumplida temprano/ });
+    expect(row).toHaveTextContent(/05 de ago de 2026/);
+    expect(row).not.toHaveTextContent(/10 de ago de 2026/);
+  });
+
   it('muestra el día UTC de una visita guardada a medianoche (igual que el form de edición)', async () => {
     const c = makeInMemoryContainer(new Date('2026-08-01T00:30:00.000Z'));
     await c.recordVisit.execute({ fieldId: 'f1', visitedAt: new Date('2026-08-01T00:00:00.000Z'), notes: 'borde', next: { kind: 'none' } });

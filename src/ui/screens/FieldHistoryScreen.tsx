@@ -29,7 +29,7 @@ export function FieldHistoryScreen() {
             <li key={v.id}>
               <Link className="field-row" to={`/field/${fieldId}/visitas/${v.id}`}>
                 <span className="field-text">
-                  <span className="field-name">{dateLabel(v.plannedFor ?? v.visitedAt!)}</span>
+                  <span className="field-name">{dateLabel(v.visitedAt ?? v.plannedFor!)}</span>
                   <span className="field-sub">{v.notes ?? 'Sin notas'}</span>
                 </span>
                 <span className={`visit-badge ${v.status === 'CANCELLED' ? 'is-cancelled' : 'is-active'}`}>
