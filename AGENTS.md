@@ -48,13 +48,23 @@ Correr un test puntual: `npx vitest run tests/ruta/al.test.ts`.
 
 Regla: **cada PR mergeado = un bump de versión** (patch/minor/major según semver) y **un solo banner de actualización** para el usuario. El banner muestra `v{X.Y.Z}` + changelog, donde el changelog son los commits `feat`/`fix` desde el tag anterior.
 
-Flujo por PR (el bump va DENTRO del PR, nunca después del merge — si no, hay 2 deploys = 2 banners):
+**Pasos manuales por task (lo único que requiere intervención humana):**
 
-1. Último commit en la rama del PR: `npm version <part> --no-git-tag-version` + commit `chore: bump X.Y.Z` (el filtro de `gen-changelog.js` excluye `chore` del changelog).
-2. Merge a `main` → Vercel deploys → banner con la versión nueva y solo los cambios del PR.
-3. Cerrar la ventana para el próximo release: `git tag -a v{X.Y.Z> -m "v{X.Y.Z}"` apuntando al merge y `git push origin v{X.Y.Z}`. El tag **no** dispara deploy.
+1. **Antes del merge** — último commit en la rama del PR:
+   ```bash
+   npm version patch --no-git-tag-version    # o minor/major según el cambio
+   git add package.json package-lock.json
+   git commit -m "chore: bump X.Y.Z"
+   ```
+2. **Después del merge** — cerrar la ventana del changelog (el tag no dispara deploy ni banner):
+   ```bash
+   git tag -a vX.Y.Z -m "vX.Y.Z"
+   git push origin vX.Y.Z
+   ```
 
-El usuario ve su versión y commit actual en Configuración (`v{__APP_VERSION__} · {__GIT_SHA__}`).
+**Hooks de aviso (no bloqueantes):** `scripts/release-check.mjs` te avisa en `git push` si la rama no tiene bump desde el último tag, y en `post-merge` (pull/merge en `main`) si main avanzó sin tag. Se instalan automáticamente con `npm install` (`prepare`), o a mano con `node scripts/install-hooks.mjs`. Los avisos salen por stderr y nunca bloquean — son recordatorios para no depender de la memoria (ni de que el agente avise).
+
+El agente, al cerrar cada tarea que va a mergearse, también debe recordar estos pasos.
 
 ## Cómo trabajamos (flujo confirmado)
 
